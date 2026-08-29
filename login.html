@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Jagruthi 3.0 — Login & Register</title>
+    <meta name="description" content="Secure login and registration for Jagruthi Women Safety System.">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet"
+        href="https://maxst.icons8.com/vue-static/landings/line-awesome/line-awesome/1.3.0/css/line-awesome.min.css">
+    <link rel="stylesheet" href="./login.css">
+</head>
+
+<body>
+
+    <div class="auth-container">
+
+        <!-- Branding Header -->
+        <div class="auth-brand">
+            <div class="brand-icon">
+                <i class="las la-shield-alt"></i>
+            </div>
+            <h1>Jagruthi 3.0</h1>
+            <p>Women Safety System</p>
+        </div>
+
+        <!-- Auth Card -->
+        <div class="auth-card">
+
+            <!-- Role Selection -->
+            <div class="role-section">
+                <h2 class="section-label">Select Your Role</h2>
+                <div class="role-grid">
+                    <button class="role-btn active" data-role="user" id="roleUser">
+                        <div class="role-icon"><i class="las la-female"></i></div>
+                        <span>User</span>
+                    </button>
+                    <button class="role-btn" data-role="emergency" id="roleEmergency">
+                        <div class="role-icon"><i class="las la-user-friends"></i></div>
+                        <span>Contact</span>
+                    </button>
+                    <button class="role-btn" data-role="police" id="rolePolice">
+                        <div class="role-icon"><i class="las la-user-shield"></i></div>
+                        <span>Police</span>
+                    </button>
+                    <button class="role-btn" data-role="admin" id="roleAdmin">
+                        <div class="role-icon"><i class="las la-cogs"></i></div>
+                        <span>Admin</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tab Switcher -->
+            <div class="tab-switcher">
+                <button class="tab-btn active" id="tabLogin" data-tab="login">Login</button>
+                <button class="tab-btn" id="tabRegister" data-tab="register">Register</button>
+                <div class="tab-indicator" id="tabIndicator"></div>
+            </div>
+
+            <!-- Error/Success Messages -->
+            <div class="message-box hidden" id="messageBox">
+                <i class="las la-exclamation-circle"></i>
+                <span id="messageText"></span>
+            </div>
+
+            <!-- LOGIN FORM -->
+            <form class="auth-form" id="loginForm">
+                <div class="input-field">
+                    <div class="field-icon"><i class="las la-phone"></i></div>
+                    <input type="tel" id="loginPhone" placeholder="Phone Number" required autocomplete="tel">
+                </div>
+                <div class="input-field">
+                    <div class="field-icon"><i class="las la-lock"></i></div>
+                    <input type="password" id="loginPassword" placeholder="Password" required
+                        autocomplete="current-password">
+                    <button type="button" class="toggle-pass" id="toggleLoginPass"><i class="las la-eye"></i></button>
+                </div>
+                <a href="#" class="forgot-link">Forgot Password?</a>
+                <button type="submit" class="submit-btn" id="loginBtn">
+                    <i class="las la-sign-in-alt"></i>
+                    <span>Login</span>
+                </button>
+            </form>
+
+            <!-- REGISTRATION FORM -->
+            <form class="auth-form hidden" id="registerForm">
+                <div class="input-field">
+                    <div class="field-icon"><i class="las la-user"></i></div>
+                    <input type="text" id="regName" placeholder="Full Name" required>
+                </div>
+                <div class="input-field">
+                    <div class="field-icon"><i class="las la-phone"></i></div>
+                    <input type="tel" id="regPhone" placeholder="Phone Number" required>
+                </div>
+                <div class="input-field">
+                    <div class="field-icon"><i class="las la-envelope"></i></div>
+                    <input type="email" id="regEmail" placeholder="Email Address" required>
+                </div>
+                <div class="input-field">
+                    <div class="field-icon"><i class="las la-lock"></i></div>
+                    <input type="password" id="regPassword" placeholder="Password" required>
+                    <button type="button" class="toggle-pass" id="toggleRegPass"><i class="las la-eye"></i></button>
+                </div>
+                <div class="input-field">
+                    <div class="field-icon"><i class="las la-lock"></i></div>
+                    <input type="password" id="regConfirmPassword" placeholder="Confirm Password" required>
+                </div>
+
+                <!-- Dynamic Role Fields -->
+                <div class="role-fields" id="roleFields">
+                    <!-- User Fields (default) -->
+                    <div class="dynamic-fields" id="fieldsUser">
+                        <div class="input-field">
+                            <div class="field-icon"><i class="las la-phone-volume"></i></div>
+                            <input type="tel" id="regEmergencyContact" placeholder="Emergency Contact Number">
+                        </div>
+                        <div class="input-field">
+                            <div class="field-icon"><i class="las la-map-marker"></i></div>
+                            <input type="text" id="regAddress" placeholder="Address (Optional)">
+                        </div>
+                    </div>
+                    <!-- Emergency Contact Fields -->
+                    <div class="dynamic-fields hidden" id="fieldsEmergency">
+                        <div class="input-field">
+                            <div class="field-icon"><i class="las la-heart"></i></div>
+                            <input type="text" id="regRelationship" placeholder="Relationship to User">
+                        </div>
+                    </div>
+                    <!-- Police Fields -->
+                    <div class="dynamic-fields hidden" id="fieldsPolice">
+                        <div class="input-field">
+                            <div class="field-icon"><i class="las la-building"></i></div>
+                            <input type="text" id="regPoliceStation" placeholder="Police Station Name">
+                        </div>
+                        <div class="input-field">
+                            <div class="field-icon"><i class="las la-id-badge"></i></div>
+                            <input type="text" id="regOfficerId" placeholder="Officer ID">
+                        </div>
+                    </div>
+                    <!-- Admin Fields -->
+                    <div class="dynamic-fields hidden" id="fieldsAdmin">
+                        <div class="input-field">
+                            <div class="field-icon"><i class="las la-id-card"></i></div>
+                            <input type="text" id="regAdminId" placeholder="Admin ID">
+                        </div>
+                        <div class="input-field">
+                            <div class="field-icon"><i class="las la-key"></i></div>
+                            <input type="password" id="regSecurityCode" placeholder="Security Code">
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="submit-btn submit-register" id="registerBtn">
+                    <i class="las la-user-plus"></i>
+                    <span>Create Account</span>
+                </button>
+            </form>
+
+        </div>
+
+        <!-- Footer -->
+        <p class="auth-footer">&copy; 2026 Jagruthi 3.0 Women Safety &bull; All Rights Reserved</p>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="./supabaseClient.js"></script>
+    <script src="./login.js"></script>
+</body>
+
+</html>

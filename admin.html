@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Admin Dashboard - Jagruthi 3.0</title>
+    <meta name="description" content="A mobile-first responsive women safety admin management dashboard.">
+    <!-- Modern Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://maxst.icons8.com/vue-static/landings/line-awesome/line-awesome/1.3.0/css/line-awesome.min.css">
+    <link rel="stylesheet" href="./style.css"> <!-- Base styles -->
+    <link rel="stylesheet" href="./admin.css"> <!-- Admin specific overrides -->
+    
+    <!-- Leaflet Map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+    <div class="app-container admin-app-container">
+        
+        <!-- Top Navigation -->
+        <header class="top-nav top-nav-admin">
+            <div class="nav-left">
+                <div class="logo logo-admin">
+                    <i class="las la-user-shield"></i>
+                </div>
+                <h1 class="app-name">Jagruthi 3.0 <span>Admin Panel</span></h1>
+            </div>
+            <div class="nav-right" style="position:relative;">
+                <!-- Notification Bell with Dropdown -->
+                <div class="admin-notif-wrapper" id="adminNotifWrapper">
+                    <button class="admin-bell-btn" id="adminBellBtn" aria-label="Notifications">
+                        <i class="las la-bell"></i>
+                        <span class="admin-notif-count" id="adminNotifCount" style="display:none;">0</span>
+                    </button>
+                    <!-- Notification Dropdown -->
+                    <div class="admin-notif-dropdown hidden" id="adminNotifDropdown">
+                        <div class="notif-dropdown-header">
+                            <span>Notifications</span>
+                            <button class="notif-clear-btn" id="notifClearBtn">Clear All</button>
+                        </div>
+                        <div class="notif-list" id="adminNotifList">
+                            <div class="notif-empty"><i class="las la-check-circle"></i> All clear</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Initials Profile Badge -->
+                <div class="profile-badge badge-admin" id="adminInitialsBadge">AD</div>
+
+                <!-- Visible Logout -->
+                <button class="logout-btn-premium admin-logout" onclick="localStorage.clear(); window.location.href='login.html';" title="Logout">
+                    <i class="las la-sign-out-alt"></i>
+                    <span>Logout</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Dashboard Title -->
+        <div class="dashboard-header-text">
+            <h2 class="text-admin-dark">Admin Control Dashboard</h2>
+            <p>System Monitoring and Management</p>
+        </div>
+
+        <main class="dashboard-content dashboard-admin-content">
+
+            <!-- System Overview Section (Main Monitoring) -->
+            <section class="admin-grid-section">
+                <div class="stat-card">
+                    <div class="stat-icon bg-indigo-light text-indigo"><i class="las la-users"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-label">Total Users</span>
+                        <h3 class="stat-value" id="statTotalUsers">0</h3>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon bg-purple-light text-purple"><i class="las la-address-book"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-label">Contacts</span>
+                        <h3 class="stat-value" id="statContactCount">0</h3>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon bg-blue-light text-blue"><i class="las la-taxi"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-label">Police Units</span>
+                        <h3 class="stat-value" id="statPoliceCount">0</h3>
+                    </div>
+                </div>
+                <div class="stat-card border-danger-left">
+                    <div class="stat-icon bg-danger-light text-danger flash-icon"><i class="las la-exclamation-circle"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-label text-danger fw-600">Active Alerts</span>
+                        <h3 class="stat-value text-danger" id="statActive">0</h3>
+                    </div>
+                </div>
+                <div class="stat-card border-success-left">
+                    <div class="stat-icon bg-success-light text-success"><i class="las la-check-circle"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-label text-success fw-600">Resolved</span>
+                        <h3 class="stat-value text-success" id="statResolved">45</h3>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Map Overview Section -->
+            <section class="card admin-card">
+                <h2 class="section-title text-admin-dark"><i class="las la-globe-asia"></i> Global Safety Map</h2>
+                <div class="admin-map-placeholder" id="adminMap" style="height: 250px; z-index:1; border-radius: var(--radius-sm); border: 1px solid #cbd5e1;"></div>
+            </section>
+
+            <!-- Live Emergency Monitoring -->
+            <section class="card admin-card live-monitoring-card border-top-danger">
+                <div class="section-header">
+                    <h2 class="section-title text-danger"><i class="las la-podcast"></i> Live Emergency Monitoring</h2>
+                </div>
+                <div class="admin-list-container" id="adminActiveEmergencies">
+                    <div class="empty-state text-center" id="adminEmptyState">
+                        <i class="las la-shield-check text-success" style="font-size:3rem;"></i>
+                        <p class="mt-2 text-medium">No active emergencies. System is secure.</p>
+                    </div>
+                    <!-- Dynamically populated via JS -->
+                </div>
+            </section>
+            
+            <!-- Emergency Response Timeline -->
+            <section class="card admin-card hidden" id="adminTimelineWrapper">
+                <h2 class="section-title text-admin-dark"><i class="las la-stream"></i> Global Event Timeline</h2>
+                <div class="vertical-timeline" id="adminTimeline">
+                    <!-- Populated dynamically -->
+                </div>
+            </section>
+
+            <!-- FEATURE 2: Closed Cases Archive -->
+            <section class="card admin-card hidden" id="closedCasesSection">
+                <h2 class="section-title text-admin-dark"><i class="las la-archive"></i> Closed Cases Archive <span class="archive-pill">Session Only</span></h2>
+                <p style="font-size:0.8rem;color:#94a3b8;margin-bottom:12px;">Minimal records for resolved cases: Case ID · Location · Time</p>
+                <div class="closed-cases-list" id="closedCasesList">
+                    <!-- Populated dynamically -->
+                </div>
+            </section>
+
+            <!-- FEATURE 3: Live Analytics Dashboard -->
+            <section class="card admin-card analytics-section">
+                <h2 class="section-title text-admin-dark"><i class="las la-chart-bar"></i> Crime Analytics Dashboard</h2>
+                <p style="font-size:0.8rem;color:#94a3b8;margin-bottom:16px;">Live data from all emergency records</p>
+
+                <!-- Summary Strip -->
+                <div class="analytics-summary-strip">
+                    <div class="anal-stat">
+                        <div class="anal-stat-label">Total Alerts</div>
+                        <div class="anal-stat-val" id="analTotal">—</div>
+                    </div>
+                    <div class="anal-stat">
+                        <div class="anal-stat-label">This Week</div>
+                        <div class="anal-stat-val text-danger" id="analWeek">—</div>
+                    </div>
+                    <div class="anal-stat">
+                        <div class="anal-stat-label">Peak Hour</div>
+                        <div class="anal-stat-val text-warning" id="analPeak">—</div>
+                    </div>
+                </div>
+
+                <!-- Daily Trend -->
+                <div class="anal-block">
+                    <div class="anal-block-title"><i class="las la-calendar-alt"></i> 7-Day Alert Trend</div>
+                    <div class="daily-trend-chart" id="dailyTrendChart">
+                        <div style="color:#94a3b8;font-size:0.85rem;">Loading...</div>
+                    </div>
+                </div>
+
+                <!-- Alert Type Breakdown -->
+                <div class="anal-block">
+                    <div class="anal-block-title"><i class="las la-tag"></i> Alert Type Breakdown</div>
+                    <div class="type-breakdown" id="alertTypeChart">
+                        <div style="color:#94a3b8;font-size:0.85rem;">Loading...</div>
+                    </div>
+                </div>
+
+                <!-- Danger Zones -->
+                <div class="anal-block">
+                    <div class="anal-block-title"><i class="las la-map-marker-alt"></i> Top Danger Zones</div>
+                    <div class="danger-zones-list" id="dangerZonesList">
+                        <div style="color:#94a3b8;font-size:0.85rem;">Loading...</div>
+                    </div>
+                </div>
+
+                <!-- Hourly Pattern -->
+                <div class="anal-block">
+                    <div class="anal-block-title"><i class="las la-clock"></i> Alert Pattern by Time of Day</div>
+                    <div class="hourly-pattern" id="hourlyPattern">
+                        <div style="color:#94a3b8;font-size:0.85rem;">Loading...</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- User Management Section -->
+            <section class="card admin-card">
+                <h2 class="section-title text-admin-dark"><i class="las la-users-cog"></i> User Management Panel</h2>
+                <div class="table-responsive">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Phone</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><div class="fw-600">Priya M.</div><div class="text-xs text-medium">2 Contacts</div></td>
+                                <td>+91 98765 00001</td>
+                                <td><span class="badge badge-success">Active</span></td>
+                                <td><button class="action-edit"><i class="las la-pen"></i></button></td>
+                            </tr>
+                            <tr>
+                                <td><div class="fw-600">Sarah J.</div><div class="text-xs text-medium">1 Contact</div></td>
+                                <td>+91 98765 00002</td>
+                                <td><span class="badge badge-danger">Blocked</span></td>
+                                <td><button class="action-edit"><i class="las la-pen"></i></button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <button class="btn-outline-admin mt-3 w-100"><i class="las la-search"></i> View All Users</button>
+            </section>
+
+            <!-- Emergency Contact Management -->
+            <section class="card admin-card">
+                <h2 class="section-title text-admin-dark"><i class="las la-address-card"></i> Contact Management</h2>
+                <div class="admin-list-container">
+                    <div class="contact-card-admin">
+                        <div class="contact-icon bg-indigo-light text-indigo"><i class="las la-user"></i></div>
+                        <div class="contact-info">
+                            <h4>Ramesh Kumar</h4>
+                            <p>Linked to: Priya M.</p>
+                        </div>
+                        <button class="btn-icon-soft"><i class="las la-ellipsis-v"></i></button>
+                    </div>
+                    <div class="contact-card-admin">
+                        <div class="contact-icon bg-indigo-light text-indigo"><i class="las la-user"></i></div>
+                        <div class="contact-info">
+                            <h4>Anita Singh</h4>
+                            <p>Linked to: Kavya T.</p>
+                        </div>
+                        <button class="btn-icon-soft"><i class="las la-ellipsis-v"></i></button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Police Management Section -->
+            <section class="card admin-card">
+                <h2 class="section-title text-admin-dark"><i class="las la-building"></i> Police Unit Management</h2>
+                <div class="admin-list-container">
+                    <div class="police-unit-card">
+                        <div class="unit-status status-busy"></div>
+                        <div class="unit-details">
+                            <h4>Central Station - Unit 4</h4>
+                            <p>Officer: R. Sharma</p>
+                        </div>
+                        <span class="badge badge-warning">Busy</span>
+                    </div>
+                    <div class="police-unit-card">
+                        <div class="unit-status status-avail"></div>
+                        <div class="unit-details">
+                            <h4>North Station - Unit 2</h4>
+                            <p>Officer: V. Patel</p>
+                        </div>
+                        <span class="badge badge-success">Available</span>
+                    </div>
+                </div>
+                <button class="btn-outline-admin mt-3 w-100"><i class="las la-plus"></i> Add Unit Route</button>
+            </section>
+
+            <!-- Spacing -->
+            <div style="height: 60px;"></div>
+        </main>
+        
+        <!-- Audio for alerting -->
+        <audio id="adminAlertSound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="none"></audio>
+
+        <!-- Pop-up Alert Modal -->
+        <div class="overlay" id="adminIncidentOverlay"></div>
+        <div class="modal admin-modal" id="adminIncidentModal">
+            <div class="admin-modal-icon bg-danger text-white pulse-icon-danger">
+                <i class="las la-exclamation-triangle"></i>
+            </div>
+            <h2 class="alert-title text-danger">🚨 Global System Alert</h2>
+            <div class="admin-alert-summary text-left mt-3">
+                <p><strong><i class="las la-user"></i> Triggered By:</strong> <span id="admPopupUser">--</span></p>
+                <p><strong><i class="las la-phone"></i> Phone:</strong> <span id="admPopupPhone">--</span></p>
+                <p><strong><i class="las la-tag"></i> Type:</strong> <span id="admPopupType" class="text-danger">--</span></p>
+                <p><strong><i class="las la-map-marker"></i> Location:</strong> <span id="admPopupLoc">--</span></p>
+                <p><strong><i class="las la-comment-alt"></i> Message:</strong> <span id="admPopupMsg">--</span></p>
+            </div>
+            <p class="alert-message mt-3">Emergency Contact, Police & Admin have been simultaneously notified.</p>
+            <div class="modal-actions mt-3">
+                <button class="btn-admin-primary w-100" id="btnAdminAcknowledge">
+                    Acknowledge & Monitor
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="./supabaseClient.js"></script>
+    <script src="./admin.js"></script>
+</body>
+</html>

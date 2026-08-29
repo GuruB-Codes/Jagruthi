@@ -1,0 +1,521 @@
+/* Police Specific Styles extending style.css */
+
+.police-app-container {
+    background-color: #f1f5f9;
+    background-image: none;
+}
+
+/* Police Theme Variables */
+:root {
+    --police-blue: #1e3a8a;
+    --police-blue-light: #2563eb;
+    --police-blue-dark: #1e293b;
+    --police-bg: #f8fafc;
+}
+
+.text-police-dark { color: var(--police-blue-dark); font-weight: 700;}
+.text-police-light { color: #64748b; }
+.text-white { color: white !important; }
+
+/* Navigation */
+.top-nav-police { 
+    background: #0f172a; 
+    border-bottom: 1px solid rgba(255,255,255,0.1); 
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+
+.profile-badge.badge-police {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #1e40af, #1e3a8a);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-weight: 700;
+    box-shadow: 0 4px 12px rgba(30, 58, 138, 0.4);
+    border: 1px solid rgba(255,255,255,0.2);
+}
+
+.logout-btn-premium.police-logout {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: #fca5a5;
+    padding: 8px 14px;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.logout-btn-premium.police-logout:hover {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: rgba(239, 68, 68, 0.3);
+    color: #ef4444;
+}
+
+.police-header-text {
+    padding: 24px 24px 0;
+}
+.police-header-text h2 { color: #1e3a8a; font-weight: 800; font-size: 1.6rem; margin-bottom: 4px; }
+.police-header-text p { color: #64748b; font-weight: 500; font-size: 0.95rem; }
+
+.card { border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }
+
+/* Queue Section */
+.queue-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.badge-active-count { 
+    background: #1e3a8a; 
+    color: white; 
+    padding: 5px 12px; 
+    border-radius: 30px; 
+    font-size: 0.75rem; 
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+.scrollable-queue { 
+    max-height: 200px; 
+    overflow-y: auto; 
+    display: flex; 
+    flex-direction: column; 
+    gap: 10px; 
+    padding-right: 4px;
+}
+
+.queue-item { 
+    display: flex; 
+    align-items: center; 
+    padding: 12px 14px; 
+    border: 1px solid #e2e8f0; 
+    border-radius: 14px; 
+    background: white;
+    gap: 12px;
+    transition: all 0.2s;
+}
+
+.queue-item:hover { 
+    border-color: #bfdbfe;
+    box-shadow: 0 2px 8px rgba(30,58,138,0.08);
+}
+
+.queue-icon { 
+    width: 38px; 
+    height: 38px; 
+    border-radius: 50%; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+.queue-info { 
+    flex: 1; 
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.queue-info h4 { 
+    font-size: 0.95rem; 
+    font-weight: 700;
+    color: #0f172a; 
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.queue-info p { 
+    font-size: 0.75rem; 
+    color: #64748b; 
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.queue-status {
+    flex-shrink: 0;
+}
+
+.badge-pending { 
+    background: #e0f2fe; 
+    color: #0284c7; 
+    padding: 4px 10px; 
+    border-radius: 20px; 
+    font-size: 0.72rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.badge-active-case { 
+    background: #fef2f2; 
+    color: #dc2626; 
+    padding: 4px 10px; 
+    border-radius: 20px; 
+    font-size: 0.72rem; 
+    font-weight: 800;
+    white-space: nowrap;
+    border: 1px solid #fee2e2;
+    animation: blink 2.5s infinite;
+}
+
+
+/* Incoming Alert Panel (Systematic Red) */
+.alert-panel { 
+    background: #ffffff; 
+    border: 1px solid #fee2e2; 
+    border-radius: 20px;
+    box-shadow: 0 15px 35px rgba(239, 68, 68, 0.1);
+    overflow: hidden;
+}
+
+.strobe-header { 
+    background: #ef4444; 
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+}
+
+.strobe-header h2 { 
+    color: white; 
+    font-size: 1.3rem; 
+    font-weight: 800; 
+    letter-spacing: 1px;
+    margin: 0;
+}
+
+.grid-dark { 
+    background: #ffffff; 
+    padding: 24px; 
+    display: grid; 
+    gap: 20px;
+}
+
+.grid-dark .detail-label { color: #64748b; font-size: 0.9rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;}
+.grid-dark .detail-value { color: #0f172a; font-size: 1.15rem; font-weight: 800; }
+.alert-msg { background: rgba(239, 68, 68, 0.2); padding: 8px 12px; border-radius: var(--radius-sm); border: 2px solid var(--danger); display: inline-block; font-size: 1.1rem;}
+.flash-badge { animation: backgroundFlash 1s infinite; padding: 6px 16px; border-radius: 6px; font-weight: 900; font-size: 1.1rem; border: 2px solid var(--danger);}
+
+@keyframes backgroundFlash {
+    0%, 100% { background: var(--danger); color: white; }
+    50% { background: white; color: var(--danger); }
+}
+
+/* Info Grid */
+.info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.info-box { display: flex; align-items: center; gap: 12px; background: white; padding: 12px; border: 1px solid #e2e8f0; border-radius: var(--radius-sm); }
+.info-box.border-red { border: 1px solid rgba(239, 68, 68, 0.5); background: #fef2f2; }
+.info-icon { font-size: 1.5rem; color: var(--police-blue); }
+.info-text { display: flex; flex-direction: column; }
+.info-text span { font-size: 0.75rem; color: var(--text-light); text-transform: uppercase; }
+.info-text strong { font-size: 0.95rem; color: var(--police-blue-dark); word-break: break-word;}
+
+.address-box { display: flex; align-items: flex-start; gap: 12px; background: #e0f2fe; padding: 12px; border-radius: var(--radius-sm); }
+.address-box i { font-size: 1.5rem; margin-top: 2px; }
+.coords-text { font-family: monospace; font-size: 0.8rem; color: #0284c7; margin-top: 4px; }
+.mt-3 { margin-top: 16px; }
+
+/* Map View */
+.border-view { border: 2px solid var(--police-blue); border-radius: var(--radius-sm); }
+.map-grid-police {
+    position: absolute;
+    inset: 0;
+    background-image: linear-gradient(#cbd5e1 1px, transparent 1px), linear-gradient(90deg, #cbd5e1 1px, transparent 1px);
+    background-size: 30px 30px;
+    background-color: #f8fafc;
+}
+.police-marker i { color: var(--police-blue); font-size: 2.2rem; }
+.unit-label { position: absolute; bottom: -20px; left: 50%; transform: translateX(-50%); background: var(--police-blue); color: white; font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; font-weight: bold; white-space: nowrap;}
+.deviation-path { stroke: var(--danger); stroke-linecap: round; }
+
+/* Contact Activity */
+.activity-grid { display: flex; flex-direction: column; gap: 8px; }
+.activity-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: white; border-radius: var(--radius-sm); border: 1px solid #e2e8f0; font-size: 0.9rem; font-weight: 500;}
+.badge-green { background: #d1fae5; color: #059669; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 700;}
+.badge-gray { background: #f1f5f9; color: #475569; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 700;}
+.badge-red { background: #fee2e2; color: #dc2626; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 700;}
+.flash-subtle { animation: blink 1.5s infinite; }
+
+/* Timeline */
+.response-timeline { display: flex; justify-content: space-between; align-items: center; position: relative; padding: 12px 0;}
+.response-timeline::before { content: ''; position: absolute; top: 25px; left: 10%; right: 10%; height: 2px; background: #e2e8f0; z-index: 1;}
+.time-step { display: flex; flex-direction: column; align-items: center; gap: 8px; z-index: 2; width: 25%;}
+.step-icon { width: 28px; height: 28px; border-radius: 50%; background: #f1f5f9; border: 2px solid #cbd5e1; display: flex; justify-content: center; align-items: center; color: #94a3b8; transition: var(--transition); font-size: 1rem;}
+.step-content { font-size: 0.7rem; font-weight: 600; color: #64748b; text-align: center; }
+
+.time-step.completed .step-icon { background: var(--success); border-color: var(--success); color: white; }
+.time-step.completed .step-content { color: var(--success-dark); }
+
+.time-step.active .step-icon { 
+    background: #1e3a8a; 
+    border-color: #1e3a8a; 
+    color: white; 
+    box-shadow: 0 0 0 4px rgba(30, 58, 138, 0.1); 
+    animation: pulse 2s infinite;
+}
+.time-step.active .step-content { color: #1e3a8a; font-weight: 700; }
+
+/* Action Controls Buttons */
+.action-buttons-police { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.pol-action-btn { border: none; border-radius: var(--radius-sm); padding: 16px; font-size: 0.95rem; font-weight: 600; display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer; transition: transform 0.1s, opacity 0.2s; color: white; }
+.pol-action-btn i { font-size: 2rem; }
+.pol-action-btn:active { transform: scale(0.96); }
+.pol-action-btn:disabled { opacity: 0.5; pointer-events: none; }
+
+.btn-accept { background: var(--police-blue-light); box-shadow: 0 4px 12px rgba(37,99,235,0.3); }
+.btn-dispatch { background: var(--danger); box-shadow: 0 4px 12px rgba(239,68,68,0.3); }
+.btn-navigate { background: #0284c7; box-shadow: 0 4px 12px rgba(2,132,199,0.3); }
+.btn-mark-safe { background: var(--success); box-shadow: 0 4px 12px rgba(16,185,129,0.3); grid-column: span 2; flex-direction: row; justify-content: center; padding: 18px;}
+
+/* Premium Alert Modal Overrides */
+.modal-police-premium {
+    background: #ffffff;
+    border-radius: 28px;
+    padding: 0 !important;
+    overflow: hidden;
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0 30px 60px -12px rgba(15, 23, 42, 0.4), 0 0 20px rgba(239, 68, 68, 0.2);
+    border: 1px solid rgba(0,0,0,0.05);
+}
+
+.alert-urgency-bar {
+    background: #ef4444;
+    color: white;
+    padding: 14px;
+    font-weight: 800;
+    font-size: 0.85rem;
+    letter-spacing: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    position: relative;
+    overflow: hidden;
+}
+
+.siren-glow {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    animation: sirenSweep 2s infinite linear;
+}
+
+@keyframes sirenSweep {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+.alert-content-premium {
+    padding: 32px 24px;
+}
+
+.victim-highlight {
+    font-size: 2.2rem;
+    color: #1e293b;
+    font-weight: 800;
+    margin-bottom: 4px;
+    letter-spacing: -1px;
+}
+
+.incident-status-label {
+    color: #ef4444;
+    font-weight: 700;
+    font-size: 1rem;
+    margin-bottom: 24px;
+    text-transform: uppercase;
+}
+
+.alert-divider {
+    height: 1px;
+    background: #f1f5f9;
+    margin-bottom: 24px;
+}
+
+.alert-meta-group {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.alert-type-badge {
+    background: #fef2f2;
+    color: #ef4444;
+    padding: 6px 16px;
+    border-radius: 30px;
+    font-weight: 800;
+    font-size: 0.85rem;
+    border: 1px solid #fee2e2;
+}
+
+.target-status {
+    color: #64748b;
+    font-size: 0.9rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.acknowledge-btn-premium {
+    width: 100%;
+    border: none;
+    background: linear-gradient(135deg, #1e3a8a, #2563eb);
+    color: white;
+    padding: 20px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: all 0.3s;
+}
+
+.acknowledge-btn-premium:hover {
+    filter: brightness(1.1);
+    letter-spacing: 0.5px;
+}
+
+.acknowledge-btn-premium i {
+    font-size: 1.4rem;
+}
+
+/* Proper Police System Case Report Modal */
+.report-modal {
+    background: #ffffff;
+    border-radius: 20px;
+    padding: 0 !important;
+    overflow: hidden;
+    width: 90%;
+    max-width: 450px;
+    box-shadow: 0 25px 60px rgba(15, 23, 42, 0.4);
+    text-align: left !important;
+}
+
+.report-header {
+    background: #0f172a;
+    color: white;
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.report-header i { font-size: 1.6rem; color: #3b82f6; }
+.report-header h3 { margin: 0; font-size: 1.2rem; font-weight: 700; }
+
+.report-body {
+    padding: 24px;
+}
+
+.report-body p {
+    font-size: 0.95rem;
+    color: #475569;
+    margin-bottom: 16px;
+    line-height: 1.5;
+}
+
+.report-body textarea {
+    width: 100%;
+    height: 120px;
+    padding: 16px;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    background: #f8fafc;
+    font-family: inherit;
+    font-size: 0.95rem;
+    resize: none;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.report-body textarea:focus {
+    border-color: #3b82f6;
+}
+
+.report-footer {
+    padding: 16px 24px;
+    background: #f1f5f9;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+.btn-submit-report {
+    background: #1e3a8a;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.2s;
+}
+
+.btn-submit-report:hover { background: #1e40af; }
+
+.btn-cancel-report {
+    background: white;
+    color: #64748b;
+    border: 1px solid #e2e8f0;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.hidden { display: none !important; }
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+    .nav-left h1 span {
+        display: none;
+    }
+
+    .police-header-text {
+        text-align: center;
+        padding: 0 16px;
+    }
+
+    .info-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .action-buttons-police {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+
+    .pol-action-btn {
+        flex: unset;
+        width: 100%;
+    }
+
+    .modal-police-premium {
+        width: 95%;
+        padding: 20px;
+    }
+
+    .strobe-header h2 {
+        font-size: 1.2rem;
+    }
+
+    .alert-content-premium h2 {
+        font-size: 1.5rem;
+    }
+}

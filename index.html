@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Jagruthi 3.0 Women Safety Dashboard</title>
+    <meta name="description" content="A mobile-first responsive women safety application dashboard.">
+    <!-- Modern Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Icons -->
+    <link rel="stylesheet"
+        href="https://maxst.icons8.com/vue-static/landings/line-awesome/line-awesome/1.3.0/css/line-awesome.min.css">
+    <link rel="stylesheet" href="./style.css">
+
+    <!-- Leaflet Map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+
+<body>
+    <div class="app-container">
+
+        <!-- Top Navigation Bar -->
+        <header class="top-nav">
+            <div class="nav-left">
+                <div class="logo">
+                    <i class="las la-shield-alt"></i>
+                </div>
+                <h1 class="app-name">Jagruthi 3.0 <span>Women Safety</span></h1>
+            </div>
+            <div class="nav-right" style="gap: 12px; align-items: center; display: flex;">
+                <div class="icon-btn profile-btn" aria-label="User Profile">
+                    <img id="userProfileImg"
+                        src="https://ui-avatars.com/api/?name=User&background=7b2cbf&color=fff&rounded=true"
+                        alt="User Profile Picture">
+                </div>
+                <button class="logout-btn" aria-label="Logout"
+                    onclick="localStorage.clear(); window.location.href='login.html';" title="Logout"
+                    style="background-color: #fee2e2; color: #ef4444; border-radius: 8px; padding: 6px 12px; font-weight: 600; display: flex; align-items: center; gap: 6px; border: 1px solid #fca5a5; outline: none; cursor: pointer; transition: all 0.2s;">
+                    Logout
+                    <i class="las la-sign-out-alt" style="font-size: 1.2rem;"></i>
+                </button>
+            </div>
+        </header>
+
+        <main class="dashboard-content">
+
+            <!-- Travel Mode Selection Section -->
+            <section class="card mode-selection">
+                <h2 class="section-title">Select Travel Mode</h2>
+                <div class="mode-options">
+                    <button class="mode-btn active" data-mode="walking">
+                        <div class="mode-icon-bg">
+                            <i class="las la-walking"></i>
+                        </div>
+                        <span>Walking</span>
+                    </button>
+                    <button class="mode-btn" data-mode="car">
+                        <div class="mode-icon-bg">
+                            <i class="las la-car-side"></i>
+                        </div>
+                        <span>Car</span>
+                    </button>
+                    <button class="mode-btn" data-mode="bike">
+                        <div class="mode-icon-bg">
+                            <i class="las la-motorcycle"></i>
+                        </div>
+                        <span>Bike</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Source and Destination Input Section -->
+            <section class="card location-input-section">
+                <div class="location-timeline">
+                    <div class="timeline-dot source-dot"></div>
+                    <div class="timeline-line"></div>
+                    <div class="timeline-dot dest-dot"></div>
+                </div>
+
+                <div class="inputs-wrapper">
+                    <div class="input-group">
+                        <div class="input-icon-wrapper text-blue">
+                            <i class="las la-crosshairs"></i>
+                        </div>
+                        <input type="text" placeholder="Source Location" class="location-input" value="Current Location"
+                            id="sourceInput">
+                        <button class="use-current-location" title="Use Current Location">
+                            <i class="las la-map-marker"></i>
+                        </button>
+                    </div>
+
+                    <div class="input-group" style="position:relative;">
+                        <div class="input-icon-wrapper text-purple">
+                            <i class="las la-map-pin"></i>
+                        </div>
+                        <input type="text" placeholder="Search destination..." class="location-input" id="destInput"
+                            autocomplete="off">
+                        <button class="use-current-location" id="searchDestBtn" title="Search Destination"
+                            style="background: var(--primary); border-radius: 10px; margin: 4px;">
+                            <i class="las la-search" style="color: white;"></i>
+                        </button>
+                        <!-- Search Suggestions Dropdown -->
+                        <div class="hidden" id="destSuggestions"
+                            style="position:absolute; top:calc(100% + 4px); left:0; right:0; background:white; z-index:100; border-radius: 12px; border:1px solid #e2e8f0; padding: 6px 0; box-shadow: 0 12px 32px rgba(0,0,0,0.12); max-height: 200px; overflow-y:auto;">
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <div class="input-icon-wrapper text-orange">
+                            <i class="las la-car-side"></i>
+                        </div>
+                        <input type="text" placeholder="Enter Vehicle/Car Number" class="location-input"
+                            id="carNumberInput" autocomplete="off">
+                    </div>
+                </div>
+            </section>
+
+            <!-- Live Tracking Map Section -->
+            <section class="card map-preview-section">
+                <div class="section-header">
+                    <h2 class="section-title">Live Tracking</h2>
+                    <span class="live-indicator"><span class="dot"></span>Live</span>
+                </div>
+                <div class="map-placeholder" id="userMap"
+                    style="height: 250px; z-index: 1; border-radius: var(--radius-md); border: 2px solid #e2e8f0; overflow:hidden;">
+                </div>
+            </section>
+
+            <!-- Safe Route Selection Section (HIDDEN until destination is set) -->
+            <section class="card routes-section hidden" id="routesSection">
+                <h2 class="section-title">Available Safe Routes</h2>
+                <!-- Loading indicator -->
+                <div class="route-loading hidden" id="routeLoading" style="text-align:center; padding: 20px;">
+                    <i class="las la-spinner la-spin" style="font-size: 2rem; color: var(--primary);"></i>
+                    <p style="margin-top: 8px; color: var(--text-medium); font-weight: 500;">Generating routes...</p>
+                </div>
+                <!-- Dynamic route cards inserted here by JS -->
+                <div class="route-list" id="dynamicRouteList">
+                </div>
+            </section>
+
+
+
+            <!-- Spacing for bottom floating elements -->
+            <div style="height: 120px;"></div>
+        </main>
+
+        <!-- Start Journey Button Bar -->
+        <div class="bottom-action-bar">
+            <button class="btn-start-journey" id="startJourneyBtn">
+                <i class="las la-play"></i>
+                <span>Start Journey</span>
+                <i class="las la-arrow-right arrow-icon"></i>
+            </button>
+        </div>
+
+        <!-- Floating SOS Emergency Button -->
+        <button class="sos-btn" id="sosBtn" aria-label="Emergency SOS">
+            <span class="sos-text">SOS</span>
+            <div class="sos-ripple"></div>
+            <div class="sos-ripple delay"></div>
+        </button>
+
+        <!-- Route Deviation Alert Popup -->
+        <div class="overlay" id="deviationOverlay"></div>
+        <div class="modal alert-modal" id="deviationModal" role="alertdialog" aria-labelledby="alertTitle"
+            aria-describedby="alertDesc">
+            <div class="modal-icon-container">
+                <div class="modal-icon vibration-animation">
+                    <i class="las la-mobile"></i>
+                    <div class="signal-waves">
+                        <span></span><span></span><span></span>
+                    </div>
+                </div>
+            </div>
+            <h2 class="alert-title" id="alertTitle">Route Deviation Detected</h2>
+            <p class="alert-message" id="alertDesc">You are moving away from the selected safe route. Are you safe?</p>
+            <div class="modal-actions">
+                <button class="btn-no" id="btnNotSafe">
+                    <i class="las la-times-circle"></i> NO
+                </button>
+                <button class="btn-yes" id="btnSafe">
+                    <i class="las la-check-circle"></i> YES
+                </button>
+            </div>
+            <!-- Test button just for preview purposes -->
+            <button class="test-close" id="testCloseBtn"
+                style="position: absolute; top: 10px; right: 10px; background: none; border: none; font-size: 20px; color: #a0aec0;"><i
+                    class="las la-times"></i></button>
+        </div>
+
+        <!-- Media Capture Status (Hidden by default) -->
+        <div id="mediaCaptureIndicator" class="media-indicator hidden">
+            <div class="media-indicator-content">
+                <div class="media-pulse"></div>
+                <span id="mediaStatusText">Capturing evidence...</span>
+            </div>
+        </div>
+
+        <!-- Hidden Media Elements -->
+        <div style="display:none;">
+            <video id="hiddenVideo" autoplay playsinline></video>
+            <canvas id="hiddenCanvas"></canvas>
+        </div>
+
+    </div>
+
+    <!-- For demo purpose: trigger modal -->
+    <button class="demo-trigger" id="demoTrigger" title="Test Deviation Alert"><i class="las la-vial"></i> Test
+        Alert</button>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="./supabaseClient.js"></script>
+    <script src="./mediaService.js"></script>
+    <script src="./script.js"></script>
+</body>
+
+</html>

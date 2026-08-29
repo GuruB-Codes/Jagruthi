@@ -1,0 +1,471 @@
+/* =========================================
+   Jagruthi 3.0 Login & Registration Styles
+   ========================================= */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Outfit', sans-serif;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 40%, #312e81 100%);
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 20px 16px 40px;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* ---- Container ---- */
+.auth-container {
+    width: 100%;
+    max-width: 420px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    animation: fadeSlideUp 0.6s ease-out;
+}
+
+@keyframes fadeSlideUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ---- Branding ---- */
+.auth-brand {
+    text-align: center;
+    padding-top: 10px;
+}
+
+.brand-icon {
+    width: 72px;
+    height: 72px;
+    border-radius: 20px;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 14px;
+    box-shadow: 0 10px 30px rgba(99, 102, 241, 0.4);
+    animation: iconPulse 3s ease-in-out infinite;
+}
+
+@keyframes iconPulse {
+    0%, 100% { box-shadow: 0 10px 30px rgba(99, 102, 241, 0.4); }
+    50% { box-shadow: 0 14px 40px rgba(139, 92, 246, 0.6); }
+}
+
+.brand-icon i {
+    font-size: 36px;
+    color: white;
+}
+
+.auth-brand h1 {
+    font-size: 2rem;
+    font-weight: 800;
+    color: white;
+    letter-spacing: -0.5px;
+}
+
+.auth-brand p {
+    font-size: 0.95rem;
+    color: #94a3b8;
+    margin-top: 4px;
+    font-weight: 400;
+}
+
+/* ---- Auth Card ---- */
+.auth-card {
+    background: rgba(255, 255, 255, 0.97);
+    border-radius: 24px;
+    padding: 28px 24px 32px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+    backdrop-filter: blur(20px);
+}
+
+/* ---- Role Selection ---- */
+.section-label {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1e293b;
+    text-align: center;
+    margin-bottom: 14px;
+}
+
+.role-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 24px;
+}
+
+.role-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 14px 6px;
+    border: 2px solid #e2e8f0;
+    border-radius: 16px;
+    background: white;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.role-btn::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 14px;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.06), rgba(139, 92, 246, 0.06));
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.role-btn:hover::after { opacity: 1; }
+
+.role-btn .role-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+}
+
+.role-btn .role-icon i {
+    font-size: 20px;
+    color: #64748b;
+    transition: color 0.3s;
+}
+
+.role-btn span {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #64748b;
+    transition: color 0.3s;
+}
+
+.role-btn.active {
+    border-color: #6366f1;
+    background: #eef2ff;
+    transform: scale(1.03);
+}
+
+.role-btn.active .role-icon {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+}
+
+.role-btn.active .role-icon i {
+    color: white;
+}
+
+.role-btn.active span {
+    color: #4338ca;
+    font-weight: 700;
+}
+
+.role-btn:active {
+    transform: scale(0.95);
+}
+
+/* ---- Tab Switcher ---- */
+.tab-switcher {
+    display: flex;
+    position: relative;
+    background: #f1f5f9;
+    border-radius: 14px;
+    padding: 4px;
+    margin-bottom: 20px;
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 12px;
+    text-align: center;
+    background: transparent;
+    border: none;
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #64748b;
+    cursor: pointer;
+    border-radius: 11px;
+    transition: color 0.3s;
+    z-index: 2;
+    position: relative;
+}
+
+.tab-btn.active {
+    color: #1e293b;
+}
+
+.tab-indicator {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    width: calc(50% - 4px);
+    height: calc(100% - 8px);
+    background: white;
+    border-radius: 11px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 1;
+}
+
+.tab-indicator.right {
+    transform: translateX(100%);
+}
+
+/* ---- Message Box ---- */
+.message-box {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    margin-bottom: 16px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    animation: shakeIn 0.4s ease-out;
+}
+
+.message-box.hidden { display: none; }
+
+.message-box.error {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #dc2626;
+}
+
+.message-box.success {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    color: #16a34a;
+}
+
+.message-box i { font-size: 1.2rem; }
+
+@keyframes shakeIn {
+    0% { transform: translateX(-10px); opacity: 0; }
+    50% { transform: translateX(5px); }
+    100% { transform: translateX(0); opacity: 1; }
+}
+
+/* ---- Forms ---- */
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.auth-form.hidden { display: none; }
+
+.input-field {
+    position: relative;
+    display: flex;
+    align-items: center;
+    background: #f8fafc;
+    border: 2px solid #e2e8f0;
+    border-radius: 14px;
+    transition: all 0.3s;
+    overflow: hidden;
+}
+
+.input-field:focus-within {
+    border-color: #6366f1;
+    background: white;
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+}
+
+.field-icon {
+    padding: 0 0 0 14px;
+    display: flex;
+    align-items: center;
+}
+
+.field-icon i {
+    font-size: 1.15rem;
+    color: #94a3b8;
+    transition: color 0.3s;
+}
+
+.input-field:focus-within .field-icon i {
+    color: #6366f1;
+}
+
+.input-field input {
+    flex: 1;
+    padding: 15px 14px;
+    border: none;
+    background: transparent;
+    font-family: 'Outfit', sans-serif;
+    font-size: 1rem;
+    color: #1e293b;
+    outline: none;
+}
+
+.input-field input::placeholder {
+    color: #94a3b8;
+    font-weight: 400;
+}
+
+.toggle-pass {
+    padding: 10px 14px;
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+.toggle-pass i {
+    font-size: 1.15rem;
+    color: #94a3b8;
+    transition: color 0.2s;
+}
+
+.toggle-pass:hover i { color: #6366f1; }
+
+/* ---- Forgot Link ---- */
+.forgot-link {
+    text-align: right;
+    font-size: 0.85rem;
+    color: #6366f1;
+    text-decoration: none;
+    font-weight: 500;
+    margin-top: -4px;
+    transition: color 0.2s;
+}
+
+.forgot-link:hover { color: #4338ca; }
+
+/* ---- Submit Button ---- */
+.submit-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 16px;
+    border: none;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: white;
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.35);
+    margin-top: 6px;
+    position: relative;
+    overflow: hidden;
+}
+
+.submit-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.submit-btn:hover::before { opacity: 1; }
+.submit-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(99, 102, 241, 0.45); }
+.submit-btn:active { transform: scale(0.97); }
+
+.submit-btn i, .submit-btn span { position: relative; z-index: 2; }
+
+.submit-register {
+    background: linear-gradient(135deg, #10b981, #059669);
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.35);
+}
+
+.submit-register::before {
+    background: linear-gradient(135deg, #059669, #047857);
+}
+
+.submit-register:hover {
+    box-shadow: 0 10px 30px rgba(16, 185, 129, 0.45);
+}
+
+/* ---- Dynamic Role Fields ---- */
+.role-fields { margin-top: 2px; }
+
+.dynamic-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    animation: fadeIn 0.35s ease-out;
+}
+
+.dynamic-fields.hidden { display: none; }
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ---- Footer ---- */
+.auth-footer {
+    text-align: center;
+    color: #64748b;
+    font-size: 0.8rem;
+    font-weight: 400;
+}
+
+/* ---- Loading State ---- */
+.submit-btn.loading {
+    pointer-events: none;
+    opacity: 0.7;
+}
+
+.submit-btn.loading span { visibility: hidden; }
+.submit-btn.loading i { visibility: hidden; }
+
+.submit-btn.loading::after {
+    content: '';
+    position: absolute;
+    width: 24px;
+    height: 24px;
+    border: 3px solid rgba(255,255,255,0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    z-index: 3;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 380px) {
+    .role-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .auth-card {
+        padding: 24px 18px 28px;
+    }
+
+    .role-btn .role-icon {
+        width: 36px;
+        height: 36px;
+    }
+}
+
+@media (min-width: 768px) {
+    body {
+        align-items: center;
+        padding: 40px 20px;
+    }
+}

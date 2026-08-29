@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Emergency Contact Monitor - Jagruthi 3.0</title>
+    <meta name="description" content="A mobile-first responsive women safety emergency monitor dashboard.">
+    <!-- Modern Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://maxst.icons8.com/vue-static/landings/line-awesome/line-awesome/1.3.0/css/line-awesome.min.css">
+    <link rel="stylesheet" href="./style.css"> <!-- Base styles -->
+    <link rel="stylesheet" href="./emergency.css"> <!-- Emergency specific overrides -->
+    
+    <!-- Leaflet Map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+    <div class="app-container emergency-app-container">
+        
+        <!-- Top Navigation -->
+        <header class="top-nav top-nav-emergency">
+            <div class="nav-left">
+                <div class="logo">
+                    <i class="las la-satellite-dish"></i>
+                </div>
+                <h1 class="app-name">Jagruthi 3.0 <span>Emergency Monitor</span></h1>
+            </div>
+            <div class="nav-right">
+                <div class="profile-badge" id="contactInitialsBadge">PA</div>
+                <button class="logout-btn-premium" onclick="localStorage.clear(); window.location.href='login.html';" title="Logout">
+                    <i class="las la-sign-out-alt"></i>
+                    <span>Logout</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Dashboard Title -->
+        <div class="dashboard-header-text">
+            <h2>Emergency Contact Dashboard</h2>
+            <p>Monitor Safety Alerts and Live Location</p>
+        </div>
+
+        <main class="dashboard-content">
+            
+            <!-- Safety Status Indicator -->
+            <section class="card widget-status">
+                <div class="status-widget-content" id="monitoringStatusCard">
+                    <div class="status-pulse green-pulse"></div>
+                    <div class="status-desc">
+                        <span class="status-label">Current Status</span>
+                        <h3 class="status-headline" id="mainStatusText">Monitoring Safety</h3>
+                    </div>
+                    <div class="status-badge status-green" id="mainStatusBadge">Safe</div>
+                </div>
+            </section>
+
+            <!-- Incoming Emergency Notification Section -->
+            <section class="card alert-panel hidden" id="activeAlertPanel">
+                <div class="alert-header">
+                    <div class="alert-title-group">
+                        <i class="las la-exclamation-triangle flashing-icon"></i>
+                        <h2 class="section-title text-danger">Emergency Alert Received</h2>
+                    </div>
+                </div>
+                
+                <div class="alert-details-grid">
+                    <div class="detail-row">
+                        <span class="detail-label">User:</span>
+                        <span class="detail-value fw-700" id="alertUserName">--</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Phone:</span>
+                        <span class="detail-value" id="alertUserPhone">--</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Message:</span>
+                        <span class="detail-value alert-msg" id="alertMessage">--</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Location:</span>
+                        <span class="detail-value" id="alertLocation" style="font-size:0.85rem; color:#94a3b8;">Fetching...</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Time:</span>
+                        <span class="detail-value" id="alertTime">--</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Status:</span>
+                        <span class="detail-value badge-active">ACTIVE</span>
+                    </div>
+                    <!-- Evidence Status -->
+                    <div id="evidenceBadge" class="hidden" style="grid-column: span 2;"></div>
+                </div>
+
+                <!-- Driver Details Box -->
+                <div class="driver-details-box hidden" id="emergencyDriverBox" style="background: #fdf2f8; border: 1px solid #fbcfe8; border-radius: var(--radius-md); padding: 12px; margin-top: 12px; display: none;">
+                    <h4 style="margin-bottom: 8px; font-size: 0.9rem; color: #831843; display: flex; align-items: center; gap: 6px;">
+                        <i class="las la-car"></i> Vehicle & Driver Info
+                    </h4>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                        <div>
+                            <span style="font-size: 0.75rem; color: #9d174d;">Driver Name</span>
+                            <strong style="display: block; font-size: 0.9rem; color: #4c0519;" id="emDriverName">--</strong>
+                        </div>
+                        <div>
+                            <span style="font-size: 0.75rem; color: #9d174d;">Phone</span>
+                            <strong style="display: block; font-size: 0.9rem; color: #4c0519;" id="emDriverPhone">--</strong>
+                        </div>
+                        <div>
+                            <span style="font-size: 0.75rem; color: #9d174d;">Vehicle No.</span>
+                            <strong style="display: block; font-size: 0.9rem; color: #4c0519;" id="emDriverCarNum">--</strong>
+                        </div>
+                        <div>
+                            <span style="font-size: 0.75rem; color: #9d174d;">Model</span>
+                            <strong style="display: block; font-size: 0.9rem; color: #4c0519;" id="emDriverModel">--</strong>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Live Location Map Section -->
+            <section class="card map-preview-section">
+                <div class="section-header">
+                    <h2 class="section-title"><i class="las la-map-marked"></i> Live Location Tracking</h2>
+                    <span class="last-updated" id="lastUpdatedTime">Updated just now</span>
+                </div>
+                <!-- Interactive styling for tracking -->
+                <div class="map-placeholder" id="contactMap" style="height: 250px; z-index: 1; border-radius: var(--radius-md); border: 2px solid #e2e8f0; overflow:hidden;"></div>
+                
+                <!-- Emergency Details Section (Below map) -->
+                <div class="emergency-details-panel hidden" id="emergencyDetailsPanel">
+                    <h3 class="panel-subtitle">Emergency Details</h3>
+                    <div class="loc-detail-card">
+                        <div class="loc-icon text-danger"><i class="las la-biohazard"></i></div>
+                        <div class="loc-info">
+                            <span class="loc-title text-danger" id="locAlertType">SOS Triggered</span>
+                            <span class="loc-subtitle" id="locAddress">--</span>
+                            <span class="loc-coords">Lat: <span id="locLat">--</span>, Lng: <span id="locLng">--</span></span>
+                        </div>
+                    </div>
+                    <div class="distance-info">
+                        <i class="las la-ruler"></i> User is approximately <strong>2.8 km</strong> away
+                    </div>
+                </div>
+            </section>
+
+            <!-- Emergency Actions Section -->
+            <section class="card actions-section hidden" id="emergencyActionsSection">
+                <h2 class="section-title">Emergency Actions</h2>
+                <div class="action-buttons-grid">
+                    <button class="action-btn btn-call" id="btnCall">
+                        <i class="las la-phone-volume"></i>
+                        <span>Call User</span>
+                    </button>
+                    <button class="action-btn btn-police" id="btnEmergencyNumbers">
+                        <i class="las la-phone-square"></i>
+                        <span>Emergency Numbers</span>
+                    </button>
+                </div>
+                <button class="btn-resolve" id="btnResolveAlert" style="margin-top: 12px; width: 100%;">
+                    <i class="las la-check-double"></i> Mark as Resolved
+                </button>
+            </section>
+
+            <!-- Alert History Section -->
+            <section class="card history-section">
+                <h2 class="section-title">Previous Alerts</h2>
+                <div class="history-list" id="historyList">
+                    <!-- Dummy history row 1 -->
+                    <div class="history-card">
+                        <div class="history-icon bg-gray">
+                            <i class="las la-exclamation-circle text-gray"></i>
+                        </div>
+                        <div class="history-content">
+                            <h4>Not Safe Triggered</h4>
+                            <p>Oct 12, 10:45 PM</p>
+                        </div>
+                        <div class="history-status badge-resolved">Resolved</div>
+                    </div>
+                    
+                    <!-- Dummy history row 2 -->
+                    <div class="history-card">
+                        <div class="history-icon bg-gray">
+                            <i class="las la-exclamation-circle text-gray"></i>
+                        </div>
+                        <div class="history-content">
+                            <h4>SOS Triggered</h4>
+                            <p>Sep 28, 08:30 PM</p>
+                        </div>
+                        <div class="history-status badge-resolved">Resolved</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Spacing -->
+            <div style="height: 40px;"></div>
+        </main>
+        
+        <!-- Audio for alerting -->
+        <audio id="alertSound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto" loop></audio>
+
+        <!-- Pop-up Alert Modal (Full screen flash) -->
+        <div class="overlay" id="incidentOverlay"></div>
+        <div class="modal incident-modal" id="incidentModal">
+            <div class="strobe-light">
+                <i class="las la-bullhorn"></i>
+            </div>
+            <h2 class="alert-title text-danger">🚨 Emergency Alert 🚨</h2>
+            <p class="alert-message"><strong id="popupUserName">User</strong> pressed <span id="popupAlertType">SOS</span></p>
+            <p class="alert-message mb-3">Live Location Data Received.</p>
+            <button class="btn-yes pulse-button" id="btnViewLive">
+                Tap to view live location
+            </button>
+        </div>
+
+        <!-- Evidence Viewer Modal -->
+        <div class="overlay" id="evdOverlay"></div>
+        <div class="modal evd-modal" id="evdModal" style="max-width: 90%; background: #0f172a; padding: 20px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; color:white;">
+                <h3 style="margin:0;"><i class="las la-photo-video text-danger"></i> Captured Evidence</h3>
+                <button id="closeEvdBtn" style="background:none; border:none; color:white; font-size:1.5rem; cursor:pointer;"><i class="las la-times"></i></button>
+            </div>
+            <img id="evdImage" style="width:100%; border-radius:8px; display:none; margin-bottom:15px;" />
+            <audio id="evdAudio" controls style="width:100%; display:none;"></audio>
+        </div>
+    </div>
+
+    <!-- For demo purpose: link back to User dashboard -->
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="./supabaseClient.js"></script>
+    <script src="./emergency.js"></script>
+</body>
+</html>
