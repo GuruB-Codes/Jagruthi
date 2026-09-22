@@ -5,10 +5,14 @@
     <meta charset="UTF-8">
     <meta name="viewport"
         content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Jagruthi 3.0 — Login & Register</title>
-    <meta name="description" content="Secure login and registration for Jagruthi Women Safety System.">
+    <title>Jagruthi 3.0 — Women Safety System</title>
+    <meta name="description" content="Jagruthi 3.0 - Women Safety System. Safer Women, Stronger Communities.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet">
+    <!-- Line Awesome Icons -->
     <link rel="stylesheet"
         href="https://maxst.icons8.com/vue-static/landings/line-awesome/line-awesome/1.3.0/css/line-awesome.min.css">
     <link rel="stylesheet" href="./login.css">
@@ -16,52 +20,101 @@
 
 <body>
 
-    <div class="auth-container">
-
-        <!-- Branding Header -->
-        <div class="auth-brand">
-            <div class="brand-icon">
-                <i class="las la-shield-alt"></i>
-            </div>
-            <h1>Jagruthi 3.0</h1>
-            <p>Women Safety System</p>
+    <!-- Background Layer & Atmospheric Overlays -->
+    <div class="bg-backdrop" aria-hidden="true">
+        <div class="bg-overlay"></div>
+        
+        <!-- Left Side Vertical Text Pillar -->
+        <div class="side-pillar pillar-left">
+            <span class="pillar-line">SAFETY</span>
+            <span class="pillar-line">SUPPORT</span>
+            <span class="pillar-line">AWARENESS</span>
+            <span class="pillar-line">STRONGER</span>
+            <span class="pillar-line">WOMEN</span>
+            <span class="pillar-dash">—</span>
         </div>
 
-        <!-- Auth Card -->
+        <!-- Right Side Vertical Text Pillar -->
+        <div class="side-pillar pillar-right">
+            <span class="pillar-line">A</span>
+            <span class="pillar-line">SAFER</span>
+            <span class="pillar-line">TOMORROW</span>
+            <span class="pillar-line">TOGETHER</span>
+            <span class="pillar-dash">—</span>
+        </div>
+    </div>
+
+    <!-- Main Auth Container -->
+    <main class="auth-container">
+
+        <!-- Branding Header -->
+        <header class="auth-brand">
+            <div class="brand-icon-wrapper">
+                <div class="brand-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shield-icon-svg">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    </svg>
+                </div>
+            </div>
+            <h1 class="brand-title">Jagruthi <span class="version-highlight">3.0</span></h1>
+            <p class="brand-subtitle">Women Safety System</p>
+            <div class="brand-motto">
+                <span>Safer Women</span>
+                <span class="motto-dot"></span>
+                <span>Stronger Communities</span>
+            </div>
+        </header>
+
+        <!-- Auth Glass Card -->
         <div class="auth-card">
 
             <!-- Role Selection -->
             <div class="role-section">
                 <h2 class="section-label">Select Your Role</h2>
                 <div class="role-grid">
-                    <button class="role-btn active" data-role="user" id="roleUser">
-                        <div class="role-icon"><i class="las la-female"></i></div>
+                    <button class="role-btn active" data-role="user" id="roleUser" type="button" aria-label="Role User">
+                        <div class="role-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>
+                        </div>
                         <span>User</span>
                     </button>
-                    <button class="role-btn" data-role="emergency" id="roleEmergency">
-                        <div class="role-icon"><i class="las la-user-friends"></i></div>
+                    <button class="role-btn" data-role="emergency" id="roleEmergency" type="button" aria-label="Role Contact">
+                        <div class="role-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="9" cy="7" r="4"></circle>
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                            </svg>
+                        </div>
                         <span>Contact</span>
                     </button>
-                    <button class="role-btn" data-role="police" id="rolePolice">
-                        <div class="role-icon"><i class="las la-user-shield"></i></div>
+                    <button class="role-btn" data-role="police" id="rolePolice" type="button" aria-label="Role Police">
+                        <div class="role-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 2l7 3v6c0 5.25-3.5 10-7 11-3.5-1-7-5.75-7-11V5l7-3z"></path>
+                                <circle cx="12" cy="11" r="2.5"></circle>
+                            </svg>
+                        </div>
                         <span>Police</span>
                     </button>
-                    <button class="role-btn" data-role="admin" id="roleAdmin">
-                        <div class="role-icon"><i class="las la-cogs"></i></div>
+                    <button class="role-btn" data-role="admin" id="roleAdmin" type="button" aria-label="Role Admin">
+                        <div class="role-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="3"></circle>
+                                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                            </svg>
+                        </div>
                         <span>Admin</span>
                     </button>
                 </div>
             </div>
 
-            <!-- Tab Switcher -->
-            <div class="tab-switcher">
-                <button class="tab-btn active" id="tabLogin" data-tab="login">Login</button>
-                <button class="tab-btn" id="tabRegister" data-tab="register">Register</button>
-                <div class="tab-indicator" id="tabIndicator"></div>
-            </div>
-
             <!-- Error/Success Messages -->
-            <div class="message-box hidden" id="messageBox">
+            <div class="message-box hidden" id="messageBox" role="alert">
                 <i class="las la-exclamation-circle"></i>
                 <span id="messageText"></span>
             </div>
@@ -69,43 +122,94 @@
             <!-- LOGIN FORM -->
             <form class="auth-form" id="loginForm">
                 <div class="input-field">
-                    <div class="field-icon"><i class="las la-phone"></i></div>
+                    <div class="field-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                        </svg>
+                    </div>
                     <input type="tel" id="loginPhone" placeholder="Phone Number" required autocomplete="tel">
                 </div>
                 <div class="input-field">
-                    <div class="field-icon"><i class="las la-lock"></i></div>
+                    <div class="field-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                        </svg>
+                    </div>
                     <input type="password" id="loginPassword" placeholder="Password" required
                         autocomplete="current-password">
-                    <button type="button" class="toggle-pass" id="toggleLoginPass"><i class="las la-eye"></i></button>
+                    <button type="button" class="toggle-pass" id="toggleLoginPass" aria-label="Toggle password visibility">
+                        <i class="las la-eye"></i>
+                    </button>
                 </div>
-                <a href="#" class="forgot-link">Forgot Password?</a>
+                
+                <div class="form-options">
+                    <a href="#" class="forgot-link">Forgot Password?</a>
+                </div>
+
                 <button type="submit" class="submit-btn" id="loginBtn">
-                    <i class="las la-sign-in-alt"></i>
+                    <div class="btn-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+                            <polyline points="10 17 15 12 10 7"></polyline>
+                            <line x1="15" y1="12" x2="3" y2="12"></line>
+                        </svg>
+                    </div>
                     <span>Login</span>
                 </button>
+
+                <p class="auth-switch-text">
+                    Don't have an account? <a href="#" id="linkToRegister" class="auth-switch-link">Register</a>
+                </p>
             </form>
 
             <!-- REGISTRATION FORM -->
             <form class="auth-form hidden" id="registerForm">
                 <div class="input-field">
-                    <div class="field-icon"><i class="las la-user"></i></div>
+                    <div class="field-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                    </div>
                     <input type="text" id="regName" placeholder="Full Name" required>
                 </div>
                 <div class="input-field">
-                    <div class="field-icon"><i class="las la-phone"></i></div>
+                    <div class="field-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                        </svg>
+                    </div>
                     <input type="tel" id="regPhone" placeholder="Phone Number" required>
                 </div>
                 <div class="input-field">
-                    <div class="field-icon"><i class="las la-envelope"></i></div>
+                    <div class="field-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                            <polyline points="22,6 12,13 2,6"></polyline>
+                        </svg>
+                    </div>
                     <input type="email" id="regEmail" placeholder="Email Address" required>
                 </div>
                 <div class="input-field">
-                    <div class="field-icon"><i class="las la-lock"></i></div>
+                    <div class="field-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                        </svg>
+                    </div>
                     <input type="password" id="regPassword" placeholder="Password" required>
-                    <button type="button" class="toggle-pass" id="toggleRegPass"><i class="las la-eye"></i></button>
+                    <button type="button" class="toggle-pass" id="toggleRegPass" aria-label="Toggle password visibility">
+                        <i class="las la-eye"></i>
+                    </button>
                 </div>
                 <div class="input-field">
-                    <div class="field-icon"><i class="las la-lock"></i></div>
+                    <div class="field-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                        </svg>
+                    </div>
                     <input type="password" id="regConfirmPassword" placeholder="Confirm Password" required>
                 </div>
 
@@ -114,56 +218,105 @@
                     <!-- User Fields (default) -->
                     <div class="dynamic-fields" id="fieldsUser">
                         <div class="input-field">
-                            <div class="field-icon"><i class="las la-phone-volume"></i></div>
+                            <div class="field-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                                </svg>
+                            </div>
                             <input type="tel" id="regEmergencyContact" placeholder="Emergency Contact Number">
                         </div>
                         <div class="input-field">
-                            <div class="field-icon"><i class="las la-map-marker"></i></div>
+                            <div class="field-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                    <circle cx="12" cy="10" r="3"></circle>
+                                </svg>
+                            </div>
                             <input type="text" id="regAddress" placeholder="Address (Optional)">
                         </div>
                     </div>
                     <!-- Emergency Contact Fields -->
                     <div class="dynamic-fields hidden" id="fieldsEmergency">
                         <div class="input-field">
-                            <div class="field-icon"><i class="las la-heart"></i></div>
+                            <div class="field-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                                </svg>
+                            </div>
                             <input type="text" id="regRelationship" placeholder="Relationship to User">
                         </div>
                     </div>
                     <!-- Police Fields -->
                     <div class="dynamic-fields hidden" id="fieldsPolice">
                         <div class="input-field">
-                            <div class="field-icon"><i class="las la-building"></i></div>
+                            <div class="field-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                                    <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                                </svg>
+                            </div>
                             <input type="text" id="regPoliceStation" placeholder="Police Station Name">
                         </div>
                         <div class="input-field">
-                            <div class="field-icon"><i class="las la-id-badge"></i></div>
+                            <div class="field-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                                    <line x1="8" y1="21" x2="16" y2="21"></line>
+                                    <line x1="12" y1="17" x2="12" y2="21"></line>
+                                </svg>
+                            </div>
                             <input type="text" id="regOfficerId" placeholder="Officer ID">
                         </div>
                     </div>
                     <!-- Admin Fields -->
                     <div class="dynamic-fields hidden" id="fieldsAdmin">
                         <div class="input-field">
-                            <div class="field-icon"><i class="las la-id-card"></i></div>
+                            <div class="field-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                                    <line x1="8" y1="21" x2="16" y2="21"></line>
+                                    <line x1="12" y1="17" x2="12" y2="21"></line>
+                                </svg>
+                            </div>
                             <input type="text" id="regAdminId" placeholder="Admin ID">
                         </div>
                         <div class="input-field">
-                            <div class="field-icon"><i class="las la-key"></i></div>
+                            <div class="field-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="7.5" cy="15.5" r="5.5"></circle>
+                                    <path d="M21 2l-9.6 9.6"></path>
+                                    <path d="M15.5 7.5l3 3L22 7l-3-3"></path>
+                                </svg>
+                            </div>
                             <input type="password" id="regSecurityCode" placeholder="Security Code">
                         </div>
                     </div>
                 </div>
 
                 <button type="submit" class="submit-btn submit-register" id="registerBtn">
-                    <i class="las la-user-plus"></i>
+                    <div class="btn-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="8.5" cy="7" r="4"></circle>
+                            <line x1="20" y1="8" x2="20" y2="14"></line>
+                            <line x1="23" y1="11" x2="17" y2="11"></line>
+                        </svg>
+                    </div>
                     <span>Create Account</span>
                 </button>
+
+                <p class="auth-switch-text">
+                    Already have an account? <a href="#" id="linkToLogin" class="auth-switch-link">Login</a>
+                </p>
             </form>
 
         </div>
 
         <!-- Footer -->
-        <p class="auth-footer">&copy; 2026 Jagruthi 3.0 Women Safety &bull; All Rights Reserved</p>
-    </div>
+        <footer class="auth-footer">
+            <p>&copy; 2026 Jagruthi 3.0 Women Safety &bull; All Rights Reserved</p>
+        </footer>
+    </main>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./supabaseClient.js"></script>

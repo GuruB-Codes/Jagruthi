@@ -33,21 +33,38 @@ document.addEventListener('DOMContentLoaded', () => {
     /* =========================================
        2. TAB SWITCHING
        ========================================= */
-    tabLogin.addEventListener('click', () => switchTab('login'));
-    tabRegister.addEventListener('click', () => switchTab('register'));
+    if (tabLogin) tabLogin.addEventListener('click', () => switchTab('login'));
+    if (tabRegister) tabRegister.addEventListener('click', () => switchTab('register'));
+
+    const linkToRegister = document.getElementById('linkToRegister');
+    const linkToLogin = document.getElementById('linkToLogin');
+
+    if (linkToRegister) {
+        linkToRegister.addEventListener('click', (e) => {
+            e.preventDefault();
+            switchTab('register');
+        });
+    }
+
+    if (linkToLogin) {
+        linkToLogin.addEventListener('click', (e) => {
+            e.preventDefault();
+            switchTab('login');
+        });
+    }
 
     function switchTab(tab) {
         hideMessage();
         if (tab === 'login') {
-            tabLogin.classList.add('active');
-            tabRegister.classList.remove('active');
-            tabIndicator.classList.remove('right');
+            if (tabLogin) tabLogin.classList.add('active');
+            if (tabRegister) tabRegister.classList.remove('active');
+            if (tabIndicator) tabIndicator.classList.remove('right');
             loginForm.classList.remove('hidden');
             registerForm.classList.add('hidden');
         } else {
-            tabLogin.classList.remove('active');
-            tabRegister.classList.add('active');
-            tabIndicator.classList.add('right');
+            if (tabLogin) tabLogin.classList.remove('active');
+            if (tabRegister) tabRegister.classList.add('active');
+            if (tabIndicator) tabIndicator.classList.add('right');
             loginForm.classList.add('hidden');
             registerForm.classList.remove('hidden');
         }
