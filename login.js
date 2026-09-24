@@ -170,7 +170,17 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             // Success — store session
+            if (user.id) {
+                localStorage.setItem('userId', user.id);
+            } else {
+                let existingUserId = localStorage.getItem('userId');
+                if (!existingUserId || existingUserId.length < 10) {
+                    existingUserId = window.generateUUID ? window.generateUUID() : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => (c === 'x' ? Math.random()*16|0 : (Math.random()*16|0)&0x3|0x8).toString(16));
+                }
+                localStorage.setItem('userId', existingUserId);
+            }
             localStorage.setItem('userName', user.full_name);
+            localStorage.setItem('fullName', user.full_name);
             localStorage.setItem('userPhone', user.phone);
             localStorage.setItem('userRole', user.role);
             localStorage.setItem('isLoggedIn', 'true');

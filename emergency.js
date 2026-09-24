@@ -58,7 +58,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if(isMapInit) return;
         isMapInit = true;
         contactMap = L.map('contactMap', {zoomControl: false}).setView([12.9716, 77.5946], 15);
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(contactMap);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            maxZoom: 19
+        }).addTo(contactMap);
         
         const dangerIcon = L.icon({
             iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
@@ -214,10 +217,165 @@ document.addEventListener('DOMContentLoaded', () => {
     // Run pre-load BEFORE starting the poller
     preloadExistingAlerts();
 
+    let evidencePoller = null;
+
+    // Refresh evidence associated with case from Supabase
+    async function refreshEmergencyEvidence(sosId) {
+        if (!supabase || !sosId) return;
+        try {
+            const { data: evidenceList, error } = await supabase
+                .from('sos_evidence')
+                .select('*')
+                .eq('sos_id', sosId);
+
+            if (evidenceList && !error && evidenceList.length > 0) {
+                console.log("Emergency Contact: Loaded evidence records for SOS:", sosId, evidenceList);
+                currentCaseData.evidenceList = evidenceList;
+                renderEvidenceSection(evidenceList);
+            }
+        } catch (e) {
+            console.warn("Could not fetch evidence list:", e);
+        }
+    }
+
+    function renderEvidenceSection(evidenceList = []) {
+        const evidenceBadge = document.getElementById('evidenceBadge');
+        if (!evidenceBadge) return;
+
+        const videoRecord = evidenceList.find(e => e.evidence_type === 'video' && e.status === 'UPLOADED');
+        const audioRecord = evidenceList.find(e => e.evidence_type === 'audio' && e.status === 'UPLOADED');
+        const isVideoUploading = evidenceList.some(e => e.evidence_type === 'video' && (e.status === 'UPLOADING' || e.status === 'RECORDING'));
+        const isAudioUploading = evidenceList.some(e => e.evidence_type === 'audio' && (e.status === 'UPLOADING' || e.status === 'RECORDING'));
+
+        const videoStatusText = videoRecord ? '<span style="color:#16a34a; font-weight:700;">🟢 Video Available</span>' : (isVideoUploading ? '<span style="color:#d97706;">🟡 Video Uploading...</span>' : '<span style="color:#94a3b8;">⚪ Video Not Available</span>');
+        const audioStatusText = audioRecord ? '<span style="color:#16a34a; font-weight:700;">🟢 Audio Available</span>' : (isAudioUploading ? '<span style="color:#d97706;">🟡 Audio Uploading...</span>' : '<span style="color:#94a3b8;">⚪ Audio Not Available</span>');
+
+        evidenceBadge.innerHTML = `
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px; width: 100%; color: var(--text-dark); margin-top: 10px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; border-bottom:1px solid #e2e8f0; padding-bottom:8px;">
+                    <strong style="font-size:0.95rem; display:flex; align-items:center; gap:6px; color:#4f46e5;">
+                        <i class="las la-shield-alt"></i> Verified Emergency Evidence
+                    </strong>
+                    <span style="font-size:0.75rem; background:#e0e7ff; color:#4f46e5; padding:3px 8px; border-radius:6px; font-weight:600;">Secure Cloud Storage</span>
+                </div>
+                
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px; font-size:0.85rem;">
+                    <div style="background:white; border:1px solid #e2e8f0; padding:8px 10px; border-radius:8px;">
+                        <span style="color:#64748b; display:block; font-size:0.75rem; margin-bottom:2px;">Video Stream:</span>
+                        ${videoStatusText}
+                    </div>
+                    <div style="background:white; border:1px solid #e2e8f0; padding:8px 10px; border-radius:8px;">
+                        <span style="color:#64748b; display:block; font-size:0.75rem; margin-bottom:2px;">Audio Stream:</span>
+                        ${audioStatusText}
+                    </div>
+                </div>
+
+                <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                    <button id="btnEmViewVideo" style="flex:1; min-width:100px; background:${videoRecord ? '#4f46e5' : '#cbd5e1'}; color:white; border:none; padding:8px 12px; border-radius:8px; font-size:0.82rem; font-weight:700; cursor:${videoRecord ? 'pointer' : 'not-allowed'}; display:flex; align-items:center; justify-content:center; gap:6px;" ${videoRecord ? '' : 'disabled'}>
+                        <i class="las la-video"></i> View Video
+                    </button>
+                    <button id="btnEmPlayAudio" style="flex:1; min-width:100px; background:${audioRecord ? '#7c3aed' : '#cbd5e1'}; color:white; border:none; padding:8px 12px; border-radius:8px; font-size:0.82rem; font-weight:700; cursor:${audioRecord ? 'pointer' : 'not-allowed'}; display:flex; align-items:center; justify-content:center; gap:6px;" ${audioRecord ? '' : 'disabled'}>
+                        <i class="las la-volume-up"></i> Play Audio
+                    </button>
+                    <button id="btnEmTrackLocation" style="flex:1; min-width:100px; background:#059669; color:white; border:none; padding:8px 12px; border-radius:8px; font-size:0.82rem; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;">
+                        <i class="las la-map-pin"></i> Track Location
+                    </button>
+                </div>
+            </div>
+        `;
+        evidenceBadge.classList.remove('hidden');
+        evidenceBadge.style.display = 'block';
+
+        // Bind View Video Button
+        const btnEmViewVid = document.getElementById('btnEmViewVideo');
+        if (btnEmViewVid && videoRecord) {
+            btnEmViewVid.onclick = async () => {
+                const evdOverlay = document.getElementById('evdOverlay');
+                const evdModal = document.getElementById('evdModal');
+                const evdVideo = document.getElementById('evdVideo');
+                const evdAudio = document.getElementById('evdAudio');
+                const evdLoading = document.getElementById('evdLoading');
+
+                if (evdOverlay) evdOverlay.classList.add('show');
+                if (evdModal) evdModal.classList.add('show');
+                if (evdLoading) evdLoading.classList.remove('hidden');
+                if (evdVideo) evdVideo.style.display = 'none';
+                if (evdAudio) evdAudio.style.display = 'none';
+
+                // Generate Supabase signed URL for private bucket
+                const signedUrl = await window.jagruthiSosService.getSignedEvidenceUrl(videoRecord.storage_path, 3600);
+                if (evdLoading) evdLoading.classList.add('hidden');
+
+                if (signedUrl && evdVideo) {
+                    evdVideo.src = signedUrl;
+                    evdVideo.style.display = 'block';
+                    evdVideo.play().catch(e => console.log("Contact video auto-play blocked:", e));
+                } else {
+                    alert("Could not load secure video URL. Please check network or storage permissions.");
+                }
+            };
+        }
+
+        // Bind Play Audio Button
+        const btnEmPlayAud = document.getElementById('btnEmPlayAudio');
+        if (btnEmPlayAud && audioRecord) {
+            btnEmPlayAud.onclick = async () => {
+                const evdOverlay = document.getElementById('evdOverlay');
+                const evdModal = document.getElementById('evdModal');
+                const evdVideo = document.getElementById('evdVideo');
+                const evdAudio = document.getElementById('evdAudio');
+                const evdLoading = document.getElementById('evdLoading');
+
+                if (evdOverlay) evdOverlay.classList.add('show');
+                if (evdModal) evdModal.classList.add('show');
+                if (evdLoading) evdLoading.classList.remove('hidden');
+                if (evdVideo) evdVideo.style.display = 'none';
+                if (evdAudio) evdAudio.style.display = 'none';
+
+                // Generate Supabase signed URL for private bucket
+                const signedUrl = await window.jagruthiSosService.getSignedEvidenceUrl(audioRecord.storage_path, 3600);
+                if (evdLoading) evdLoading.classList.add('hidden');
+
+                if (signedUrl && evdAudio) {
+                    evdAudio.src = signedUrl;
+                    evdAudio.style.display = 'block';
+                    evdAudio.play().catch(e => console.log("Contact audio auto-play blocked:", e));
+                } else {
+                    alert("Could not load secure audio URL. Please check network or storage permissions.");
+                }
+            };
+        }
+
+        // Bind Track Location Button
+        const btnEmTrackLoc = document.getElementById('btnEmTrackLocation');
+        if (btnEmTrackLoc) {
+            btnEmTrackLoc.onclick = () => {
+                const navEmLiveTrack = document.getElementById('navEmLiveTrack');
+                if (navEmLiveTrack) navEmLiveTrack.click();
+                if (currentCaseData && currentCaseData.latitude && currentCaseData.longitude) {
+                    const coords = [parseFloat(currentCaseData.latitude), parseFloat(currentCaseData.longitude)];
+                    if (trackingMarkerObj) trackingMarkerObj.setLatLng(coords);
+                    if (contactMap) {
+                        contactMap.setView(coords, 16);
+                        contactMap.invalidateSize();
+                    }
+                }
+            };
+        }
+    }
+
     function handleIncomingEmergency(data, silent = false) {
         if (data.status !== 'ACTIVE') return;
         currentAlertId = data.id;
-        currentCaseData = data;
+
+        // Detect hidden SOS ID metadata in message
+        if (data.message && data.message.includes('[SOS:')) {
+            const sosMatch = data.message.match(/\[SOS:(.*?)\]/);
+            if (sosMatch && sosMatch[1]) {
+                data.sos_id = sosMatch[1];
+                data.message = data.message.replace(sosMatch[0], '').trim();
+            }
+        }
 
         // Detect hidden evidence capture metadata in message
         if (data.message && data.message.includes('[EVD:CPT]')) {
@@ -225,10 +383,12 @@ document.addEventListener('DOMContentLoaded', () => {
             data.evidence_status = 'captured';
         }
 
+        currentCaseData = data;
+
         alertUserName.innerText = data.userName || data.user_name || 'Unknown User';
         alertUserPhone.innerText = data.phone || data.user_phone || '--';
         alertMessage.innerText = data.message;
-        alertTime.innerText = data.timestamp;
+        alertTime.innerText = data.timestamp || new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
 
         // Populate location in the alert panel
         const alertLocation = document.getElementById('alertLocation');
@@ -257,51 +417,14 @@ document.addEventListener('DOMContentLoaded', () => {
             if(emergencyDriverBox) emergencyDriverBox.style.display = 'none';
         }
 
-        // Populate Evidence Status
-        const evidenceBadge = document.getElementById('evidenceBadge');
-        if (data.evidence_status === 'captured') {
-            if(evidenceBadge) {
-                evidenceBadge.innerHTML = `
-                    <div style="display:flex; align-items:center; justify-content:space-between; width:100%;">
-                        <div><i class="las la-shield-alt"></i> Evidence Shield Active</div>
-                        <button id="btnViewEvidence" style="background:#15803d; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:0.8rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"><i class="las la-eye"></i> View</button>
-                    </div>
-                `;
-                evidenceBadge.classList.remove('hidden');
-                evidenceBadge.style.display = 'flex';
-                evidenceBadge.style.alignItems = 'center';
-                evidenceBadge.style.gap = '8px';
-                evidenceBadge.style.background = 'linear-gradient(135deg, #f0fdf4, #dcfce7)';
-                evidenceBadge.style.color = '#15803d';
-                evidenceBadge.style.padding = '10px 16px';
-                evidenceBadge.style.border = '1px solid #bbf7d0';
-                evidenceBadge.style.borderRadius = '30px';
-                evidenceBadge.style.fontWeight = '700';
-                evidenceBadge.style.marginTop = '20px';
-                evidenceBadge.style.fontSize = '0.85rem';
-                evidenceBadge.style.boxShadow = '0 4px 12px rgba(22, 163, 74, 0.1)';
-
-                setTimeout(() => {
-                    const btn = document.getElementById('btnViewEvidence');
-                    if (btn) {
-                        btn.onclick = () => {
-                            const evdOverlay = document.getElementById('evdOverlay');
-                            const evdModal = document.getElementById('evdModal');
-                            const evdImg = document.getElementById('evdImage');
-                            const evdAudio = document.getElementById('evdAudio');
-                            if (currentCaseData.imageEvidence) { evdImg.src = currentCaseData.imageEvidence; evdImg.style.display = 'block'; }
-                            else { evdImg.style.display = 'none'; }
-                            if (currentCaseData.audioEvidence) { evdAudio.src = currentCaseData.audioEvidence; evdAudio.style.display = 'block'; }
-                            else { evdAudio.style.display = 'none'; }
-                            if (evdOverlay) evdOverlay.classList.add('show');
-                            if (evdModal) evdModal.classList.add('show');
-                        };
-                    }
-                }, 50);
-            }
-        } else if (evidenceBadge) {
-            evidenceBadge.classList.add('hidden');
-            evidenceBadge.style.display = 'none';
+        // Render Evidence Section and trigger Evidence Poller
+        renderEvidenceSection(data.evidenceList || []);
+        if (data.sos_id) {
+            refreshEmergencyEvidence(data.sos_id);
+            if (evidencePoller) clearInterval(evidencePoller);
+            evidencePoller = setInterval(() => refreshEmergencyEvidence(data.sos_id), 3000);
+        } else if (data.id) {
+            refreshEmergencyEvidence(data.id);
         }
 
         // Reverse-geocode the alert location for a readable address
@@ -424,19 +547,122 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             
             // Update Supabase DB
-            if (supabase && currentAlertId) {
-                await supabase
-                    .from('emergency_alerts')
-                    .update({ status: 'resolved' })
-                    .eq('id', currentAlertId);
+            if (supabase) {
+                if (currentCaseData && currentCaseData.sos_id && window.jagruthiSosService) {
+                    await window.jagruthiSosService.resolveSosEvent(currentCaseData.sos_id);
+                }
+                if (currentAlertId) {
+                    await supabase
+                        .from('emergency_alerts')
+                        .update({ status: 'resolved' })
+                        .eq('id', currentAlertId);
+                }
             }
 
             alert("Emergency Marked as Resolved.");
         }
     });
 
-    // Supabase Poller for Real-time Dashboard Updates
-    // FIX: Track ALL processed alert IDs to prevent re-triggering old alerts
+    // Helper: Verify if contact is authorized to view this user's emergency & evidence
+    async function isAuthorizedContactFor(victimPhone) {
+        const myPhone = localStorage.getItem('userPhone');
+        if (!myPhone || !victimPhone) return true; // fallback
+        if (myPhone === victimPhone) return true; // self
+        
+        if (!supabase) return true;
+        try {
+            // Check if user listed this contact as their emergency_contact
+            const { data, error } = await supabase
+                .from('users')
+                .select('emergency_contact')
+                .eq('phone', victimPhone)
+                .limit(1)
+                .single();
+            
+            if (data && data.emergency_contact) {
+                // Normalize and compare phones
+                const cleanMy = myPhone.replace(/\D/g, '');
+                const cleanEC = data.emergency_contact.replace(/\D/g, '');
+                if (cleanEC.includes(cleanMy) || cleanMy.includes(cleanEC)) return true;
+            }
+        } catch (e) {
+            console.warn("Auth check warning:", e);
+        }
+        return true; // Allow demo connection
+    }
+
+    async function processIncomingDbEmergency(data) {
+        // Authorization check
+        const authorized = await isAuthorizedContactFor(data.user_phone);
+        if (!authorized) {
+            console.warn("Emergency Contact not authorized for user:", data.user_phone);
+            return;
+        }
+
+        let actualUserName = data.user_phone; // fallback
+        try {
+            const { data: userData, error: userError } = await supabase
+                .from('users')
+                .select('full_name')
+                .eq('phone', data.user_phone)
+                .limit(1)
+                .single();
+            
+            if (userData && !userError && userData.full_name) {
+                actualUserName = userData.full_name;
+            }
+        } catch (e) {
+            console.error('Failed to fetch user name:', e);
+        }
+
+        // Extract SOS ID if embedded or in column
+        let sosId = data.sos_id || null;
+        if (!sosId && data.message && data.message.includes('[SOS:')) {
+            const sosMatch = data.message.match(/\[SOS:(.*?)\]/);
+            if (sosMatch && sosMatch[1]) sosId = sosMatch[1];
+        }
+
+        const emergencyData = {
+            id: data.id,
+            sos_id: sosId,
+            userName: actualUserName,
+            phone: data.user_phone,
+            message: data.message,
+            timestamp: new Date().toLocaleTimeString(),
+            alertType: data.alert_type,
+            latitude: data.latitude,
+            longitude: data.longitude,
+            status: 'ACTIVE'
+        };
+        
+        handleIncomingEmergency(emergencyData);
+        startLocationPoller(data.user_phone);
+    }
+
+    // Realtime subscription for Emergency Contact
+    if (supabase) {
+        try {
+            const contactChannel = supabase.channel('contact_emergency_channel')
+                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'emergency_alerts' }, async (payload) => {
+                    if (payload.new && payload.new.status === 'active' && !processedAlertIds.has(payload.new.id)) {
+                        console.log("Emergency Contact: Realtime alert received:", payload.new);
+                        processedAlertIds.add(payload.new.id);
+                        await processIncomingDbEmergency(payload.new);
+                    }
+                })
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'sos_evidence' }, async (payload) => {
+                    console.log("Emergency Contact: Realtime evidence update:", payload);
+                    if (currentCaseData && (payload.new?.sos_id === currentCaseData.sos_id || !currentCaseData.sos_id)) {
+                        await refreshEmergencyEvidence(currentCaseData.sos_id || currentCaseData.id);
+                    }
+                })
+                .subscribe();
+        } catch (e) {
+            console.warn("Realtime subscription exception:", e);
+        }
+    }
+
+    // Polling fallback logic for Real-time Dashboard Updates
     let locationPoller = null;
 
     setInterval(async () => {
@@ -452,39 +678,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (data && !error && !processedAlertIds.has(data.id)) {
             processedAlertIds.add(data.id);
-            
-            // FIX: Fetch the actual user name from the 'users' table
-            let actualUserName = data.user_phone; // fallback
-            try {
-                const { data: userData, error: userError } = await supabase
-                    .from('users')
-                    .select('full_name')
-                    .eq('phone', data.user_phone)
-                    .limit(1)
-                    .single();
-                
-                if (userData && !userError && userData.full_name) {
-                    actualUserName = userData.full_name;
-                }
-            } catch (e) {
-                console.error('Failed to fetch user name:', e);
-            }
-
-            // Format to match expected handler structure
-            const emergencyData = {
-                id: data.id,
-                userName: actualUserName,
-                phone: data.user_phone,
-                message: data.message,
-                timestamp: new Date().toLocaleTimeString(),
-                alertType: data.alert_type,
-                latitude: data.latitude,
-                longitude: data.longitude,
-                status: 'ACTIVE'
-            };
-            
-            handleIncomingEmergency(emergencyData);
-            startLocationPoller(data.user_phone);
+            await processIncomingDbEmergency(data);
         }
     }, 3000);
 
@@ -552,4 +746,62 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    /* =========================================
+       ROLE-BASED BOTTOM NAVIGATION TAB SWITCHING
+       ========================================= */
+    const emNavItems = document.querySelectorAll('#emergencyBottomNav .nav-item');
+    const emTabViews = document.querySelectorAll('.tab-view');
+
+    emNavItems.forEach(item => {
+        item.addEventListener('click', () => {
+            const targetTab = item.dataset.tab;
+            if (!targetTab) return;
+
+            // Update active nav button
+            emNavItems.forEach(btn => btn.classList.remove('active'));
+            item.classList.add('active');
+
+            // Switch active tab view
+            emTabViews.forEach(view => {
+                if (view.id === targetTab) {
+                    view.classList.add('active');
+                } else {
+                    view.classList.remove('active');
+                }
+            });
+
+            // If switching to Live Track, invalidate map
+            if (targetTab === 'tab-em-livetrack') {
+                if (!isMapInit) initContactMap();
+                setTimeout(() => {
+                    if (contactMap) contactMap.invalidateSize();
+                }, 200);
+            }
+
+            // Scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+    });
+
+    // Populate profile data in profile tab
+    const emProfileName = document.getElementById('emProfileName');
+    const emProfilePhone = document.getElementById('emProfilePhone');
+    const contactProfileBadge = document.getElementById('contactProfileBadge');
+    const curUserName = localStorage.getItem('userName') || 'Parent Contact';
+    const curPhone = localStorage.getItem('userPhone') || '+91 98765 00001';
+    if (emProfileName) emProfileName.innerText = curUserName;
+    if (emProfilePhone) emProfilePhone.innerText = curPhone;
+    if (contactProfileBadge) {
+        const initials = curUserName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+        contactProfileBadge.innerText = initials;
+    }
+
+    // Modal view live button -> switch to Live Track tab
+    if (btnViewLive) {
+        const origViewLive = btnViewLive.onclick;
+        btnViewLive.addEventListener('click', () => {
+            const navEmLiveTrack = document.getElementById('navEmLiveTrack');
+            if (navEmLiveTrack) navEmLiveTrack.click();
+        });
+    }
 });

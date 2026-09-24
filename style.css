@@ -547,13 +547,14 @@ h1, h2, h3 { color: var(--text-dark); font-weight: 700; }
 /* Bottom Action Bar */
 .bottom-action-bar {
     position: fixed;
-    bottom: 0;
+    bottom: 64px;
     width: 100%;
     max-width: 480px;
-    padding: 16px 24px 24px;
-    background: linear-gradient(to top, rgba(255,255,255,1) 60%, rgba(255,255,255,0));
+    padding: 12px 24px 16px;
+    background: linear-gradient(to top, rgba(255,255,255,0.95) 70%, rgba(255,255,255,0));
     z-index: 40;
     pointer-events: none;
+    transition: var(--transition);
 }
 
 .btn-start-journey {
@@ -562,43 +563,43 @@ h1, h2, h3 { color: var(--text-dark); font-weight: 700; }
     background: var(--success);
     color: white;
     border: none;
-    border-radius: var(--radius-full);
-    padding: 18px;
-    font-size: 1.2rem;
+    border-radius: var(--radius-round);
+    padding: 16px 20px;
+    font-size: 1.1rem;
     font-weight: 600;
     display: flex;
     justify-content: center;
     align-items: center;
     gap: 12px;
-    box-shadow: 0 10px 25px rgba(16, 185, 129, 0.4);
+    box-shadow: 0 8px 20px rgba(16, 185, 129, 0.35);
     cursor: pointer;
     transition: var(--transition);
 }
 
 .btn-start-journey:active { transform: scale(0.98); }
-.btn-start-journey i { font-size: 1.4rem; }
+.btn-start-journey i { font-size: 1.3rem; }
 .btn-start-journey .arrow-icon { margin-left: auto; background: rgba(255,255,255,0.2); padding: 4px; border-radius: 50%; }
 
 /* Floating SOS Button */
 .sos-btn {
     position: fixed;
-    bottom: 100px;
-    right: 24px;
-    width: 72px;
-    height: 72px;
+    bottom: 84px;
+    right: 20px;
+    width: 64px;
+    height: 64px;
     background: var(--danger);
     color: white;
     border: none;
     border-radius: 50%;
     font-weight: 700;
-    font-size: 1.1rem;
+    font-size: 1.05rem;
     z-index: 45;
     cursor: pointer;
     box-shadow: var(--shadow-danger);
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: transform 0.2s;
+    transition: transform 0.2s, bottom 0.2s;
     outline: none;
 }
 
@@ -798,3 +799,432 @@ h1, h2, h3 { color: var(--text-dark); font-weight: 700; }
     font-size: 0.95rem;
     letter-spacing: 0.5px;
 }
+
+/* ===================================================
+   ROLE-BASED BOTTOM NAVIGATION BAR STYLES
+   =================================================== */
+
+/* Page Bottom Padding so content is never covered */
+.dashboard-content,
+.dashboard-police-content,
+.dashboard-admin-content {
+    padding-bottom: 96px !important;
+}
+
+/* Base Bottom Nav Bar */
+.bottom-nav-bar {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 480px;
+    height: 68px;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    background: rgba(255, 255, 255, 0.94);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(226, 232, 240, 0.9);
+    box-shadow: 0 -8px 24px rgba(15, 23, 42, 0.08);
+    z-index: 50;
+    padding: 6px 8px 10px;
+    border-radius: 22px 22px 0 0;
+}
+
+/* Navigation Items */
+.bottom-nav-bar .nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    text-decoration: none;
+    color: #64748b;
+    transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    padding: 4px 2px;
+    position: relative;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.bottom-nav-bar .nav-icon-wrapper {
+    width: 42px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    transition: all 0.25s ease;
+    font-size: 1.35rem;
+    position: relative;
+}
+
+.bottom-nav-bar .nav-label {
+    font-size: 0.68rem;
+    font-weight: 500;
+    transition: all 0.2s;
+    white-space: nowrap;
+    margin-top: 2px;
+    letter-spacing: -0.1px;
+}
+
+/* Active State (Women / Default Primary) */
+.bottom-nav-bar .nav-item.active {
+    color: var(--primary);
+}
+
+.bottom-nav-bar .nav-item.active .nav-icon-wrapper {
+    background: rgba(99, 102, 241, 0.14);
+    color: var(--primary);
+    transform: translateY(-2px);
+}
+
+.bottom-nav-bar .nav-item.active .nav-label {
+    font-weight: 700;
+    color: var(--primary);
+}
+
+/* Special SOS Tab Button */
+.bottom-nav-bar .nav-item.nav-item-sos .nav-icon-wrapper {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: white !important;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.45);
+    margin-top: -6px;
+}
+
+.bottom-nav-bar .nav-item.nav-item-sos .nav-label {
+    color: var(--danger);
+    font-weight: 700;
+}
+
+.bottom-nav-bar .nav-item.nav-item-sos.active .nav-icon-wrapper {
+    transform: translateY(-4px) scale(1.06);
+    box-shadow: 0 6px 16px rgba(239, 68, 68, 0.6);
+}
+
+/* Badge for Notifications / Alerts */
+.bottom-nav-bar .nav-badge {
+    position: absolute;
+    top: 2px;
+    right: 8px;
+    background: var(--danger);
+    color: white;
+    font-size: 0.65rem;
+    font-weight: 700;
+    min-width: 16px;
+    height: 16px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 4px;
+    box-shadow: 0 2px 6px rgba(239, 68, 68, 0.5);
+}
+
+/* Emergency Contact Role Nav */
+.bottom-nav-bar.emergency-nav .nav-item.active {
+    color: #d97706;
+}
+
+.bottom-nav-bar.emergency-nav .nav-item.active .nav-icon-wrapper {
+    background: rgba(217, 119, 6, 0.14);
+    color: #d97706;
+}
+
+.bottom-nav-bar.emergency-nav .nav-item.active .nav-label {
+    color: #d97706;
+}
+
+/* Police Role Nav */
+.bottom-nav-bar.police-nav {
+    background: rgba(15, 23, 42, 0.96);
+    border-top: 1px solid rgba(51, 65, 85, 0.9);
+    box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.45);
+}
+
+.bottom-nav-bar.police-nav .nav-item {
+    color: #94a3b8;
+}
+
+.bottom-nav-bar.police-nav .nav-item.active {
+    color: #60a5fa;
+}
+
+.bottom-nav-bar.police-nav .nav-item.active .nav-icon-wrapper {
+    background: rgba(96, 165, 250, 0.2);
+    color: #60a5fa;
+    box-shadow: 0 0 12px rgba(96, 165, 250, 0.35);
+}
+
+.bottom-nav-bar.police-nav .nav-item.active .nav-label {
+    color: #60a5fa;
+}
+
+/* Admin Role Nav */
+.bottom-nav-bar.admin-nav .nav-item.active {
+    color: #4338ca;
+}
+
+.bottom-nav-bar.admin-nav .nav-item.active .nav-icon-wrapper {
+    background: rgba(67, 56, 202, 0.14);
+    color: #4338ca;
+}
+
+.bottom-nav-bar.admin-nav .nav-item.active .nav-label {
+    color: #4338ca;
+}
+
+/* Tab View Visibility & Transitions */
+.tab-view {
+    display: none;
+    width: 100%;
+}
+
+.tab-view.active {
+    display: block;
+    animation: tabViewFadeIn 0.22s ease-out;
+}
+
+@keyframes tabViewFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Profile and Shared Card Elements */
+.profile-hero-card {
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    color: white;
+    border-radius: var(--radius-md);
+    padding: 24px 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: var(--shadow-md);
+    margin-bottom: 20px;
+}
+
+.profile-hero-avatar {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    border: 3px solid rgba(255, 255, 255, 0.8);
+    object-fit: cover;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.profile-hero-info h3 {
+    color: white;
+    font-size: 1.25rem;
+    margin-bottom: 4px;
+}
+
+.profile-hero-info p {
+    color: #e0e7ff;
+    font-size: 0.88rem;
+}
+
+.profile-hero-info .role-badge-pill {
+    display: inline-block;
+    background: rgba(255, 255, 255, 0.22);
+    backdrop-filter: blur(8px);
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-top: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.settings-list-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.settings-item-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    background: white;
+    border-radius: var(--radius-sm);
+    border: 1px solid #e2e8f0;
+    transition: var(--transition);
+}
+
+.settings-item-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.settings-item-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+}
+
+.settings-item-text h4 {
+    font-size: 0.95rem;
+    color: var(--text-dark);
+    margin-bottom: 2px;
+}
+
+.settings-item-text p {
+    font-size: 0.78rem;
+    color: var(--text-medium);
+}
+
+/* Switch Toggle Styling */
+.switch-toggle {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+}
+
+.switch-toggle input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.switch-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #cbd5e1;
+    transition: .3s;
+    border-radius: 24px;
+}
+
+.switch-slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .3s;
+    border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+input:checked + .switch-slider {
+    background-color: var(--primary);
+}
+
+input:checked + .switch-slider:before {
+    transform: translateX(20px);
+}
+
+/* Quick Hotline Dialer Grid */
+.hotline-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+    margin-top: 14px;
+}
+
+.hotline-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 14px 8px;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: var(--radius-sm);
+    text-decoration: none;
+    color: var(--text-dark);
+    font-weight: 600;
+    font-size: 0.82rem;
+    box-shadow: var(--shadow-sm);
+    transition: var(--transition);
+}
+
+.hotline-btn:hover, .hotline-btn:active {
+    transform: translateY(-2px);
+    border-color: var(--primary);
+    box-shadow: var(--shadow-md);
+}
+
+.hotline-btn i {
+    font-size: 1.6rem;
+}
+
+.hotline-number {
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+/* Evidence Card & Media Indicator Styles */
+.media-indicator {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(15, 23, 42, 0.95);
+    color: white;
+    padding: 10px 18px;
+    border-radius: var(--radius-round);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.media-indicator-content {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.88rem;
+    font-weight: 600;
+}
+
+.media-pulse {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #ef4444;
+    animation: pulseGlow 1s infinite alternate;
+}
+
+@keyframes pulseGlow {
+    from { opacity: 0.5; transform: scale(0.9); }
+    to { opacity: 1; transform: scale(1.2); }
+}
+
+.evidence-card {
+    border-left: 4px solid var(--primary);
+    transition: var(--transition);
+}
+
+.evidence-status-banner {
+    transition: var(--transition);
+}
+

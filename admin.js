@@ -143,7 +143,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if(isMapInit) return;
         isMapInit = true;
         adminMap = L.map('adminMap', {zoomControl: false}).setView([12.9716, 77.5946], 13);
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(adminMap);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            maxZoom: 19
+        }).addTo(adminMap);
         const policeIcon = L.icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png', shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png', iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34] });
         const userIcon = L.icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png', shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png', iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34] });
         L.marker([12.9650, 77.5850], {icon: policeIcon}).addTo(adminMap).bindPopup("Police Unit 4");
@@ -815,4 +818,55 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initial analytics load
     buildAnalyticsDashboard();
+
+    /* =========================================
+       ROLE-BASED BOTTOM NAVIGATION TAB SWITCHING
+       ========================================= */
+    const admNavItems = document.querySelectorAll('#adminBottomNav .nav-item');
+    const admTabViews = document.querySelectorAll('.tab-view');
+
+    admNavItems.forEach(item => {
+        item.addEventListener('click', () => {
+            const targetTab = item.dataset.tab;
+            if (!targetTab) return;
+
+            // Update active nav button
+            admNavItems.forEach(btn => btn.classList.remove('active'));
+            item.classList.add('active');
+
+            // Switch active tab view
+            admTabViews.forEach(view => {
+                if (view.id === targetTab) {
+                    view.classList.add('active');
+                } else {
+                    view.classList.remove('active');
+                }
+            });
+
+            // Map invalidation on Dashboard tab
+            if (targetTab === 'tab-adm-dashboard') {
+                setTimeout(() => {
+                    if (typeof adminMap !== 'undefined' && adminMap) adminMap.invalidateSize();
+                }, 200);
+            }
+
+            // Rebuild analytics if entering Analytics tab
+            if (targetTab === 'tab-adm-analytics') {
+                buildAnalyticsDashboard();
+            }
+
+            // Scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+    });
+
+    // Populate Admin profile
+    const admProfileName = document.getElementById('admProfileName');
+    const adminProfileBadge = document.getElementById('adminProfileBadge');
+    const adminNameVal = localStorage.getItem('userName') || 'System Admin';
+    if (admProfileName) admProfileName.innerText = adminNameVal;
+    if (adminProfileBadge) {
+        const initials = adminNameVal.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+        adminProfileBadge.innerText = initials;
+    }
 });

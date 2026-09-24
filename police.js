@@ -70,7 +70,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if(isMapInit) return;
         isMapInit = true;
         policeMap = L.map('policeMap', {zoomControl: false}).setView([12.9716, 77.5946], 14);
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(policeMap);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            maxZoom: 19
+        }).addTo(policeMap);
         
         const dangerIcon = L.icon({
             iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
@@ -225,7 +228,74 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Polling logic: check Supabase every 3 seconds for ONLY NEW active alerts
     let locationPoller = null;
+    let evidencePoller = null;
 
+    // Supabase Realtime channel setup for instant alerts & evidence updates
+    if (supabase) {
+        try {
+            const policeChannel = supabase.channel('police_emergency_channel')
+                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'emergency_alerts' }, async (payload) => {
+                    if (payload.new && payload.new.status === 'active' && !processedAlertIds.has(payload.new.id)) {
+                        console.log("Police: Realtime new alert received:", payload.new);
+                        processedAlertIds.add(payload.new.id);
+                        await processIncomingDbAlert(payload.new);
+                    }
+                })
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'sos_evidence' }, async (payload) => {
+                    console.log("Police: Realtime evidence update:", payload);
+                    if (currentCaseData && (payload.new?.sos_id === currentCaseData.sos_id || !currentCaseData.sos_id)) {
+                        await refreshCaseEvidence(currentCaseData.sos_id || currentCaseData.id);
+                    }
+                })
+                .subscribe();
+        } catch (e) {
+            console.warn("Realtime subscription exception:", e);
+        }
+    }
+
+    async function processIncomingDbAlert(data) {
+        let actualUserName = data.user_phone; // fallback
+        try {
+            const { data: userData, error: userError } = await supabase
+                .from('users')
+                .select('full_name')
+                .eq('phone', data.user_phone)
+                .limit(1)
+                .single();
+            
+            if (userData && !userError && userData.full_name) {
+                actualUserName = userData.full_name;
+            }
+        } catch (e) {
+            console.error('Failed to fetch user name:', e);
+        }
+
+        // Extract SOS ID if embedded or in column
+        let sosId = data.sos_id || null;
+        if (!sosId && data.message && data.message.includes('[SOS:')) {
+            const sosMatch = data.message.match(/\[SOS:(.*?)\]/);
+            if (sosMatch && sosMatch[1]) sosId = sosMatch[1];
+        }
+
+        const emergencyData = {
+            id: data.id,
+            sos_id: sosId,
+            userName: actualUserName,
+            phone: data.user_phone,
+            message: data.message,
+            timestamp: new Date().toLocaleTimeString(),
+            alertType: data.alert_type,
+            latitude: data.latitude,
+            longitude: data.longitude,
+            status: 'ACTIVE',
+            evidence_status: data.evidence_status
+        };
+        
+        handleIncomingCase(emergencyData);
+        startLocationPoller(data.user_phone);
+    }
+
+    // Polling logic fallback: check Supabase every 3 seconds for ONLY NEW active alerts
     setInterval(async () => {
         if (!supabase) return;
         
@@ -240,40 +310,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (data && !error && !processedAlertIds.has(data.id)) {
             console.log("Police Dashboard: New alert detected via Supabase polling", data);
             processedAlertIds.add(data.id);
-            
-            // FIX: Fetch the actual user name from the 'users' table
-            let actualUserName = data.user_phone; // fallback
-            try {
-                const { data: userData, error: userError } = await supabase
-                    .from('users')
-                    .select('full_name')
-                    .eq('phone', data.user_phone)
-                    .limit(1)
-                    .single();
-                
-                if (userData && !userError && userData.full_name) {
-                    actualUserName = userData.full_name;
-                }
-            } catch (e) {
-                console.error('Failed to fetch user name:', e);
-            }
-
-            // Re-format to match map data format expected from user tracking
-            const emergencyData = {
-                id: data.id,
-                userName: actualUserName,
-                phone: data.user_phone,
-                message: data.message,
-                timestamp: new Date().toLocaleTimeString(),
-                alertType: data.alert_type,
-                latitude: data.latitude,
-                longitude: data.longitude,
-                status: 'ACTIVE',
-                evidence_status: data.evidence_status
-            };
-            
-            handleIncomingCase(emergencyData);
-            startLocationPoller(data.user_phone);
+            await processIncomingDbAlert(data);
         }
     }, 3000);
 
@@ -305,7 +342,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (data.alert_status === 'deviated') {
                         infoRouteStatus.innerText = "⚠️ Deviated";
                         infoRouteStatus.className = "text-danger";
-                        // Reverse geocode the deviated location
                         reverseGeocode(data.latitude, data.longitude).then(addr => {
                             if (addr && infoAddress) infoAddress.innerText = addr;
                         });
@@ -316,6 +352,151 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
         }, 3000);
+    }
+
+    // Refresh evidence associated with case from Supabase
+    async function refreshCaseEvidence(sosId) {
+        if (!supabase || !sosId) return;
+        try {
+            const { data: evidenceList, error } = await supabase
+                .from('sos_evidence')
+                .select('*')
+                .eq('sos_id', sosId);
+
+            if (evidenceList && !error && evidenceList.length > 0) {
+                console.log("Police: Loaded evidence records for SOS:", sosId, evidenceList);
+                currentCaseData.evidenceList = evidenceList;
+                renderEvidenceSection(evidenceList);
+            }
+        } catch (e) {
+            console.warn("Could not fetch evidence list:", e);
+        }
+    }
+
+    function renderEvidenceSection(evidenceList = []) {
+        const evidenceBadge = document.getElementById('evidenceBadge');
+        if (!evidenceBadge) return;
+
+        const videoRecord = evidenceList.find(e => e.evidence_type === 'video' && e.status === 'UPLOADED');
+        const audioRecord = evidenceList.find(e => e.evidence_type === 'audio' && e.status === 'UPLOADED');
+        const isVideoUploading = evidenceList.some(e => e.evidence_type === 'video' && (e.status === 'UPLOADING' || e.status === 'RECORDING'));
+        const isAudioUploading = evidenceList.some(e => e.evidence_type === 'audio' && (e.status === 'UPLOADING' || e.status === 'RECORDING'));
+
+        const videoStatusText = videoRecord ? '<span style="color:#16a34a; font-weight:700;">🟢 Available</span>' : (isVideoUploading ? '<span style="color:#d97706;">🟡 Uploading...</span>' : '<span style="color:#94a3b8;">⚪ Not Available</span>');
+        const audioStatusText = audioRecord ? '<span style="color:#16a34a; font-weight:700;">🟢 Available</span>' : (isAudioUploading ? '<span style="color:#d97706;">🟡 Uploading...</span>' : '<span style="color:#94a3b8;">⚪ Not Available</span>');
+
+        evidenceBadge.innerHTML = `
+            <div style="background: #0f172a; border: 1px solid #334155; border-radius: 12px; padding: 14px; width: 100%; color: white; margin-top: 10px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; border-bottom:1px solid #1e293b; padding-bottom:8px;">
+                    <strong style="font-size:0.95rem; display:flex; align-items:center; gap:6px; color:#60a5fa;">
+                        <i class="las la-shield-alt"></i> SOS Secured Evidence
+                    </strong>
+                    <span style="font-size:0.75rem; background:#1e293b; color:#94a3b8; padding:3px 8px; border-radius:6px;">Encrypted Vault</span>
+                </div>
+                
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px; font-size:0.85rem;">
+                    <div style="background:#1e293b; padding:8px 10px; border-radius:8px;">
+                        <span style="color:#94a3b8; display:block; font-size:0.75rem;">Video Evidence:</span>
+                        ${videoStatusText}
+                    </div>
+                    <div style="background:#1e293b; padding:8px 10px; border-radius:8px;">
+                        <span style="color:#94a3b8; display:block; font-size:0.75rem;">Audio Evidence:</span>
+                        ${audioStatusText}
+                    </div>
+                </div>
+
+                <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                    <button id="btnPolViewVideo" style="flex:1; min-width:100px; background:${videoRecord ? '#2563eb' : '#334155'}; color:white; border:none; padding:8px 12px; border-radius:8px; font-size:0.82rem; font-weight:700; cursor:${videoRecord ? 'pointer' : 'not-allowed'}; display:flex; align-items:center; justify-content:center; gap:6px;" ${videoRecord ? '' : 'disabled'}>
+                        <i class="las la-video"></i> View Video
+                    </button>
+                    <button id="btnPolPlayAudio" style="flex:1; min-width:100px; background:${audioRecord ? '#7c3aed' : '#334155'}; color:white; border:none; padding:8px 12px; border-radius:8px; font-size:0.82rem; font-weight:700; cursor:${audioRecord ? 'pointer' : 'not-allowed'}; display:flex; align-items:center; justify-content:center; gap:6px;" ${audioRecord ? '' : 'disabled'}>
+                        <i class="las la-volume-up"></i> Play Audio
+                    </button>
+                    <button id="btnPolViewLocation" style="flex:1; min-width:100px; background:#059669; color:white; border:none; padding:8px 12px; border-radius:8px; font-size:0.82rem; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;">
+                        <i class="las la-map-pin"></i> View Location
+                    </button>
+                </div>
+            </div>
+        `;
+        evidenceBadge.classList.remove('hidden');
+        evidenceBadge.style.display = 'block';
+
+        // Bind View Video Button
+        const btnPolViewVid = document.getElementById('btnPolViewVideo');
+        if (btnPolViewVid && videoRecord) {
+            btnPolViewVid.onclick = async () => {
+                const evdOverlay = document.getElementById('evdOverlay');
+                const evdModal = document.getElementById('evdModal');
+                const evdVideo = document.getElementById('evdVideo');
+                const evdAudio = document.getElementById('evdAudio');
+                const evdLoading = document.getElementById('evdLoading');
+
+                if (evdOverlay) evdOverlay.classList.add('show');
+                if (evdModal) evdModal.classList.add('show');
+                if (evdLoading) evdLoading.classList.remove('hidden');
+                if (evdVideo) evdVideo.style.display = 'none';
+                if (evdAudio) evdAudio.style.display = 'none';
+
+                // Generate Supabase signed URL for private bucket
+                const signedUrl = await window.jagruthiSosService.getSignedEvidenceUrl(videoRecord.storage_path, 3600);
+                if (evdLoading) evdLoading.classList.add('hidden');
+
+                if (signedUrl && evdVideo) {
+                    evdVideo.src = signedUrl;
+                    evdVideo.style.display = 'block';
+                    evdVideo.play().catch(e => console.log("Police video auto-play blocked:", e));
+                } else {
+                    alert("Could not load secure video URL. Please check network or storage permissions.");
+                }
+            };
+        }
+
+        // Bind Play Audio Button
+        const btnPolPlayAud = document.getElementById('btnPolPlayAudio');
+        if (btnPolPlayAud && audioRecord) {
+            btnPolPlayAud.onclick = async () => {
+                const evdOverlay = document.getElementById('evdOverlay');
+                const evdModal = document.getElementById('evdModal');
+                const evdVideo = document.getElementById('evdVideo');
+                const evdAudio = document.getElementById('evdAudio');
+                const evdLoading = document.getElementById('evdLoading');
+
+                if (evdOverlay) evdOverlay.classList.add('show');
+                if (evdModal) evdModal.classList.add('show');
+                if (evdLoading) evdLoading.classList.remove('hidden');
+                if (evdVideo) evdVideo.style.display = 'none';
+                if (evdAudio) evdAudio.style.display = 'none';
+
+                // Generate Supabase signed URL for private bucket
+                const signedUrl = await window.jagruthiSosService.getSignedEvidenceUrl(audioRecord.storage_path, 3600);
+                if (evdLoading) evdLoading.classList.add('hidden');
+
+                if (signedUrl && evdAudio) {
+                    evdAudio.src = signedUrl;
+                    evdAudio.style.display = 'block';
+                    evdAudio.play().catch(e => console.log("Police audio auto-play blocked:", e));
+                } else {
+                    alert("Could not load secure audio URL. Please check network or storage permissions.");
+                }
+            };
+        }
+
+        // Bind View Location Button
+        const btnPolViewLoc = document.getElementById('btnPolViewLocation');
+        if (btnPolViewLoc) {
+            btnPolViewLoc.onclick = () => {
+                const navPolLiveMap = document.getElementById('navPolLiveMap');
+                if (navPolLiveMap) navPolLiveMap.click();
+                if (currentCaseData && currentCaseData.latitude && currentCaseData.longitude) {
+                    const coords = [parseFloat(currentCaseData.latitude), parseFloat(currentCaseData.longitude)];
+                    if (victimMarker) victimMarker.setLatLng(coords);
+                    if (policeMap) {
+                        policeMap.setView(coords, 16);
+                        policeMap.invalidateSize();
+                    }
+                }
+            };
+        }
     }
 
     function handleIncomingCase(data, silent = false) {
@@ -333,6 +514,15 @@ document.addEventListener('DOMContentLoaded', () => {
             if (modeMatch && modeMatch[1]) {
                 data.travelMode = modeMatch[1];
                 data.message = data.message.replace(modeMatch[0], '').trim();
+            }
+        }
+
+        // Detect hidden SOS ID metadata in message
+        if (data.message && data.message.includes('[SOS:')) {
+            const sosMatch = data.message.match(/\[SOS:(.*?)\]/);
+            if (sosMatch && sosMatch[1]) {
+                data.sos_id = sosMatch[1];
+                data.message = data.message.replace(sosMatch[0], '').trim();
             }
         }
 
@@ -370,51 +560,14 @@ document.addEventListener('DOMContentLoaded', () => {
             if(policeDriverBox) policeDriverBox.style.display = 'none';
         }
 
-        // Populate Evidence Status
-        const evidenceBadge = document.getElementById('evidenceBadge');
-        if (data.evidence_status === 'captured') {
-            if(evidenceBadge) {
-                evidenceBadge.innerHTML = `
-                    <div style="display:flex; align-items:center; justify-content:space-between; width:100%;">
-                        <div><i class="las la-camera"></i> Evidence Captured</div>
-                        <button id="btnViewEvidence" style="background:#166534; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:0.8rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"><i class="las la-eye"></i> View</button>
-                    </div>
-                `;
-                evidenceBadge.classList.remove('hidden');
-                evidenceBadge.style.display = 'flex';
-                evidenceBadge.style.alignItems = 'center';
-                evidenceBadge.style.gap = '8px';
-                evidenceBadge.style.background = '#dcfce7';
-                evidenceBadge.style.color = '#166534';
-                evidenceBadge.style.padding = '6px 12px';
-                evidenceBadge.style.borderRadius = 'var(--radius-sm)';
-                evidenceBadge.style.fontWeight = '600';
-                evidenceBadge.style.marginTop = '12px';
-                evidenceBadge.style.fontSize = '0.9rem';
-
-                setTimeout(() => {
-                    const btn = document.getElementById('btnViewEvidence');
-                    if (btn) {
-                        btn.onclick = () => {
-                            const evdOverlay = document.getElementById('evdOverlay');
-                            const evdModal = document.getElementById('evdModal');
-                            const evdImg = document.getElementById('evdImage');
-                            const evdAudio = document.getElementById('evdAudio');
-                            // Now always access currentCaseData safely
-                            if (currentCaseData.imageEvidence) { evdImg.src = currentCaseData.imageEvidence; evdImg.style.display = 'block'; }
-                            else { evdImg.style.display = 'none'; }
-                            if (currentCaseData.audioEvidence) { evdAudio.src = currentCaseData.audioEvidence; evdAudio.style.display = 'block'; }
-                            else { evdAudio.style.display = 'none'; }
-                            
-                            if (evdOverlay) evdOverlay.classList.add('show');
-                            if (evdModal) evdModal.classList.add('show');
-                        };
-                    }
-                }, 50);
-            }
-        } else if (evidenceBadge) {
-            evidenceBadge.classList.add('hidden');
-            evidenceBadge.style.display = 'none';
+        // Render Evidence Section and trigger Evidence Poller
+        renderEvidenceSection(data.evidenceList || []);
+        if (data.sos_id) {
+            refreshCaseEvidence(data.sos_id);
+            if (evidencePoller) clearInterval(evidencePoller);
+            evidencePoller = setInterval(() => refreshCaseEvidence(data.sos_id), 3000);
+        } else if (data.id) {
+            refreshCaseEvidence(data.id);
         }
 
         // Reverse-geocode the alert location for a readable address
@@ -646,14 +799,19 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // Sync to Supabase
-        if (supabase && currentCaseData && currentCaseData.id) {
-            await supabase
-                .from('emergency_alerts')
-                .update({ 
-                    status: 'resolved',
-                    message: `[RESOLVED] Action Taken: ${actionTaken}` // Appending report to message to keep "dont change working" (no schema change)
-                })
-                .eq('id', currentCaseData.id);
+        if (supabase && currentCaseData) {
+            if (currentCaseData.sos_id && window.jagruthiSosService) {
+                await window.jagruthiSosService.resolveSosEvent(currentCaseData.sos_id);
+            }
+            if (currentCaseData.id) {
+                await supabase
+                    .from('emergency_alerts')
+                    .update({ 
+                        status: 'resolved',
+                        message: `[RESOLVED] Action Taken: ${actionTaken}`
+                    })
+                    .eq('id', currentCaseData.id);
+            }
         }
 
         setTimeout(() => {
@@ -710,4 +868,62 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    /* =========================================
+       ROLE-BASED BOTTOM NAVIGATION TAB SWITCHING
+       ========================================= */
+    const polNavItems = document.querySelectorAll('#policeBottomNav .nav-item');
+    const polTabViews = document.querySelectorAll('.tab-view');
+
+    polNavItems.forEach(item => {
+        item.addEventListener('click', () => {
+            const targetTab = item.dataset.tab;
+            if (!targetTab) return;
+
+            // Update active nav button
+            polNavItems.forEach(btn => btn.classList.remove('active'));
+            item.classList.add('active');
+
+            // Switch active tab view
+            polTabViews.forEach(view => {
+                if (view.id === targetTab) {
+                    view.classList.add('active');
+                } else {
+                    view.classList.remove('active');
+                }
+            });
+
+            // Map invalidation on Live Map tab
+            if (targetTab === 'tab-pol-livemap') {
+                if (!isMapInit) initPoliceMap();
+                setTimeout(() => {
+                    if (policeMap) policeMap.invalidateSize();
+                }, 200);
+            }
+
+            // Scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+    });
+
+    // Populate officer profile
+    const polProfileName = document.getElementById('polProfileName');
+    const polProfileId = document.getElementById('polProfileId');
+    const officerProfileBadge = document.getElementById('officerProfileBadge');
+    const polStationName = document.getElementById('polStationName');
+    const officerNameVal = localStorage.getItem('userName') || 'Officer Singh';
+    if (polProfileName) polProfileName.innerText = officerNameVal;
+    if (officerProfileBadge) {
+        const initials = officerNameVal.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+        officerProfileBadge.innerText = initials;
+    }
+    const stationVal = localStorage.getItem('policeStation');
+    if (stationVal && polStationName) polStationName.innerText = stationVal;
+
+    // Connect Acknowledge Alert button to open Incidents Tab
+    if (btnAcknowledgeAlert) {
+        btnAcknowledgeAlert.addEventListener('click', () => {
+            const navPolIncidents = document.getElementById('navPolIncidents');
+            if (navPolIncidents) navPolIncidents.click();
+        });
+    }
 });

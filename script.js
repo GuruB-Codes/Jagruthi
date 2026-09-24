@@ -52,8 +52,9 @@ document.addEventListener('DOMContentLoaded', () => {
     let routesGenerated = false;
 
     userMap = L.map('userMap', {zoomControl: false}).setView(startLoc, 15);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; OpenStreetMap'
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        maxZoom: 19
     }).addTo(userMap);
 
     const userIcon = L.icon({
@@ -482,6 +483,218 @@ document.addEventListener('DOMContentLoaded', () => {
         clearTimeout(sosHoldTimer);
     }
 
+    let activeSosId = null;
+    let activeUserId = null;
+
+    // Helper: Ensure valid authenticated User ID UUID
+    async function getAuthenticatedUserId() {
+        let userId = localStorage.getItem('userId');
+        const userPhone = localStorage.getItem('userPhone');
+        
+        if (!userId && userPhone && supabase) {
+            try {
+                const { data } = await supabase.from('users').select('id').eq('phone', userPhone).limit(1).single();
+                if (data && data.id) {
+                    userId = data.id;
+                    localStorage.setItem('userId', userId);
+                }
+            } catch (e) {
+                console.warn('Could not fetch user ID from DB:', e);
+            }
+        }
+        
+        if (!userId || userId.length < 10) {
+            userId = window.generateUUID ? window.generateUUID() : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => (c === 'x' ? Math.random()*16|0 : (Math.random()*16|0)&0x3|0x8).toString(16));
+            localStorage.setItem('userId', userId);
+        }
+        return userId;
+    }
+
+    // UI updater for Evidence Card states
+    function updateEvidenceUI(state, details = {}) {
+        const overallBadge = document.getElementById('evidenceOverallBadge');
+        const banner = document.getElementById('evidenceStatusBanner');
+        const bannerText = document.getElementById('evidenceBannerText');
+        const videoVal = document.getElementById('videoStatusVal');
+        const audioVal = document.getElementById('audioStatusVal');
+        const timeVal = document.getElementById('evidenceCaptureTimeVal');
+        const btnViewVid = document.getElementById('btnUserViewVideo');
+        const btnPlayAud = document.getElementById('btnUserPlayAudio');
+        const btnRetry = document.getElementById('btnUserRetryUpload');
+
+        if (timeVal && details.timestamp) {
+            timeVal.innerText = new Date(details.timestamp).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true });
+        }
+
+        if (state === 'RECORDING') {
+            // STATE 1: 🔴 Evidence Recording
+            if (overallBadge) {
+                overallBadge.innerText = '🔴 Recording';
+                overallBadge.style.background = '#fee2e2';
+                overallBadge.style.color = '#ef4444';
+            }
+            if (banner) {
+                banner.style.background = '#fef2f2';
+                banner.style.border = '1px solid #fecaca';
+                banner.style.color = '#b91c1c';
+            }
+            if (bannerText) bannerText.innerHTML = '<strong>🔴 Evidence Recording</strong>: Video + Audio are being captured...';
+            if (videoVal) { videoVal.innerText = 'Recording'; videoVal.style.background = '#fee2e2'; videoVal.style.color = '#ef4444'; }
+            if (audioVal) { audioVal.innerText = 'Recording'; audioVal.style.background = '#fee2e2'; audioVal.style.color = '#ef4444'; }
+            if (btnViewVid) btnViewVid.classList.add('hidden');
+            if (btnPlayAud) btnPlayAud.classList.add('hidden');
+            if (btnRetry) btnRetry.classList.add('hidden');
+
+        } else if (state === 'UPLOADING') {
+            // STATE 2: 🟡 Evidence Uploading
+            if (overallBadge) {
+                overallBadge.innerText = '🟡 Uploading';
+                overallBadge.style.background = '#fef3c7';
+                overallBadge.style.color = '#d97706';
+            }
+            if (banner) {
+                banner.style.background = '#fffbeb';
+                banner.style.border = '1px solid #fde68a';
+                banner.style.color = '#b45309';
+            }
+            if (bannerText) bannerText.innerHTML = '<strong>🟡 Evidence Uploading</strong>: Video and Audio are being uploaded securely to private vault...';
+            if (videoVal) { videoVal.innerText = details.videoStatus || 'Uploading'; videoVal.style.background = '#fef3c7'; videoVal.style.color = '#d97706'; }
+            if (audioVal) { audioVal.innerText = details.audioStatus || 'Uploading'; audioVal.style.background = '#fef3c7'; audioVal.style.color = '#d97706'; }
+            if (btnViewVid) btnViewVid.classList.add('hidden');
+            if (btnPlayAud) btnPlayAud.classList.add('hidden');
+            if (btnRetry) btnRetry.classList.add('hidden');
+
+        } else if (state === 'UPLOADED') {
+            // STATE 3: 🟢 Evidence Secured
+            if (overallBadge) {
+                overallBadge.innerText = '🟢 Secured';
+                overallBadge.style.background = '#d1fae5';
+                overallBadge.style.color = '#059669';
+            }
+            if (banner) {
+                banner.style.background = '#f0fdf4';
+                banner.style.border = '1px solid #bbf7d0';
+                banner.style.color = '#15803d';
+            }
+            if (bannerText) bannerText.innerHTML = '<strong>🟢 Evidence Secured</strong>: Video + Audio uploaded successfully to encrypted cloud storage.';
+            if (videoVal) { videoVal.innerText = 'Uploaded'; videoVal.style.background = '#d1fae5'; videoVal.style.color = '#059669'; }
+            if (audioVal) { audioVal.innerText = 'Uploaded'; audioVal.style.background = '#d1fae5'; audioVal.style.color = '#059669'; }
+            if (btnViewVid) btnViewVid.classList.remove('hidden');
+            if (btnPlayAud) btnPlayAud.classList.remove('hidden');
+            if (btnRetry) btnRetry.classList.add('hidden');
+
+        } else if (state === 'FAILED') {
+            // STATE 4: 🔴 Evidence Upload Failed
+            if (overallBadge) {
+                overallBadge.innerText = '🔴 Upload Failed';
+                overallBadge.style.background = '#fee2e2';
+                overallBadge.style.color = '#b91c1c';
+            }
+            if (banner) {
+                banner.style.background = '#fef2f2';
+                banner.style.border = '1px solid #f87171';
+                banner.style.color = '#991b1b';
+            }
+            if (bannerText) bannerText.innerHTML = '<strong>🔴 Evidence Upload Failed</strong>: Cloud sync interrupted. Click retry to securely upload stored evidence.';
+            if (videoVal) { videoVal.innerText = details.videoStatus || 'Failed'; videoVal.style.background = details.videoStatus === 'Uploaded' ? '#d1fae5' : '#fee2e2'; videoVal.style.color = details.videoStatus === 'Uploaded' ? '#059669' : '#b91c1c'; }
+            if (audioVal) { audioVal.innerText = details.audioStatus || 'Failed'; audioVal.style.background = details.audioStatus === 'Uploaded' ? '#d1fae5' : '#fee2e2'; audioVal.style.color = details.audioStatus === 'Uploaded' ? '#059669' : '#b91c1c'; }
+            if (btnViewVid) {
+                if (details.videoStatus === 'Uploaded') btnViewVid.classList.remove('hidden');
+                else btnViewVid.classList.add('hidden');
+            }
+            if (btnPlayAud) {
+                if (details.audioStatus === 'Uploaded') btnPlayAud.classList.remove('hidden');
+                else btnPlayAud.classList.add('hidden');
+            }
+            if (btnRetry) btnRetry.classList.remove('hidden');
+        }
+    }
+
+    // Subscribe to mediaService state changes
+    if (window.emergencyMedia) {
+        window.emergencyMedia.onStatusChange((state, details) => {
+            updateEvidenceUI(state, details);
+        });
+    }
+
+    // Bind Evidence Action Buttons
+    const btnUserViewVideo = document.getElementById('btnUserViewVideo');
+    const btnUserPlayAudio = document.getElementById('btnUserPlayAudio');
+    const btnUserRetryUpload = document.getElementById('btnUserRetryUpload');
+    const userEvdOverlay = document.getElementById('userEvdOverlay');
+    const userEvdModal = document.getElementById('userEvdModal');
+    const userEvdVideo = document.getElementById('userEvdVideo');
+    const userEvdAudio = document.getElementById('userEvdAudio');
+    const closeUserEvdBtn = document.getElementById('closeUserEvdBtn');
+
+    if (btnUserViewVideo) {
+        btnUserViewVideo.addEventListener('click', async () => {
+            if (!window.emergencyMedia || !window.emergencyMedia.lastEvidence) return;
+            const evd = window.emergencyMedia.lastEvidence;
+            
+            // Try to get Supabase signed URL, fallback to local URL
+            let videoSrc = evd.videoLocalUrl;
+            if (supabase && activeUserId && activeSosId && evd.videoInfo) {
+                const storagePath = `${activeUserId}/${activeSosId}/evidence_video.${evd.videoInfo.extension}`;
+                const signedUrl = await window.jagruthiSosService.getSignedEvidenceUrl(storagePath);
+                if (signedUrl) videoSrc = signedUrl;
+            }
+
+            if (userEvdVideo && videoSrc) {
+                userEvdVideo.src = videoSrc;
+                userEvdVideo.style.display = 'block';
+                if (userEvdAudio) userEvdAudio.style.display = 'none';
+                if (userEvdOverlay) userEvdOverlay.classList.add('show');
+                if (userEvdModal) userEvdModal.classList.add('show');
+                userEvdVideo.play().catch(e => console.log("User video playback init:", e));
+            }
+        });
+    }
+
+    if (btnUserPlayAudio) {
+        btnUserPlayAudio.addEventListener('click', async () => {
+            if (!window.emergencyMedia || !window.emergencyMedia.lastEvidence) return;
+            const evd = window.emergencyMedia.lastEvidence;
+            
+            let audioSrc = evd.audioLocalUrl;
+            if (supabase && activeUserId && activeSosId && evd.audioInfo) {
+                const storagePath = `${activeUserId}/${activeSosId}/evidence_audio.${evd.audioInfo.extension}`;
+                const signedUrl = await window.jagruthiSosService.getSignedEvidenceUrl(storagePath);
+                if (signedUrl) audioSrc = signedUrl;
+            }
+
+            if (userEvdAudio && audioSrc) {
+                userEvdAudio.src = audioSrc;
+                userEvdAudio.style.display = 'block';
+                if (userEvdVideo) userEvdVideo.style.display = 'none';
+                if (userEvdOverlay) userEvdOverlay.classList.add('show');
+                if (userEvdModal) userEvdModal.classList.add('show');
+                userEvdAudio.play().catch(e => console.log("User audio playback init:", e));
+            }
+        });
+    }
+
+    if (closeUserEvdBtn) {
+        closeUserEvdBtn.addEventListener('click', () => {
+            if (userEvdOverlay) userEvdOverlay.classList.remove('show');
+            if (userEvdModal) userEvdModal.classList.remove('show');
+            if (userEvdVideo) { userEvdVideo.pause(); userEvdVideo.src = ''; }
+            if (userEvdAudio) { userEvdAudio.pause(); userEvdAudio.src = ''; }
+        });
+    }
+
+    if (btnUserRetryUpload) {
+        btnUserRetryUpload.addEventListener('click', async () => {
+            if (window.emergencyMedia) {
+                btnUserRetryUpload.innerText = "Retrying upload...";
+                btnUserRetryUpload.disabled = true;
+                await window.emergencyMedia.retryUpload();
+                btnUserRetryUpload.innerText = "Retry Upload";
+                btnUserRetryUpload.disabled = false;
+            }
+        });
+    }
+
     async function triggerSOSAction(type = "SOS Triggered", message = "Emergency SOS Activated") {
         const isAutoTrigger = type === "Auto-SOS Activated" || type === "Not Safe Triggered";
         
@@ -496,20 +709,16 @@ document.addEventListener('DOMContentLoaded', () => {
         sosCooldown = true;
         setTimeout(() => sosCooldown = false, 10000); // 10s cooldown
 
-        console.log("EMERGENCY MEDIA CAPTURE STARTING...");
-        let evidence = { status: "pending" };
-        if (window.emergencyMedia) {
-            evidence = await window.emergencyMedia.startCapture();
-        }
-
-        console.log("EMERGENCY TRIGGERED!", type, message);
+        console.log("====================================");
+        console.log("🚨 EMERGENCY SOS INITIATED: 🚨", type, message);
+        console.log("====================================");
         
         let travelMode = "Unknown";
         const activeModeObj = document.querySelector('.mode-btn.active span');
         if (activeModeObj) travelMode = activeModeObj.innerText;
         
-        const fallbackLat = "12.9716";
-        const fallbackLng = "77.5946";
+        const fallbackLat = "13.1682";
+        const fallbackLng = "77.5354";
 
         // Use the captured deviated position if available, otherwise use current marker position
         let alertLat, alertLng;
@@ -521,15 +730,27 @@ document.addEventListener('DOMContentLoaded', () => {
             alertLng = userMarker ? userMarker.getLatLng().lng.toFixed(4) : fallbackLng;
         }
 
+        // 1. Get authenticated user ID UUID
+        activeUserId = await getAuthenticatedUserId();
+
+        // 2. CREATE sos_events RECORD FIRST
+        console.log("Creating sos_events record in Supabase...");
+        const sosEventResult = await window.jagruthiSosService.createSosEvent({
+            userId: activeUserId,
+            latitude: parseFloat(alertLat),
+            longitude: parseFloat(alertLng)
+        });
+        activeSosId = sosEventResult.data.id;
+        console.log("Generated SOS ID:", activeSosId);
+
         // Check for attached driver/vehicle info
         const carNumberInput = document.getElementById('carNumberInput');
         let driverInfo = null;
         if (carNumberInput && carNumberInput.value.trim() !== '') {
             const enteredNum = carNumberInput.value.trim().toUpperCase();
-            // Match with mock data or pick random if not found
             let found = dummyDrivers.find(d => d.carNumber.toUpperCase().includes(enteredNum) || enteredNum.includes(d.carNumber.toUpperCase()));
             driverInfo = Object.assign({}, found || dummyDrivers[Math.floor(Math.random() * dummyDrivers.length)]);
-            driverInfo.carNumber = enteredNum; // Use user entered car number
+            driverInfo.carNumber = enteredNum;
         } else if (travelMode === 'Car') {
             driverInfo = Object.assign({}, dummyDrivers[Math.floor(Math.random() * dummyDrivers.length)]);
         }
@@ -548,11 +769,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const emergencyData = {
             id: Date.now(),
+            sos_id: activeSosId,
+            user_id: activeUserId,
             userName: localStorage.getItem('userName') || "Kavya",
             phone: localStorage.getItem('userPhone') || "+91 98765 43210",
             latitude: alertLat,
             longitude: alertLng,
-            address: destInput ? destInput.value || "Unknown Location" : "Unknown Location",
+            address: destInput ? destInput.value || "Presidency University, Rajanakunte" : "Presidency University, Rajanakunte",
             alertType: type,
             message: fullMessage,
             travelMode: travelMode,
@@ -562,32 +785,64 @@ document.addEventListener('DOMContentLoaded', () => {
             contactNotified: "YES",
             contactResponded: "NO",
             policeEscalation: "PENDING",
-            evidence_status: evidence.status === "captured" ? "captured" : "failed",
-            imageEvidence: evidence.image || null,
-            audioEvidence: evidence.audio || null
+            evidence_status: "recording"
         };
         
         localStorage.setItem('safeRouteEmergency', JSON.stringify(emergencyData));
-        console.log("Emergency data sent locally:", emergencyData);
-        
-        // Push to Supabase 'emergency_alerts'
+
+        // 3. INSERT INTO emergency_alerts LINKED WITH sos_id
         if (supabase) {
              const { error } = await supabase.from('emergency_alerts').insert([{
+                 sos_id: activeSosId,
                  user_phone: emergencyData.phone,
                  alert_type: type,
                  latitude: parseFloat(alertLat),
                  longitude: parseFloat(alertLng),
-                 message: `${fullMessage}${emergencyData.evidence_status === 'captured' ? ' [EVD:CPT]' : ''} [MODE:${travelMode}]`,
+                 message: `${fullMessage} [MODE:${travelMode}]`,
                  status: 'active'
              }]);
-             if(error) console.error("Supabase Error saving emergency:", error);
+             if (error) {
+                 console.warn("Supabase insert with sos_id failed, attempting standard insert:", error);
+                 // Fallback if sos_id column is missing in legacy schema
+                 await supabase.from('emergency_alerts').insert([{
+                     user_phone: emergencyData.phone,
+                     alert_type: type,
+                     latitude: parseFloat(alertLat),
+                     longitude: parseFloat(alertLng),
+                     message: `${fullMessage} [MODE:${travelMode}] [SOS:${activeSosId}]`,
+                     status: 'active'
+                 }]);
+             }
         }
 
         window.dispatchEvent(new StorageEvent('storage', {
             key: 'safeRouteEmergency',
             newValue: JSON.stringify(emergencyData)
         }));
-        
+
+        // Switch to SOS tab so woman user immediately sees the Live Evidence Status Card
+        const navTabSos = document.getElementById('navTabSos');
+        if (navTabSos && !isAutoTrigger) {
+            navTabSos.click();
+        }
+
+        // 4. START EVIDENCE CAPTURE & SECURE STORAGE IN PARALLEL
+        console.log("Starting Evidence Media Capture & Storage Upload...");
+        if (window.emergencyMedia) {
+            window.emergencyMedia.captureAndUploadEvidence({
+                sosId: activeSosId,
+                userId: activeUserId,
+                duration: 6000
+            }).then(result => {
+                console.log("Evidence capture & upload completed. Result:", result);
+                if (result.success) {
+                    emergencyData.evidence_status = "captured";
+                    localStorage.setItem('safeRouteEmergency', JSON.stringify(emergencyData));
+                }
+            }).catch(err => {
+                console.error("Evidence capture workflow exception:", err);
+            });
+        }
     }
 
 
@@ -904,8 +1159,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // YES — I'm Safe: snap back to route and RESUME tracking to destination
     const btnSafe = document.getElementById('btnSafe');
     if (btnSafe) {
-        btnSafe.addEventListener('click', () => {
+        btnSafe.addEventListener('click', async () => {
             closeDeviationAlert();
+            if (activeSosId && window.jagruthiSosService) {
+                await window.jagruthiSosService.resolveSosEvent(activeSosId);
+            }
             resumeTrackingAfterDeviation();
             console.log("User marked as safe — tracking resumed.");
         });
@@ -936,6 +1194,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         if(userMarker) userMarker.setLatLng(realLoc);
                         if(userMap) { userMap.panTo(realLoc); userMap.setZoom(16); }
                         if(sourceInput) sourceInput.value = "My Current Location";
+                        updateCoordsDisplays(realLoc);
                     },
                     (error) => {
                         console.warn("GPS failed on click, using IP fallback:", error.message);
@@ -946,6 +1205,93 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 fetchLocationByIP();
             }
+        });
+    }
+
+    function updateCoordsDisplays(coords) {
+        const sosCoords = document.getElementById('sosCoordsDisplay');
+        if (sosCoords) sosCoords.innerText = `Lat: ${coords[0].toFixed(4)}, Lng: ${coords[1].toFixed(4)}`;
+        const homeGps = document.getElementById('homeGpsStatus');
+        if (homeGps) homeGps.innerText = `GPS Active (${coords[0].toFixed(2)}, ${coords[1].toFixed(2)})`;
+    }
+
+    /* =========================================
+       8. ROLE-BASED BOTTOM NAVIGATION TAB SWITCHING
+       ========================================= */
+    const navItems = document.querySelectorAll('#womenBottomNav .nav-item');
+    const tabViews = document.querySelectorAll('.tab-view');
+    const journeyActionBar = document.getElementById('journeyActionBar');
+
+    navItems.forEach(item => {
+        item.addEventListener('click', () => {
+            const targetTab = item.dataset.tab;
+            if (!targetTab) return;
+
+            // Update active nav button
+            navItems.forEach(btn => btn.classList.remove('active'));
+            item.classList.add('active');
+
+            // Switch active tab view
+            tabViews.forEach(view => {
+                if (view.id === targetTab) {
+                    view.classList.add('active');
+                } else {
+                    view.classList.remove('active');
+                }
+            });
+
+            // Toggle Journey action bar visibility
+            if (journeyActionBar) {
+                if (targetTab === 'tab-journey') {
+                    journeyActionBar.classList.remove('hidden');
+                } else {
+                    journeyActionBar.classList.add('hidden');
+                }
+            }
+
+            // Invalidate Leaflet Map Size so map redraws correctly
+            if (targetTab === 'tab-journey' && userMap) {
+                setTimeout(() => {
+                    userMap.invalidateSize();
+                }, 200);
+            }
+
+            // Scroll to top smoothly
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+    });
+
+    // Populate profile tab info from localStorage
+    const profileTabName = document.getElementById('profileTabName');
+    const profileTabPhone = document.getElementById('profileTabPhone');
+    const profileTabAvatar = document.getElementById('profileTabAvatar');
+    if (profileTabName) profileTabName.innerText = localStorage.getItem('userName') || 'Kavya Sharma';
+    if (profileTabPhone) profileTabPhone.innerText = localStorage.getItem('userPhone') || '+91 98765 43210';
+    if (profileTabAvatar) {
+        profileTabAvatar.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(localStorage.getItem('userName') || 'User')}&background=4f46e5&color=fff&rounded=true`;
+    }
+
+    // Direct SOS Button in SOS Tab
+    const directSosTriggerBtn = document.getElementById('directSosTriggerBtn');
+    if (directSosTriggerBtn) {
+        directSosTriggerBtn.addEventListener('click', () => {
+            if ('vibrate' in navigator) navigator.vibrate([300, 100, 300, 100, 500]);
+            triggerSOSAction("Emergency SOS", "User triggered manual SOS from Emergency Hub");
+            alert("Emergency SOS Activated! Live coordinates and alert sent.");
+        });
+    }
+
+    // Home Tab Test Alert Button
+    const homeTestAlertBtn = document.getElementById('homeTestAlertBtn');
+    if (homeTestAlertBtn) {
+        homeTestAlertBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            // Switch to journey tab and trigger deviation alert
+            const navTabJourney = document.getElementById('navTabJourney');
+            if (navTabJourney) navTabJourney.click();
+            setTimeout(() => {
+                showDeviationAlert();
+            }, 300);
         });
     }
 });

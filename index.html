@@ -47,109 +47,488 @@
 
         <main class="dashboard-content">
 
-            <!-- Travel Mode Selection Section -->
-            <section class="card mode-selection">
-                <h2 class="section-title">Select Travel Mode</h2>
-                <div class="mode-options">
-                    <button class="mode-btn active" data-mode="walking">
-                        <div class="mode-icon-bg">
-                            <i class="las la-walking"></i>
+            <!-- ================= TAB 1: HOME ================= -->
+            <div class="tab-view active" id="tab-home">
+                
+                <!-- Safety Status Hero Card -->
+                <section class="card widget-status" style="margin-bottom: 16px;">
+                    <div class="status-widget-content" style="display: flex; align-items: center; justify-content: space-between; gap: 14px;">
+                        <div class="status-pulse green-pulse"></div>
+                        <div class="status-desc" style="flex: 1;">
+                            <span class="status-label" style="font-size: 0.75rem; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px;">Safety Status</span>
+                            <h3 class="status-headline" style="font-size: 1.15rem; color: var(--text-dark); margin-top: 2px;">Active Protection</h3>
+                            <span style="font-size: 0.8rem; color: var(--success); font-weight: 600; display: flex; align-items: center; gap: 4px; margin-top: 2px;">
+                                <i class="las la-check-circle"></i> GPS & Geofencing Active
+                            </span>
                         </div>
-                        <span>Walking</span>
-                    </button>
-                    <button class="mode-btn" data-mode="car">
-                        <div class="mode-icon-bg">
-                            <i class="las la-car-side"></i>
-                        </div>
-                        <span>Car</span>
-                    </button>
-                    <button class="mode-btn" data-mode="bike">
-                        <div class="mode-icon-bg">
-                            <i class="las la-motorcycle"></i>
-                        </div>
-                        <span>Bike</span>
-                    </button>
-                </div>
-            </section>
+                        <div class="status-badge status-green" style="background: var(--success-light); color: var(--success-dark); padding: 6px 12px; border-radius: 20px; font-weight: 700; font-size: 0.85rem;">Safe</div>
+                    </div>
+                </section>
 
-            <!-- Source and Destination Input Section -->
-            <section class="card location-input-section">
-                <div class="location-timeline">
-                    <div class="timeline-dot source-dot"></div>
-                    <div class="timeline-line"></div>
-                    <div class="timeline-dot dest-dot"></div>
-                </div>
-
-                <div class="inputs-wrapper">
-                    <div class="input-group">
-                        <div class="input-icon-wrapper text-blue">
-                            <i class="las la-crosshairs"></i>
+                <!-- Current Location & Quick Start Journey Card -->
+                <section class="card" style="margin-bottom: 16px;">
+                    <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <h2 class="section-title" style="font-size: 1.1rem; margin: 0;"><i class="las la-crosshairs text-blue"></i> Current Location</h2>
+                        <span style="font-size: 0.78rem; color: var(--primary); font-weight: 600;" id="homeGpsStatus">Live GPS</span>
+                    </div>
+                    <div style="background: #f8fafc; border-radius: var(--radius-sm); padding: 12px 14px; border: 1px solid #e2e8f0; display: flex; align-items: center; gap: 10px;">
+                        <i class="las la-map-marker-alt" style="font-size: 1.6rem; color: var(--primary);"></i>
+                        <div style="flex: 1;">
+                            <strong style="display: block; font-size: 0.95rem; color: var(--text-dark);" id="homeCurrentLocText">Presidency University</strong>
+                            <span style="font-size: 0.78rem; color: var(--text-medium);">Bengaluru, Karnataka</span>
                         </div>
-                        <input type="text" placeholder="Source Location" class="location-input" value="Current Location"
-                            id="sourceInput">
-                        <button class="use-current-location" title="Use Current Location">
-                            <i class="las la-map-marker"></i>
+                    </div>
+                    <button class="btn-start-journey" style="margin-top: 14px; width: 100%;" onclick="document.getElementById('navTabJourney').click();">
+                        <i class="las la-route"></i>
+                        <span>Start New Journey</span>
+                        <i class="las la-arrow-right arrow-icon"></i>
+                    </button>
+                </section>
+
+                <!-- Quick SOS Trigger Card -->
+                <section class="card" style="margin-bottom: 16px; background: linear-gradient(135deg, #fff1f2, #ffe4e6); border: 1px solid #fecdd3;">
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <div>
+                            <span style="font-size: 0.75rem; font-weight: 700; color: #be123c; text-transform: uppercase;">Emergency Assist</span>
+                            <h3 style="font-size: 1.1rem; color: #9f1239; margin-top: 2px;">Need Immediate Help?</h3>
+                            <p style="font-size: 0.8rem; color: #881337; margin-top: 2px;">Notify emergency contacts & police instantly</p>
+                        </div>
+                        <button onclick="document.getElementById('navTabSos').click();" style="background: var(--danger); color: white; border: none; padding: 10px 16px; border-radius: var(--radius-sm); font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.35);">
+                            <i class="las la-exclamation-triangle"></i> SOS
                         </button>
                     </div>
+                </section>
 
-                    <div class="input-group" style="position:relative;">
-                        <div class="input-icon-wrapper text-purple">
-                            <i class="las la-map-pin"></i>
-                        </div>
-                        <input type="text" placeholder="Search destination..." class="location-input" id="destInput"
-                            autocomplete="off">
-                        <button class="use-current-location" id="searchDestBtn" title="Search Destination"
-                            style="background: var(--primary); border-radius: 10px; margin: 4px;">
-                            <i class="las la-search" style="color: white;"></i>
+                <!-- "Are You Safe?" Verification Widget -->
+                <section class="card" style="margin-bottom: 16px;">
+                    <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <h2 class="section-title" style="font-size: 1.1rem; margin: 0;"><i class="las la-shield-alt text-purple"></i> Safety Check-in</h2>
+                        <span class="badge" style="background: #e0e7ff; color: var(--primary); font-size: 0.75rem; padding: 4px 8px; border-radius: 12px; font-weight: 600;">Verification</span>
+                    </div>
+                    <p style="font-size: 0.85rem; color: var(--text-medium); margin-bottom: 12px;">Automatic verification prompts trigger if unusual delays or route deviations occur.</p>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="demo-trigger-btn" id="homeTestAlertBtn" style="flex: 1; background: #f1f5f9; border: 1px solid #cbd5e1; color: var(--text-dark); padding: 10px; border-radius: var(--radius-sm); font-weight: 600; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                            <i class="las la-vial text-purple"></i> Test Deviation Alert
                         </button>
-                        <!-- Search Suggestions Dropdown -->
-                        <div class="hidden" id="destSuggestions"
-                            style="position:absolute; top:calc(100% + 4px); left:0; right:0; background:white; z-index:100; border-radius: 12px; border:1px solid #e2e8f0; padding: 6px 0; box-shadow: 0 12px 32px rgba(0,0,0,0.12); max-height: 200px; overflow-y:auto;">
+                    </div>
+                </section>
+
+                <!-- Recent Alerts Summary -->
+                <section class="card">
+                    <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <h2 class="section-title" style="font-size: 1.1rem; margin: 0;"><i class="las la-bell text-blue"></i> Recent Alerts</h2>
+                        <a href="javascript:void(0)" onclick="document.getElementById('navTabAlerts').click();" style="font-size: 0.8rem; color: var(--primary); font-weight: 600; text-decoration: none;">View All</a>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <div style="background: #f8fafc; border-radius: 10px; padding: 10px 12px; border: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div style="width: 32px; height: 32px; border-radius: 8px; background: #e0e7ff; color: var(--primary); display: flex; align-items: center; justify-content: center;"><i class="las la-shield-alt"></i></div>
+                                <div>
+                                    <h4 style="font-size: 0.85rem; margin: 0;">Safe Route Guard Active</h4>
+                                    <span style="font-size: 0.75rem; color: #94a3b8;">Today, Live Monitoring</span>
+                                </div>
+                            </div>
+                            <span class="badge badge-success" style="font-size: 0.7rem; background: var(--success-light); color: var(--success-dark); padding: 3px 8px; border-radius: 8px; font-weight: 600;">Active</span>
+                        </div>
+                        <div style="background: #f8fafc; border-radius: 10px; padding: 10px 12px; border: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div style="width: 32px; height: 32px; border-radius: 8px; background: #fef3c7; color: #d97706; display: flex; align-items: center; justify-content: center;"><i class="las la-map-pin"></i></div>
+                                <div>
+                                    <h4 style="font-size: 0.85rem; margin: 0;">Geofence Perimeter Set</h4>
+                                    <span style="font-size: 0.75rem; color: #94a3b8;">500m Safety Corridor</span>
+                                </div>
+                            </div>
+                            <span class="badge" style="font-size: 0.7rem; background: #e2e8f0; color: #475569; padding: 3px 8px; border-radius: 8px; font-weight: 600;">Saved</span>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+
+            <!-- ================= TAB 2: JOURNEY ================= -->
+            <div class="tab-view" id="tab-journey">
+
+                <!-- Travel Mode Selection Section -->
+                <section class="card mode-selection">
+                    <h2 class="section-title">Select Travel Mode</h2>
+                    <div class="mode-options">
+                        <button class="mode-btn active" data-mode="walking">
+                            <div class="mode-icon-bg">
+                                <i class="las la-walking"></i>
+                            </div>
+                            <span>Walking</span>
+                        </button>
+                        <button class="mode-btn" data-mode="car">
+                            <div class="mode-icon-bg">
+                                <i class="las la-car-side"></i>
+                            </div>
+                            <span>Car</span>
+                        </button>
+                        <button class="mode-btn" data-mode="bike">
+                            <div class="mode-icon-bg">
+                                <i class="las la-motorcycle"></i>
+                            </div>
+                            <span>Bike</span>
+                        </button>
+                    </div>
+                </section>
+
+                <!-- Source and Destination Input Section -->
+                <section class="card location-input-section">
+                    <div class="location-timeline">
+                        <div class="timeline-dot source-dot"></div>
+                        <div class="timeline-line"></div>
+                        <div class="timeline-dot dest-dot"></div>
+                    </div>
+
+                    <div class="inputs-wrapper">
+                        <div class="input-group">
+                            <div class="input-icon-wrapper text-blue">
+                                <i class="las la-crosshairs"></i>
+                            </div>
+                            <input type="text" placeholder="Source Location" class="location-input" value="Current Location"
+                                id="sourceInput">
+                            <button class="use-current-location" title="Use Current Location">
+                                <i class="las la-map-marker"></i>
+                            </button>
+                        </div>
+
+                        <div class="input-group" style="position:relative;">
+                            <div class="input-icon-wrapper text-purple">
+                                <i class="las la-map-pin"></i>
+                            </div>
+                            <input type="text" placeholder="Search destination..." class="location-input" id="destInput"
+                                autocomplete="off">
+                            <button class="use-current-location" id="searchDestBtn" title="Search Destination"
+                                style="background: var(--primary); border-radius: 10px; margin: 4px;">
+                                <i class="las la-search" style="color: white;"></i>
+                            </button>
+                            <!-- Search Suggestions Dropdown -->
+                            <div class="hidden" id="destSuggestions"
+                                style="position:absolute; top:calc(100% + 4px); left:0; right:0; background:white; z-index:100; border-radius: 12px; border:1px solid #e2e8f0; padding: 6px 0; box-shadow: 0 12px 32px rgba(0,0,0,0.12); max-height: 200px; overflow-y:auto;">
+                            </div>
+                        </div>
+
+                        <div class="input-group">
+                            <div class="input-icon-wrapper text-orange">
+                                <i class="las la-car-side"></i>
+                            </div>
+                            <input type="text" placeholder="Enter Vehicle/Car Number" class="location-input"
+                                id="carNumberInput" autocomplete="off">
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Live Tracking Map Section -->
+                <section class="card map-preview-section">
+                    <div class="section-header">
+                        <h2 class="section-title">Live Tracking</h2>
+                        <span class="live-indicator"><span class="dot"></span>Live</span>
+                    </div>
+                    <div class="map-placeholder" id="userMap"
+                        style="height: 250px; z-index: 1; border-radius: var(--radius-md); border: 2px solid #e2e8f0; overflow:hidden;">
+                    </div>
+                </section>
+
+                <!-- Safe Route Selection Section (HIDDEN until destination is set) -->
+                <section class="card routes-section hidden" id="routesSection">
+                    <h2 class="section-title">Available Safe Routes</h2>
+                    <!-- Loading indicator -->
+                    <div class="route-loading hidden" id="routeLoading" style="text-align:center; padding: 20px;">
+                        <i class="las la-spinner la-spin" style="font-size: 2rem; color: var(--primary);"></i>
+                        <p style="margin-top: 8px; color: var(--text-medium); font-weight: 500;">Generating routes...</p>
+                    </div>
+                    <!-- Dynamic route cards inserted here by JS -->
+                    <div class="route-list" id="dynamicRouteList">
+                    </div>
+                </section>
+
+                <!-- Journey Details & Geofencing Card -->
+                <section class="card" style="margin-top: 16px;">
+                    <h2 class="section-title" style="font-size: 1.1rem;"><i class="las la-shield-alt text-purple"></i> Route Monitoring & Geofence</h2>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
+                        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px 12px;">
+                            <span style="font-size: 0.75rem; color: var(--text-light); display: block;">Route Deviation</span>
+                            <strong style="color: var(--success); font-size: 0.9rem;" id="journeyDevStatus">Monitoring Safe</strong>
+                        </div>
+                        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px 12px;">
+                            <span style="font-size: 0.75rem; color: var(--text-light); display: block;">Geofence Buffer</span>
+                            <strong style="color: var(--primary); font-size: 0.9rem;">50m Corridor</strong>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+
+            <!-- ================= TAB 3: SOS ================= -->
+            <div class="tab-view" id="tab-sos">
+                
+                <!-- SOS Hero Trigger Card -->
+                <section class="card" style="background: linear-gradient(135deg, #450a0a, #881337); color: white; text-align: center; padding: 28px 20px; border-radius: var(--radius-md); box-shadow: 0 12px 32px rgba(225, 29, 72, 0.25); margin-bottom: 20px;">
+                    <div style="width: 80px; height: 80px; background: rgba(255, 255, 255, 0.15); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; border: 2px dashed rgba(255, 255, 255, 0.5);">
+                        <i class="las la-broadcast-tower" style="font-size: 2.5rem; color: #fecdd3;"></i>
+                    </div>
+                    <h2 style="color: white; font-size: 1.4rem; font-weight: 700; margin-bottom: 6px;">Emergency SOS Hub</h2>
+                    <p style="color: #fecdd3; font-size: 0.88rem; margin-bottom: 20px;">Pressing SOS instantly broadcasts live GPS coords, audio evidence, and notifies emergency contacts & police units.</p>
+                    
+                    <button id="directSosTriggerBtn" style="background: #ef4444; color: white; border: none; padding: 16px 32px; border-radius: var(--radius-round); font-size: 1.15rem; font-weight: 700; letter-spacing: 1px; cursor: pointer; box-shadow: 0 8px 25px rgba(239, 68, 68, 0.6); display: inline-flex; align-items: center; gap: 10px; transition: transform 0.2s;">
+                        <i class="las la-exclamation-triangle" style="font-size: 1.4rem;"></i> ACTIVATE SOS NOW
+                    </button>
+                </section>
+
+                <!-- Live Evidence Security Card (STATE 1, 2, 3, 4) -->
+                <section class="card evidence-card" id="womenEvidenceCard" style="margin-bottom: 20px;">
+                    <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                        <h2 class="section-title" style="font-size: 1.1rem; margin: 0;"><i class="las la-shield-alt text-purple"></i> Evidence Status</h2>
+                        <span class="badge" id="evidenceOverallBadge" style="background: #e0e7ff; color: var(--primary); font-size: 0.75rem; padding: 4px 10px; border-radius: 12px; font-weight: 700;">Standby</span>
+                    </div>
+                    
+                    <div class="evidence-status-banner" id="evidenceStatusBanner" style="padding: 12px 14px; border-radius: var(--radius-sm); margin-bottom: 14px; font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 8px; background: #f8fafc; border: 1px solid #e2e8f0; color: #64748b;">
+                        <i class="las la-info-circle"></i>
+                        <span id="evidenceBannerText">Press SOS to trigger automatic encrypted video and audio evidence capture.</span>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <i class="las la-video" style="font-size: 1.2rem; color: #6366f1;"></i>
+                                <span style="font-size: 0.88rem; font-weight: 600;">Video:</span>
+                            </div>
+                            <span id="videoStatusVal" class="badge" style="background: #f1f5f9; color: #64748b; font-size: 0.8rem; padding: 4px 8px; border-radius: 6px; font-weight: 600;">Standby</span>
+                        </div>
+
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <i class="las la-microphone" style="font-size: 1.2rem; color: #a855f7;"></i>
+                                <span style="font-size: 0.88rem; font-weight: 600;">Audio:</span>
+                            </div>
+                            <span id="audioStatusVal" class="badge" style="background: #f1f5f9; color: #64748b; font-size: 0.8rem; padding: 4px 8px; border-radius: 6px; font-weight: 600;">Standby</span>
+                        </div>
+
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 4px;">
+                            <span style="font-size: 0.78rem; color: #64748b;">Capture Time:</span>
+                            <span id="evidenceCaptureTimeVal" style="font-size: 0.8rem; font-weight: 600; color: var(--text-dark);">--</span>
                         </div>
                     </div>
 
-                    <div class="input-group">
-                        <div class="input-icon-wrapper text-orange">
-                            <i class="las la-car-side"></i>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;" id="evidenceActionButtons">
+                        <button id="btnUserViewVideo" class="hidden" style="flex: 1; min-width: 120px; padding: 10px; background: #4f46e5; color: white; border: none; border-radius: 10px; font-size: 0.85rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+                            <i class="las la-play-circle"></i> View Video
+                        </button>
+                        <button id="btnUserPlayAudio" class="hidden" style="flex: 1; min-width: 120px; padding: 10px; background: #7c3aed; color: white; border: none; border-radius: 10px; font-size: 0.85rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+                            <i class="las la-volume-up"></i> Play Audio
+                        </button>
+                        <button id="btnUserRetryUpload" class="hidden" style="width: 100%; padding: 12px; background: #ef4444; color: white; border: none; border-radius: 10px; font-size: 0.9rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+                            <i class="las la-sync-alt"></i> Retry Upload
+                        </button>
+                    </div>
+                </section>
+
+                <!-- Current Location Sharing Card -->
+                <section class="card" style="margin-bottom: 20px;">
+                    <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <h2 class="section-title" style="font-size: 1.1rem; margin: 0;"><i class="las la-map-pin text-danger"></i> Location Sharing</h2>
+                        <span class="badge" style="background: var(--success-light); color: var(--success-dark); font-size: 0.75rem; padding: 4px 8px; border-radius: 12px; font-weight: 600;">Broadcasting</span>
+                    </div>
+                    <div style="background: #f8fafc; border-radius: var(--radius-sm); padding: 12px 14px; border: 1px solid #e2e8f0; margin-bottom: 10px;">
+                        <span style="font-size: 0.75rem; color: var(--text-light); display: block;">Live GPS Coordinates</span>
+                        <strong style="font-size: 0.95rem; color: var(--text-dark);" id="sosCoordsDisplay">Lat: 13.1682, Lng: 77.5354</strong>
+                        <p style="font-size: 0.8rem; color: var(--text-medium); margin-top: 4px;" id="sosAddressDisplay">Presidency University, Rajanakunte, Bengaluru</p>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <button onclick="navigator.clipboard.writeText(document.getElementById('sosCoordsDisplay').innerText); alert('Location coordinates copied to clipboard!');" style="flex: 1; padding: 10px; background: white; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 0.85rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                            <i class="las la-copy"></i> Copy Coordinates
+                        </button>
+                    </div>
+                </section>
+
+                <!-- Quick Hotline Callers -->
+                <section class="card">
+                    <h2 class="section-title" style="font-size: 1.1rem; margin-bottom: 8px;"><i class="las la-phone-volume text-blue"></i> Emergency Hotlines</h2>
+                    <p style="font-size: 0.82rem; color: var(--text-medium); margin-bottom: 12px;">One-tap direct access to national emergency support lines:</p>
+                    
+                    <div class="hotline-grid">
+                        <a href="tel:112" class="hotline-btn">
+                            <i class="las la-shield-alt text-blue"></i>
+                            <span>Police Control</span>
+                            <span class="hotline-number text-blue">112</span>
+                        </a>
+                        <a href="tel:1091" class="hotline-btn">
+                            <i class="las la-female text-purple"></i>
+                            <span>Women Helpline</span>
+                            <span class="hotline-number text-purple">1091</span>
+                        </a>
+                        <a href="tel:108" class="hotline-btn">
+                            <i class="las la-ambulance text-danger"></i>
+                            <span>Ambulance</span>
+                            <span class="hotline-number text-danger">108</span>
+                        </a>
+                    </div>
+                </section>
+
+            </div>
+
+            <!-- ================= TAB 4: ALERTS ================= -->
+            <div class="tab-view" id="tab-alerts">
+                
+                <section class="card" style="margin-bottom: 16px;">
+                    <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                        <h2 class="section-title" style="font-size: 1.15rem; margin: 0;"><i class="las la-bell text-blue"></i> Safety & Alert Center</h2>
+                        <span class="badge badge-active-count" style="background: #e0e7ff; color: var(--primary); font-size: 0.75rem; padding: 4px 8px; border-radius: 12px; font-weight: 700;">Live Feed</span>
+                    </div>
+                    <p style="font-size: 0.85rem; color: var(--text-medium); margin-bottom: 16px;">Review all past route notifications, automated verification checks, and safety alerts.</p>
+
+                    <!-- Alert Feed List -->
+                    <div style="display: flex; flex-direction: column; gap: 10px;" id="womenAlertsFeedList">
+                        
+                        <div style="background: white; border: 1px solid #fee2e2; border-left: 4px solid var(--danger); border-radius: var(--radius-sm); padding: 14px; box-shadow: var(--shadow-sm);">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <i class="las la-exclamation-triangle" style="color: var(--danger); font-size: 1.3rem;"></i>
+                                    <strong style="font-size: 0.95rem; color: var(--text-dark);">Route Deviation Protection</strong>
+                                </div>
+                                <span style="font-size: 0.75rem; color: #94a3b8;">Active</span>
+                            </div>
+                            <p style="font-size: 0.82rem; color: var(--text-medium); margin-top: 6px;">Deviation detection is armed. Automated verification prompt triggers after 100m variance.</p>
                         </div>
-                        <input type="text" placeholder="Enter Vehicle/Car Number" class="location-input"
-                            id="carNumberInput" autocomplete="off">
+
+                        <div style="background: white; border: 1px solid #e0e7ff; border-left: 4px solid var(--primary); border-radius: var(--radius-sm); padding: 14px; box-shadow: var(--shadow-sm);">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <i class="las la-user-check" style="color: var(--primary); font-size: 1.3rem;"></i>
+                                    <strong style="font-size: 0.95rem; color: var(--text-dark);">"Are You Safe?" Verification</strong>
+                                </div>
+                                <span style="font-size: 0.75rem; color: #94a3b8;">10 mins ago</span>
+                            </div>
+                            <p style="font-size: 0.82rem; color: var(--text-medium); margin-top: 6px;">Safety prompt was answered safely. Emergency escalation cleared.</p>
+                        </div>
+
+                        <div style="background: white; border: 1px solid #e2e8f0; border-left: 4px solid var(--success); border-radius: var(--radius-sm); padding: 14px; box-shadow: var(--shadow-sm);">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <i class="las la-shield-alt" style="color: var(--success); font-size: 1.3rem;"></i>
+                                    <strong style="font-size: 0.95rem; color: var(--text-dark);">Emergency Contacts Linked</strong>
+                                </div>
+                                <span style="font-size: 0.75rem; color: #94a3b8;">Today</span>
+                            </div>
+                            <p style="font-size: 0.82rem; color: var(--text-medium); margin-top: 6px;">Parent/Guardian contact is synchronized with real-time push alerts.</p>
+                        </div>
+
+                    </div>
+                </section>
+
+            </div>
+
+            <!-- ================= TAB 5: PROFILE ================= -->
+            <div class="tab-view" id="tab-profile">
+                
+                <!-- Profile Hero Card -->
+                <div class="profile-hero-card">
+                    <img id="profileTabAvatar" src="https://ui-avatars.com/api/?name=User&background=ffffff&color=4f46e5&rounded=true" alt="Profile Avatar" class="profile-hero-avatar">
+                    <div class="profile-hero-info">
+                        <h3 id="profileTabName">Kavya Sharma</h3>
+                        <p id="profileTabPhone">+91 98765 43210</p>
+                        <span class="role-badge-pill">Primary User</span>
                     </div>
                 </div>
-            </section>
 
-            <!-- Live Tracking Map Section -->
-            <section class="card map-preview-section">
-                <div class="section-header">
-                    <h2 class="section-title">Live Tracking</h2>
-                    <span class="live-indicator"><span class="dot"></span>Live</span>
-                </div>
-                <div class="map-placeholder" id="userMap"
-                    style="height: 250px; z-index: 1; border-radius: var(--radius-md); border: 2px solid #e2e8f0; overflow:hidden;">
-                </div>
-            </section>
+                <!-- Emergency Contacts Section -->
+                <section class="card" style="margin-bottom: 16px;">
+                    <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <h2 class="section-title" style="font-size: 1.1rem; margin: 0;"><i class="las la-address-book text-purple"></i> Emergency Contacts</h2>
+                        <span class="badge badge-success" style="font-size: 0.72rem; background: var(--success-light); color: var(--success-dark); padding: 3px 8px; border-radius: 8px; font-weight: 600;">2 Connected</span>
+                    </div>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div style="width: 36px; height: 36px; border-radius: 50%; background: #e0e7ff; color: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem;">P</div>
+                                <div>
+                                    <h4 style="font-size: 0.9rem; margin: 0;">Parent Contact (Primary)</h4>
+                                    <span style="font-size: 0.78rem; color: #64748b;">+91 98765 00001</span>
+                                </div>
+                            </div>
+                            <a href="tel:+919876500001" style="color: var(--primary); font-size: 1.4rem;"><i class="las la-phone"></i></a>
+                        </div>
 
-            <!-- Safe Route Selection Section (HIDDEN until destination is set) -->
-            <section class="card routes-section hidden" id="routesSection">
-                <h2 class="section-title">Available Safe Routes</h2>
-                <!-- Loading indicator -->
-                <div class="route-loading hidden" id="routeLoading" style="text-align:center; padding: 20px;">
-                    <i class="las la-spinner la-spin" style="font-size: 2rem; color: var(--primary);"></i>
-                    <p style="margin-top: 8px; color: var(--text-medium); font-weight: 500;">Generating routes...</p>
-                </div>
-                <!-- Dynamic route cards inserted here by JS -->
-                <div class="route-list" id="dynamicRouteList">
-                </div>
-            </section>
+                        <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div style="width: 36px; height: 36px; border-radius: 50%; background: #f3e8ff; color: var(--secondary); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem;">G</div>
+                                <div>
+                                    <h4 style="font-size: 0.9rem; margin: 0;">Guardian Contact</h4>
+                                    <span style="font-size: 0.78rem; color: #64748b;">+91 98765 00002</span>
+                                </div>
+                            </div>
+                            <a href="tel:+919876500002" style="color: var(--primary); font-size: 1.4rem;"><i class="las la-phone"></i></a>
+                        </div>
+                    </div>
+                </section>
 
+                <!-- Safety Preferences -->
+                <section class="card" style="margin-bottom: 16px;">
+                    <h2 class="section-title" style="font-size: 1.1rem; margin-bottom: 12px;"><i class="las la-sliders-h text-blue"></i> Safety Preferences</h2>
+                    
+                    <div class="settings-list-group">
+                        <div class="settings-item-row">
+                            <div class="settings-item-left">
+                                <div class="settings-item-icon bg-indigo-light text-indigo"><i class="las la-route"></i></div>
+                                <div class="settings-item-text">
+                                    <h4>Auto SOS on Deviation</h4>
+                                    <p>Trigger alert after 45s unresponsive</p>
+                                </div>
+                            </div>
+                            <label class="switch-toggle">
+                                <input type="checkbox" checked>
+                                <span class="switch-slider"></span>
+                            </label>
+                        </div>
 
+                        <div class="settings-item-row">
+                            <div class="settings-item-left">
+                                <div class="settings-item-icon bg-purple-light text-purple"><i class="las la-camera"></i></div>
+                                <div class="settings-item-text">
+                                    <h4>Auto Media Evidence</h4>
+                                    <p>Capture photo & audio in emergency</p>
+                                </div>
+                            </div>
+                            <label class="switch-toggle">
+                                <input type="checkbox" checked>
+                                <span class="switch-slider"></span>
+                            </label>
+                        </div>
 
-            <!-- Spacing for bottom floating elements -->
-            <div style="height: 120px;"></div>
+                        <div class="settings-item-row">
+                            <div class="settings-item-left">
+                                <div class="settings-item-icon bg-blue-light text-blue"><i class="las la-broadcast-tower"></i></div>
+                                <div class="settings-item-text">
+                                    <h4>High-Precision Geofencing</h4>
+                                    <p>50-meter active corridor alert</p>
+                                </div>
+                            </div>
+                            <label class="switch-toggle">
+                                <input type="checkbox" checked>
+                                <span class="switch-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Account & Logout -->
+                <section class="card">
+                    <h2 class="section-title" style="font-size: 1.1rem; margin-bottom: 12px;"><i class="las la-cog text-gray"></i> Account Settings</h2>
+                    <button onclick="localStorage.clear(); window.location.href='login.html';" style="width: 100%; background: #fee2e2; color: #ef4444; border: 1px solid #fca5a5; padding: 14px; border-radius: var(--radius-sm); font-weight: 700; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: var(--transition);">
+                        <i class="las la-sign-out-alt" style="font-size: 1.3rem;"></i> Logout Account
+                    </button>
+                </section>
+
+            </div>
+
+            <!-- Bottom spacing for fixed navigation bar -->
+            <div style="height: 40px;"></div>
         </main>
 
-        <!-- Start Journey Button Bar -->
-        <div class="bottom-action-bar">
+        <!-- Start Journey Button Bar (Only shown on Journey tab) -->
+        <div class="bottom-action-bar hidden" id="journeyActionBar">
             <button class="btn-start-journey" id="startJourneyBtn">
                 <i class="las la-play"></i>
                 <span>Start Journey</span>
@@ -157,12 +536,39 @@
             </button>
         </div>
 
-        <!-- Floating SOS Emergency Button -->
+        <!-- Floating SOS Emergency Button (Accessible from anywhere) -->
         <button class="sos-btn" id="sosBtn" aria-label="Emergency SOS">
             <span class="sos-text">SOS</span>
             <div class="sos-ripple"></div>
             <div class="sos-ripple delay"></div>
         </button>
+
+        <!-- Fixed Role-Based Bottom Navigation Bar -->
+        <nav class="bottom-nav-bar" id="womenBottomNav" aria-label="Main Navigation">
+            <button class="nav-item active" data-tab="tab-home" id="navTabHome" aria-label="Home">
+                <div class="nav-icon-wrapper"><i class="las la-home"></i></div>
+                <span class="nav-label">Home</span>
+            </button>
+            <button class="nav-item" data-tab="tab-journey" id="navTabJourney" aria-label="Journey">
+                <div class="nav-icon-wrapper"><i class="las la-map-marked-alt"></i></div>
+                <span class="nav-label">Journey</span>
+            </button>
+            <button class="nav-item nav-item-sos" data-tab="tab-sos" id="navTabSos" aria-label="Emergency SOS">
+                <div class="nav-icon-wrapper"><i class="las la-exclamation-triangle"></i></div>
+                <span class="nav-label">SOS</span>
+            </button>
+            <button class="nav-item" data-tab="tab-alerts" id="navTabAlerts" aria-label="Alerts">
+                <div class="nav-icon-wrapper">
+                    <i class="las la-bell"></i>
+                    <span class="nav-badge" id="womenAlertBadge">2</span>
+                </div>
+                <span class="nav-label">Alerts</span>
+            </button>
+            <button class="nav-item" data-tab="tab-profile" id="navTabProfile" aria-label="Profile">
+                <div class="nav-icon-wrapper"><i class="las la-user-circle"></i></div>
+                <span class="nav-label">Profile</span>
+            </button>
+        </nav>
 
         <!-- Route Deviation Alert Popup -->
         <div class="overlay" id="deviationOverlay"></div>
@@ -204,6 +610,18 @@
         <div style="display:none;">
             <video id="hiddenVideo" autoplay playsinline></video>
             <canvas id="hiddenCanvas"></canvas>
+        </div>
+
+        <!-- User Evidence Viewer Modal -->
+        <div class="overlay" id="userEvdOverlay"></div>
+        <div class="modal evd-modal" id="userEvdModal" style="max-width: 90%; background: #0f172a; padding: 20px; border-radius: var(--radius-md);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; color:white;">
+                <h3 style="margin:0; font-size: 1.1rem; color: #f8fafc;"><i class="las la-shield-check text-success"></i> Secured Evidence</h3>
+                <button id="closeUserEvdBtn" style="background:none; border:none; color:white; font-size:1.5rem; cursor:pointer;"><i class="las la-times"></i></button>
+            </div>
+            <video id="userEvdVideo" controls playsinline style="width:100%; border-radius:8px; display:none; margin-bottom:15px; max-height: 280px; background: #000;"></video>
+            <audio id="userEvdAudio" controls style="width:100%; display:none; margin-bottom: 10px;"></audio>
+            <p id="userEvdMeta" style="color: #94a3b8; font-size: 0.75rem; margin: 0; text-align: center;">Verified Secure Storage (Supabase Private Vault)</p>
         </div>
 
     </div>

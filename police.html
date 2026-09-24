@@ -44,199 +44,344 @@
 
         <main class="dashboard-content dashboard-police-content">
 
-            <!-- Multiple Emergency Queue Section -->
-            <section class="card queue-section">
-                <div class="queue-header">
-                    <h2 class="section-title text-police-dark"><i class="las la-list-alt"></i> Active Emergencies List</h2>
-                    <span class="badge badge-active-count" id="activeCasesCount">0 Active</span>
-                </div>
-                <div class="scrollable-queue" id="activeCasesList" style="min-height: 80px; display: flex; align-items: center; justify-content: center;">
-                    <p style="color: #94a3b8; font-size: 0.9rem;">No active emergencies.</p>
-                </div>
-            </section>
-
-            <!-- Incoming Emergency Alert Section -->
-            <section class="card alert-panel hidden" id="policeAlertPanel">
-                <div class="strobe-header">
-                    <i class="las la-siren strobe-icon"></i>
-                    <h2 class="section-title text-danger">🚨 New Emergency Alert 🚨</h2>
-                </div>
+            <!-- ================= TAB 1: DASHBOARD ================= -->
+            <div class="tab-view active" id="tab-pol-dashboard">
                 
-                <div class="alert-details-grid grid-dark">
-                    <div class="detail-row">
-                        <span class="detail-label">User:</span>
-                        <span class="detail-value fw-700 text-white" id="polUserName">--</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Phone:</span>
-                        <span class="detail-value text-white" id="polUserPhone">--</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Alert Type:</span>
-                        <span class="detail-value alert-msg text-white fw-700" id="polAlertType">--</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Details:</span>
-                        <span class="detail-value text-warning" id="polMessage">--</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Status:</span>
-                        <span class="detail-value badge-active">ACTIVE</span>
-                    </div>
-                    <!-- Evidence Status -->
-                    <div id="evidenceBadge" class="hidden" style="grid-column: span 2;"></div>
-
-                    <div class="detail-row">
-                        <span class="detail-label">Time:</span>
-                        <span class="detail-value fw-700" id="polTime" style="color: #1e3a8a;">--</span>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Emergency Details Panel -->
-            <section class="card emergency-info-section hidden" id="policeInfoPanel">
-                <h3 class="panel-subtitle text-police-dark">Emergency Information</h3>
-                
-                <div class="info-grid mt-3">
-                    <div class="info-box">
-                        <div class="info-icon"><i class="las la-user"></i></div>
-                        <div class="info-text">
-                            <span>Name</span>
-                            <strong id="infoName">--</strong>
-                        </div>
-                    </div>
-                    <div class="info-box">
-                        <div class="info-icon"><i class="las la-phone"></i></div>
-                        <div class="info-text">
-                            <span>Contact</span>
-                            <strong id="infoPhone">--</strong>
-                        </div>
-                    </div>
-                    <div class="info-box">
-                        <div class="info-icon"><i class="las la-walking"></i></div>
-                        <div class="info-text">
-                            <span>Mode</span>
-                            <strong id="infoMode">--</strong>
-                        </div>
-                    </div>
-                    <div class="info-box border-red">
-                        <div class="info-icon text-danger"><i class="las la-route"></i></div>
-                        <div class="info-text">
-                            <span class="text-danger">Status</span>
-                            <strong class="text-danger" id="infoRouteStatus">Deviated</strong>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="driver-details-box mt-3" id="policeDriverBox" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: var(--radius-md); padding: 12px; display: none;">
-                    <h4 style="margin-bottom: 8px; font-size: 0.9rem; color: #475569; display: flex; align-items: center; gap: 6px;">
-                        <i class="las la-car"></i> Vehicle & Driver Details
-                    </h4>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                <!-- Quick Response Stats Grid -->
+                <div class="stat-overview-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px;">
+                    <div class="stat-card" style="background: white; border-radius: var(--radius-sm); padding: 14px; border: 1px solid #e2e8f0; display: flex; align-items: center; gap: 12px;">
+                        <div style="width: 42px; height: 42px; border-radius: 10px; background: #fee2e2; color: #ef4444; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;"><i class="las la-exclamation-triangle"></i></div>
                         <div>
-                            <span style="font-size: 0.75rem; color: #64748b;">Driver Name</span>
-                            <strong style="display: block; font-size: 0.9rem;" id="infoDriverName">--</strong>
+                            <span style="font-size: 0.75rem; color: #64748b; font-weight: 600;">Active Incidents</span>
+                            <h3 style="font-size: 1.25rem; color: #0f172a; margin: 0;" id="dashActiveCount">0</h3>
                         </div>
+                    </div>
+
+                    <div class="stat-card" style="background: white; border-radius: var(--radius-sm); padding: 14px; border: 1px solid #e2e8f0; display: flex; align-items: center; gap: 12px;">
+                        <div style="width: 42px; height: 42px; border-radius: 10px; background: #d1fae5; color: #059669; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;"><i class="las la-check-circle"></i></div>
                         <div>
-                            <span style="font-size: 0.75rem; color: #64748b;">Phone</span>
-                            <strong style="display: block; font-size: 0.9rem;" id="infoDriverPhone">--</strong>
+                            <span style="font-size: 0.75rem; color: #64748b; font-weight: 600;">Cases Closed</span>
+                            <h3 style="font-size: 1.25rem; color: #0f172a; margin: 0;" id="dashClosedCount">14</h3>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Unit Readiness Status -->
+                <section class="card" style="margin-bottom: 16px; background: #0f172a; color: white; border: 1px solid #334155;">
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div style="width: 12px; height: 12px; border-radius: 50%; background: #10b981; box-shadow: 0 0 10px #10b981;"></div>
+                            <div>
+                                <h4 style="color: white; font-size: 0.95rem; margin: 0;">Unit 4 &middot; Central Station</h4>
+                                <span style="color: #94a3b8; font-size: 0.78rem;">GPS Live Tracking Feed Armed</span>
+                            </div>
+                        </div>
+                        <span class="badge" style="background: rgba(16, 185, 129, 0.2); color: #34d399; font-size: 0.72rem; padding: 4px 8px; border-radius: 8px; font-weight: 700;">ON PATROL</span>
+                    </div>
+                </section>
+
+                <!-- Nearby Emergency Contacts Status -->
+                <section class="card contact-activity-section" id="policeContactPanel" style="margin-bottom: 16px;">
+                    <h3 class="panel-subtitle text-police-dark">Emergency Contact Activity</h3>
+                    <div class="activity-grid">
+                        <div class="activity-item">
+                            <span>Contact Notified</span>
+                            <span class="badge badge-green" id="actNotified">YES</span>
+                        </div>
+                        <div class="activity-item">
+                            <span>Contact Responded</span>
+                            <span class="badge badge-gray" id="actResponded">NO</span>
+                        </div>
+                        <div class="activity-item">
+                            <span>Police Escalation</span>
+                            <span class="badge badge-red flash-subtle" id="actEscalation">ACTIVE</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Response Timeline -->
+                <section class="card timeline-section" id="policeTimelinePanel">
+                    <h3 class="panel-subtitle text-police-dark">Response Timeline</h3>
+                    <div class="response-timeline">
+                        <div class="time-step completed" id="step1">
+                            <div class="step-icon"><i class="las la-satellite-dish"></i></div>
+                            <div class="step-content">Alert Received</div>
+                        </div>
+                        <div class="time-step pending" id="step2">
+                            <div class="step-icon"><i class="las la-check"></i></div>
+                            <div class="step-content">Case Accepted</div>
+                        </div>
+                        <div class="time-step pending" id="step3">
+                            <div class="step-icon"><i class="las la-car-side"></i></div>
+                            <div class="step-content">Team Dispatched</div>
+                        </div>
+                        <div class="time-step pending" id="step4">
+                            <div class="step-icon"><i class="las la-flag-checkered"></i></div>
+                            <div class="step-content">Case Resolved</div>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+
+            <!-- ================= TAB 2: INCIDENTS ================= -->
+            <div class="tab-view" id="tab-pol-incidents">
+
+                <!-- Multiple Emergency Queue Section -->
+                <section class="card queue-section" style="margin-bottom: 16px;">
+                    <div class="queue-header">
+                        <h2 class="section-title text-police-dark"><i class="las la-list-alt"></i> Active Emergencies List</h2>
+                        <span class="badge badge-active-count" id="activeCasesCount">0 Active</span>
+                    </div>
+                    <div class="scrollable-queue" id="activeCasesList" style="min-height: 80px; display: flex; align-items: center; justify-content: center;">
+                        <p style="color: #94a3b8; font-size: 0.9rem;">No active emergencies.</p>
+                    </div>
+                </section>
+
+                <!-- Incoming Emergency Alert Section -->
+                <section class="card alert-panel hidden" id="policeAlertPanel" style="margin-bottom: 16px;">
+                    <div class="strobe-header">
+                        <i class="las la-siren strobe-icon"></i>
+                        <h2 class="section-title text-danger">🚨 New Emergency Alert 🚨</h2>
+                    </div>
+                    
+                    <div class="alert-details-grid grid-dark">
+                        <div class="detail-row">
+                            <span class="detail-label">User:</span>
+                            <span class="detail-value fw-700 text-white" id="polUserName">--</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Phone:</span>
+                            <span class="detail-value text-white" id="polUserPhone">--</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Alert Type:</span>
+                            <span class="detail-value alert-msg text-white fw-700" id="polAlertType">--</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Details:</span>
+                            <span class="detail-value text-warning" id="polMessage">--</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Status:</span>
+                            <span class="detail-value badge-active">ACTIVE</span>
+                        </div>
+                        <!-- Evidence Status -->
+                        <div id="evidenceBadge" class="hidden" style="grid-column: span 2;"></div>
+
+                        <div class="detail-row">
+                            <span class="detail-label">Time:</span>
+                            <span class="detail-value fw-700" id="polTime" style="color: #1e3a8a;">--</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Emergency Details Panel -->
+                <section class="card emergency-info-section hidden" id="policeInfoPanel" style="margin-bottom: 16px;">
+                    <h3 class="panel-subtitle text-police-dark">Emergency Information</h3>
+                    
+                    <div class="info-grid mt-3">
+                        <div class="info-box">
+                            <div class="info-icon"><i class="las la-user"></i></div>
+                            <div class="info-text">
+                                <span>Name</span>
+                                <strong id="infoName">--</strong>
+                            </div>
+                        </div>
+                        <div class="info-box">
+                            <div class="info-icon"><i class="las la-phone"></i></div>
+                            <div class="info-text">
+                                <span>Contact</span>
+                                <strong id="infoPhone">--</strong>
+                            </div>
+                        </div>
+                        <div class="info-box">
+                            <div class="info-icon"><i class="las la-walking"></i></div>
+                            <div class="info-text">
+                                <span>Mode</span>
+                                <strong id="infoMode">--</strong>
+                            </div>
+                        </div>
+                        <div class="info-box border-red">
+                            <div class="info-icon text-danger"><i class="las la-route"></i></div>
+                            <div class="info-text">
+                                <span class="text-danger">Status</span>
+                                <strong class="text-danger" id="infoRouteStatus">Deviated</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="driver-details-box mt-3" id="policeDriverBox" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: var(--radius-md); padding: 12px; display: none;">
+                        <h4 style="margin-bottom: 8px; font-size: 0.9rem; color: #475569; display: flex; align-items: center; gap: 6px;">
+                            <i class="las la-car"></i> Vehicle & Driver Details
+                        </h4>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                            <div>
+                                <span style="font-size: 0.75rem; color: #64748b;">Driver Name</span>
+                                <strong style="display: block; font-size: 0.9rem;" id="infoDriverName">--</strong>
+                            </div>
+                            <div>
+                                <span style="font-size: 0.75rem; color: #64748b;">Phone</span>
+                                <strong style="display: block; font-size: 0.9rem;" id="infoDriverPhone">--</strong>
+                            </div>
+                            <div>
+                                <span style="font-size: 0.75rem; color: #64748b;">Vehicle No.</span>
+                                <strong style="display: block; font-size: 0.9rem;" id="infoDriverCarNum">--</strong>
+                            </div>
+                            <div>
+                                <span style="font-size: 0.75rem; color: #64748b;">Model</span>
+                                <strong style="display: block; font-size: 0.9rem;" id="infoDriverModel">--</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="address-box mt-3">
+                        <i class="las la-map-marker text-danger"></i>
                         <div>
-                            <span style="font-size: 0.75rem; color: #64748b;">Vehicle No.</span>
-                            <strong style="display: block; font-size: 0.9rem;" id="infoDriverCarNum">--</strong>
-                        </div>
-                        <div>
-                            <span style="font-size: 0.75rem; color: #64748b;">Model</span>
-                            <strong style="display: block; font-size: 0.9rem;" id="infoDriverModel">--</strong>
+                            <strong id="infoAddress">--</strong>
+                            <p class="coords-text">Lat: <span id="infoLat">--</span>, Lng: <span id="infoLng">--</span></p>
                         </div>
                     </div>
+                </section>
+
+                <!-- Police Action Controls -->
+                <section class="card actions-police hidden" id="policeActionPanel">
+                    <div class="action-buttons-police">
+                        <button class="pol-action-btn btn-accept" id="btnAccept">
+                            <i class="las la-check-circle"></i>
+                            <span>Accept Case</span>
+                        </button>
+                        <button class="pol-action-btn btn-dispatch" id="btnDispatch">
+                            <i class="las la-siren"></i>
+                            <span>Dispatch Team</span>
+                        </button>
+                        <button class="pol-action-btn btn-navigate" id="btnNavigate">
+                            <i class="las la-location-arrow"></i>
+                            <span>Navigate</span>
+                        </button>
+                        <button class="pol-action-btn btn-mark-safe" id="btnMarkResolved">
+                            <i class="las la-shield-check"></i>
+                            <span>Resolved</span>
+                        </button>
+                    </div>
+                </section>
+
+            </div>
+
+            <!-- ================= TAB 3: LIVE MAP ================= -->
+            <div class="tab-view" id="tab-pol-livemap">
+
+                <!-- Live Emergency Map Section -->
+                <section class="card map-preview-section map-police" id="policeMapPanel" style="display: block;">
+                    <div class="section-header">
+                        <h2 class="section-title text-police-dark"><i class="las la-crosshairs"></i> Live Emergency Tracking</h2>
+                        <span class="last-updated"><i class="las la-broadcast-tower text-danger"></i> Live GPS Feed</span>
+                    </div>
+                    
+                    <div class="map-placeholder border-view" id="policeMap" style="height: 320px; z-index: 1; border-radius: var(--radius-md);"></div>
+                </section>
+
+            </div>
+
+            <!-- ================= TAB 4: CASES ================= -->
+            <div class="tab-view" id="tab-pol-cases">
+
+                <section class="card" style="margin-bottom: 16px;">
+                    <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                        <h2 class="section-title text-police-dark" style="font-size: 1.15rem; margin: 0;"><i class="las la-clipboard-check"></i> Case Management Log</h2>
+                        <span class="badge" style="background: #e2e8f0; color: #475569; font-size: 0.75rem; padding: 4px 8px; border-radius: 10px;">Archive</span>
+                    </div>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 10px;" id="policeCasesLogList">
+                        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: var(--radius-sm); padding: 12px 14px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <strong style="font-size: 0.9rem; color: #1e3a8a;">CASE #2026-8841</strong>
+                                <span class="badge badge-success" style="font-size: 0.7rem; background: #d1fae5; color: #059669; padding: 3px 8px; border-radius: 6px; font-weight: 700;">RESOLVED</span>
+                            </div>
+                            <p style="font-size: 0.8rem; color: #475569; margin-top: 6px;">Victim confirmed safe. Unit 4 cleared incident at Rajanakunte.</p>
+                            <span style="font-size: 0.72rem; color: #94a3b8; display: block; margin-top: 4px;">Resolved: Today, 11:42 AM</span>
+                        </div>
+
+                        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: var(--radius-sm); padding: 12px 14px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <strong style="font-size: 0.9rem; color: #1e3a8a;">CASE #2026-8812</strong>
+                                <span class="badge badge-success" style="font-size: 0.7rem; background: #d1fae5; color: #059669; padding: 3px 8px; border-radius: 6px; font-weight: 700;">RESOLVED</span>
+                            </div>
+                            <p style="font-size: 0.8rem; color: #475569; margin-top: 6px;">Route deviation verification answered safely. Case closed.</p>
+                            <span style="font-size: 0.72rem; color: #94a3b8; display: block; margin-top: 4px;">Resolved: Yesterday, 09:15 PM</span>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+
+            <!-- ================= TAB 5: PROFILE ================= -->
+            <div class="tab-view" id="tab-pol-profile">
+
+                <!-- Officer Hero Profile Card -->
+                <div class="profile-hero-card" style="background: linear-gradient(135deg, #1e3a8a, #0f172a); border: 1px solid #3b82f6;">
+                    <div style="width: 64px; height: 64px; border-radius: 50%; background: #1e3a8a; border: 2px solid #60a5fa; color: white; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 700;" id="officerProfileBadge">OS</div>
+                    <div class="profile-hero-info">
+                        <h3 id="polProfileName" style="color: white;">Officer Singh</h3>
+                        <p id="polProfileId" style="color: #93c5fd;">Badge ID: POL-2024-884</p>
+                        <span class="role-badge-pill" style="background: rgba(59, 130, 246, 0.3); color: #93c5fd;">Police Emergency Response</span>
+                    </div>
                 </div>
 
-                <div class="address-box mt-3">
-                    <i class="las la-map-marker text-danger"></i>
-                    <div>
-                        <strong id="infoAddress">--</strong>
-                        <p class="coords-text">Lat: <span id="infoLat">--</span>, Lng: <span id="infoLng">--</span></p>
+                <!-- Station & Department Details -->
+                <section class="card" style="margin-bottom: 16px;">
+                    <h2 class="section-title text-police-dark" style="font-size: 1.1rem; margin-bottom: 12px;"><i class="las la-building"></i> Department Details</h2>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <div style="padding: 10px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; display: flex; justify-content: space-between;">
+                            <span style="font-size: 0.85rem; color: #64748b;">Assigned Station</span>
+                            <strong style="font-size: 0.85rem; color: #0f172a;" id="polStationName">Central Police Station</strong>
+                        </div>
+                        <div style="padding: 10px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; display: flex; justify-content: space-between;">
+                            <span style="font-size: 0.85rem; color: #64748b;">Emergency Frequency</span>
+                            <strong style="font-size: 0.85rem; color: #1e3a8a;">CH-112 ENCRYPTED</strong>
+                        </div>
                     </div>
-                </div>
-            </section>
+                </section>
 
-            <!-- Live Emergency Map Section -->
-            <section class="card map-preview-section map-police hidden" id="policeMapPanel">
-                <div class="section-header">
-                    <h2 class="section-title text-police-dark"><i class="las la-crosshairs"></i> Live Emergency Tracking</h2>
-                    <span class="last-updated"><i class="las la-broadcast-tower text-danger"></i> Live Data Feed</span>
-                </div>
-                
-                <div class="map-placeholder border-view" id="policeMap" style="height: 250px; z-index: 1; border-radius: var(--radius-md);"></div>
-            </section>
-
-            <!-- Nearby Emergency Contacts Status -->
-            <section class="card contact-activity-section hidden" id="policeContactPanel">
-                <h3 class="panel-subtitle text-police-dark">Emergency Contact Activity</h3>
-                <div class="activity-grid">
-                    <div class="activity-item">
-                        <span>Contact Notified</span>
-                        <span class="badge badge-green" id="actNotified">YES</span>
-                    </div>
-                    <div class="activity-item">
-                        <span>Contact Responded</span>
-                        <span class="badge badge-gray" id="actResponded">NO</span>
-                    </div>
-                    <div class="activity-item">
-                        <span>Police Escalation</span>
-                        <span class="badge badge-red flash-subtle" id="actEscalation">ACTIVE</span>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Response Timeline -->
-            <section class="card timeline-section hidden" id="policeTimelinePanel">
-                <h3 class="panel-subtitle text-police-dark">Response Timeline</h3>
-                <div class="response-timeline">
-                    <div class="time-step completed" id="step1">
-                        <div class="step-icon"><i class="las la-satellite-dish"></i></div>
-                        <div class="step-content">Alert Received</div>
-                    </div>
-                    <div class="time-step pending" id="step2">
-                        <div class="step-icon"><i class="las la-check"></i></div>
-                        <div class="step-content">Case Accepted</div>
-                    </div>
-                    <div class="time-step pending" id="step3">
-                        <div class="step-icon"><i class="las la-car-side"></i></div>
-                        <div class="step-content">Team Dispatched</div>
-                    </div>
-                    <div class="time-step pending" id="step4">
-                        <div class="step-icon"><i class="las la-flag-checkered"></i></div>
-                        <div class="step-content">Case Resolved</div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Police Action Controls -->
-            <section class="card actions-police hidden" id="policeActionPanel">
-                <div class="action-buttons-police">
-                    <button class="pol-action-btn btn-accept" id="btnAccept">
-                        <i class="las la-check-circle"></i>
-                        <span>Accept Case</span>
+                <!-- Logout -->
+                <section class="card">
+                    <h2 class="section-title text-police-dark" style="font-size: 1.1rem; margin-bottom: 12px;"><i class="las la-cog"></i> Account Settings</h2>
+                    <button onclick="localStorage.clear(); window.location.href='login.html';" style="width: 100%; background: #fee2e2; color: #ef4444; border: 1px solid #fca5a5; padding: 14px; border-radius: var(--radius-sm); font-weight: 700; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                        <i class="las la-sign-out-alt" style="font-size: 1.3rem;"></i> Logout Officer Session
                     </button>
-                    <button class="pol-action-btn btn-dispatch" id="btnDispatch">
-                        <i class="las la-siren"></i>
-                        <span>Dispatch Team</span>
-                    </button>
-                    <button class="pol-action-btn btn-navigate" id="btnNavigate">
-                        <i class="las la-location-arrow"></i>
-                        <span>Navigate</span>
-                    </button>
-                    <button class="pol-action-btn btn-mark-safe" id="btnMarkResolved">
-                        <i class="las la-shield-check"></i>
-                        <span>Resolved</span>
-                    </button>
-                </div>
-            </section>
+                </section>
+
+            </div>
             
             <div style="height: 60px;"></div>
         </main>
+
+        <!-- Fixed Role-Based Bottom Navigation Bar -->
+        <nav class="bottom-nav-bar police-nav" id="policeBottomNav" aria-label="Main Navigation">
+            <button class="nav-item active" data-tab="tab-pol-dashboard" id="navPolDash" aria-label="Dashboard">
+                <div class="nav-icon-wrapper"><i class="las la-chart-pie"></i></div>
+                <span class="nav-label">Dashboard</span>
+            </button>
+            <button class="nav-item" data-tab="tab-pol-incidents" id="navPolIncidents" aria-label="Incidents">
+                <div class="nav-icon-wrapper">
+                    <i class="las la-siren"></i>
+                    <span class="nav-badge" id="polIncBadge" style="display:none;">0</span>
+                </div>
+                <span class="nav-label">Incidents</span>
+            </button>
+            <button class="nav-item" data-tab="tab-pol-livemap" id="navPolLiveMap" aria-label="Live Map">
+                <div class="nav-icon-wrapper"><i class="las la-map-marked-alt"></i></div>
+                <span class="nav-label">Live Map</span>
+            </button>
+            <button class="nav-item" data-tab="tab-pol-cases" id="navPolCases" aria-label="Cases">
+                <div class="nav-icon-wrapper"><i class="las la-clipboard-list"></i></div>
+                <span class="nav-label">Cases</span>
+            </button>
+            <button class="nav-item" data-tab="tab-pol-profile" id="navPolProfile" aria-label="Profile">
+                <div class="nav-icon-wrapper"><i class="las la-user-shield"></i></div>
+                <span class="nav-label">Profile</span>
+            </button>
+        </nav>
         
         <!-- Audio for alerting -->
         <audio id="policeAlertSound" src="https://assets.mixkit.co/active_storage/sfx/992/992-preview.mp3" preload="auto" loop></audio>
@@ -286,13 +431,15 @@
         </div>
         <!-- Evidence Viewer Modal -->
         <div class="overlay" id="evdOverlay"></div>
-        <div class="modal evd-modal" id="evdModal" style="max-width: 90%; background: #0f172a; padding: 20px;">
+        <div class="modal evd-modal" id="evdModal" style="max-width: 90%; background: #0f172a; padding: 20px; border-radius: var(--radius-md);">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; color:white;">
-                <h3 style="margin:0;"><i class="las la-photo-video text-danger"></i> Captured Evidence</h3>
+                <h3 style="margin:0; font-size: 1.1rem; color: #f8fafc;"><i class="las la-photo-video text-danger"></i> Captured Emergency Evidence</h3>
                 <button id="closeEvdBtn" style="background:none; border:none; color:white; font-size:1.5rem; cursor:pointer;"><i class="las la-times"></i></button>
             </div>
-            <img id="evdImage" style="width:100%; border-radius:8px; display:none; margin-bottom:15px;" />
-            <audio id="evdAudio" controls style="width:100%; display:none;"></audio>
+            <div id="evdLoading" class="hidden" style="color: #94a3b8; padding: 15px; text-align: center;"><i class="las la-spinner la-spin"></i> Generating secure authorized access link...</div>
+            <video id="evdVideo" controls playsinline style="width:100%; border-radius:8px; display:none; margin-bottom:15px; max-height: 280px; background: #000;"></video>
+            <audio id="evdAudio" controls style="width:100%; display:none; margin-bottom: 10px;"></audio>
+            <p id="evdStorageMeta" style="color: #94a3b8; font-size: 0.75rem; margin: 0; text-align: center;">Verified Secure Storage (Supabase Private Vault: jagruthi-evidence)</p>
         </div>
     </div>
 
