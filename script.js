@@ -1,4 +1,16 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // Automatically purge/migrate any legacy stored demo names from browser cache
+    try {
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            const val = localStorage.getItem(key);
+            if (val && typeof val === 'string' && (val.includes('Kavya') || val.includes('kavya'))) {
+                const updatedVal = val.replace(/Kavya Sharma/gi, 'Bimba K').replace(/Kavya/gi, 'Bimba K');
+                localStorage.setItem(key, updatedVal);
+            }
+        }
+    } catch(e) {}
+
     const supabase = window.supabaseClient;
     const roleMap = { 'index.html': 'user', 'emergency.html': 'emergency', 'police.html': 'police', 'admin.html': 'admin' };
     
@@ -11,7 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     // Set Profile Image based on user name
-    const userName = localStorage.getItem('userName') || 'User';
+    const userName = localStorage.getItem('userName') || 'Bimba K';
     const profileImg = document.getElementById('userProfileImg');
     if (profileImg) {
         profileImg.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=7b2cbf&color=fff&rounded=true`;
@@ -771,7 +783,7 @@ document.addEventListener('DOMContentLoaded', () => {
             id: Date.now(),
             sos_id: activeSosId,
             user_id: activeUserId,
-            userName: localStorage.getItem('userName') || "Kavya",
+            userName: localStorage.getItem('userName') || "Bimba K",
             phone: localStorage.getItem('userPhone') || "+91 98765 43210",
             latitude: alertLat,
             longitude: alertLng,
@@ -1265,7 +1277,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const profileTabName = document.getElementById('profileTabName');
     const profileTabPhone = document.getElementById('profileTabPhone');
     const profileTabAvatar = document.getElementById('profileTabAvatar');
-    if (profileTabName) profileTabName.innerText = localStorage.getItem('userName') || 'Kavya Sharma';
+    if (profileTabName) profileTabName.innerText = localStorage.getItem('userName') || 'Bimba K';
     if (profileTabPhone) profileTabPhone.innerText = localStorage.getItem('userPhone') || '+91 98765 43210';
     if (profileTabAvatar) {
         profileTabAvatar.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(localStorage.getItem('userName') || 'User')}&background=4f46e5&color=fff&rounded=true`;

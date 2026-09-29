@@ -1,4 +1,18 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // Automatically purge/migrate any legacy stored demo names from browser cache
+    try {
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            const val = localStorage.getItem(key);
+            if (val && typeof val === 'string' && (val.includes('Kavya') || val.includes('kavya'))) {
+                const updatedVal = val.replace(/Kavya Sharma/gi, 'Bimba K').replace(/Kavya/gi, 'Bimba K');
+                localStorage.setItem(key, updatedVal);
+            }
+        }
+    } catch(e) {
+        console.warn('LocalStorage sanitize error:', e);
+    }
+
     const supabase = window.supabaseClient;
     
     // Auth Check
@@ -10,7 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Populate Initials Badge
-    const contactName = localStorage.getItem('fullName') || 'Parent User';
+    const contactName = localStorage.getItem('fullName') || localStorage.getItem('userName') || 'Parent User';
     const badge = document.getElementById('contactInitialsBadge');
     if (badge) {
         const initials = contactName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
@@ -53,11 +67,60 @@ document.addEventListener('DOMContentLoaded', () => {
     // Track which Supabase alert IDs we've already processed so we don't re-trigger
     let processedAlertIds = new Set();
 
+    // Default coordinates (Presidency University, Rajanakunte)
+    const DEFAULT_COORDS = [13.1682, 77.5354];
+
+    // Helper: Update Connected Ward / Person Card info
+    function updateConnectedPersonInfo(name, phone) {
+        const wardName = name || localStorage.getItem('connectedWardName') || 'Bimba K';
+        const wardPhone = phone || localStorage.getItem('connectedWardPhone') || '+91 98765 43210';
+        
+        const homeName = document.getElementById('homeConnectedUserName');
+        const homePhone = document.getElementById('homeConnectedUserPhone');
+        const homeAvatar = document.getElementById('homeConnectedUserAvatar');
+        const homeCallBtn = document.getElementById('homeConnectedUserCallBtn');
+        
+        const profName = document.getElementById('profileConnectedUserName');
+        const profAvatar = document.getElementById('profileConnectedUserAvatar');
+
+        const initials = wardName.trim().split(/\s+/).map(n => n[0]).join('').toUpperCase().substring(0, 2) || 'B';
+        
+        if (homeName) homeName.innerText = wardName;
+        if (homePhone) homePhone.innerText = wardPhone;
+        if (homeAvatar) homeAvatar.innerText = initials;
+        if (homeCallBtn) homeCallBtn.href = `tel:${wardPhone.replace(/\s+/g, '')}`;
+        
+        if (profName) profName.innerText = wardName;
+        if (profAvatar) profAvatar.innerText = initials;
+    }
+
+    // Helper: Update Last Known Location Preview on Home Tab
+    function updateLastKnownLocationDisplay(address, timeStr, lat, lng) {
+        const addrEl = document.getElementById('homeLastKnownAddress');
+        const timeEl = document.getElementById('homeLastKnownTime');
+        
+        if (addrEl) {
+            if (address) {
+                addrEl.innerText = address;
+            } else if (lat && lng) {
+                addrEl.innerText = `Lat: ${Number(lat).toFixed(4)}, Lng: ${Number(lng).toFixed(4)}`;
+                // Asynchronously fetch friendly name
+                reverseGeocode(lat, lng).then(resolved => {
+                    if (resolved && addrEl) addrEl.innerText = resolved;
+                });
+            }
+        }
+        
+        if (timeEl) {
+            timeEl.innerText = timeStr || 'Updated just now';
+        }
+    }
+
     // Wait until map is visible to init properly
     function initContactMap() {
         if(isMapInit) return;
         isMapInit = true;
-        contactMap = L.map('contactMap', {zoomControl: false}).setView([12.9716, 77.5946], 15);
+        contactMap = L.map('contactMap', {zoomControl: false}).setView(DEFAULT_COORDS, 15);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
             maxZoom: 19
@@ -69,11 +132,14 @@ document.addEventListener('DOMContentLoaded', () => {
             iconSize: [25, 41], iconAnchor: [12, 41]
         });
         
-        trackingMarkerObj = L.marker([12.9716, 77.5946], {icon: dangerIcon}).addTo(contactMap);
+        trackingMarkerObj = L.marker(DEFAULT_COORDS, {icon: dangerIcon}).addTo(contactMap);
     }
     
     // Call init anyway in case we load directly into emergency
     setTimeout(initContactMap, 500);
+
+    // Initial setup for connected person
+    updateConnectedPersonInfo();
 
     // Listen for cross-tab communication from User Dashboard via localStorage
     // ONLY react to genuine NEW alerts sent by the user dashboard
@@ -99,9 +165,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function updateLiveTracking(loc) {
         if(!isMapInit) initContactMap();
-        document.getElementById('lastUpdatedTime').innerText = `Live: ${loc.time}`;
+        const timeStr = loc.time ? `Live: ${loc.time}` : `Live: ${new Date().toLocaleTimeString()}`;
+        const lastUpdatedEl = document.getElementById('lastUpdatedTime');
+        if (lastUpdatedEl) lastUpdatedEl.innerText = timeStr;
+
         const newCoords = [loc.lat, loc.lng];
         
+        // Dynamically update Last Known Location card on Home tab
+        const displayTime = loc.time ? `Updated ${loc.time}` : 'Updated just now';
+        if (loc.address) {
+            updateLastKnownLocationDisplay(loc.address, displayTime, loc.lat, loc.lng);
+        } else {
+            updateLastKnownLocationDisplay(null, displayTime, loc.lat, loc.lng);
+        }
+
         // 1. Draw Safe Route Path
         if (loc.routePath && loc.routePath.length > 0) {
             if (routeLineObj) contactMap.removeLayer(routeLineObj);
@@ -138,7 +215,9 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Reverse geocode the deviated location to show address
             reverseGeocode(loc.lat, loc.lng).then(addr => {
-                locAddress.innerText = addr || `Near ${loc.lat.toFixed(4)}, ${loc.lng.toFixed(4)}`;
+                const finalAddr = addr || `Near ${loc.lat.toFixed(4)}, ${loc.lng.toFixed(4)}`;
+                locAddress.innerText = finalAddr;
+                updateLastKnownLocationDisplay(finalAddr, `Deviated at ${loc.time || 'now'}`, loc.lat, loc.lng);
             });
 
             // Update the distance info to show deviation distance
@@ -385,8 +464,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         currentCaseData = data;
 
-        alertUserName.innerText = data.userName || data.user_name || 'Unknown User';
-        alertUserPhone.innerText = data.phone || data.user_phone || '--';
+        const victimName = data.userName || data.user_name || 'Bimba K';
+        const victimPhone = data.phone || data.user_phone || '+91 98765 43210';
+
+        // Update connected person card & profile card
+        updateConnectedPersonInfo(victimName, victimPhone);
+
+        alertUserName.innerText = victimName;
+        alertUserPhone.innerText = victimPhone;
         alertMessage.innerText = data.message;
         alertTime.innerText = data.timestamp || new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
 
@@ -400,6 +485,8 @@ document.addEventListener('DOMContentLoaded', () => {
         locAddress.innerText = data.address || "Fetching address near live location...";
         locLat.innerText = data.latitude;
         locLng.innerText = data.longitude;
+
+        updateLastKnownLocationDisplay(data.address, data.timestamp || 'Updated just now', data.latitude, data.longitude);
 
         // Populate Driver Details
         const emergencyDriverBox = document.getElementById('emergencyDriverBox');
@@ -433,6 +520,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (addr) {
                     locAddress.innerText = addr;
                     if (alertLocation) alertLocation.innerText = addr;
+                    updateLastKnownLocationDisplay(addr, data.timestamp || 'Updated just now', data.latitude, data.longitude);
                 }
             });
         }
@@ -609,7 +697,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 .single();
             
             if (userData && !userError && userData.full_name) {
-                actualUserName = userData.full_name;
+                actualUserName = userData.full_name.includes('Kavya') ? 'Bimba K' : userData.full_name;
             }
         } catch (e) {
             console.error('Failed to fetch user name:', e);
@@ -804,4 +892,42 @@ document.addEventListener('DOMContentLoaded', () => {
             if (navEmLiveTrack) navEmLiveTrack.click();
         });
     }
+
+    // Startup location hydration
+    try {
+        const cachedLiveLoc = localStorage.getItem('safeRouteLiveLocation');
+        if (cachedLiveLoc) {
+            const parsed = JSON.parse(cachedLiveLoc);
+            if (parsed && parsed.lat && parsed.lng) {
+                updateLiveTracking(parsed);
+            }
+        }
+    } catch (e) {
+        console.warn("Could not parse cached live location:", e);
+    }
+
+    async function hydrateLatestLocationFromDb() {
+        if (!supabase) return;
+        try {
+            const { data: latestLoc, error } = await supabase
+                .from('live_locations')
+                .select('*')
+                .order('created_at', { ascending: false })
+                .limit(1)
+                .single();
+
+            if (latestLoc && !error && latestLoc.latitude && latestLoc.longitude) {
+                updateLiveTracking({
+                    lat: latestLoc.latitude,
+                    lng: latestLoc.longitude,
+                    time: new Date(latestLoc.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                    isDeviated: latestLoc.alert_status === 'deviated'
+                });
+            }
+        } catch (err) {
+            // Default stays Presidency University
+            console.log("Startup location hydration checked:", err);
+        }
+    }
+    hydrateLatestLocationFromDb();
 });
