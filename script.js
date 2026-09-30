@@ -64,9 +64,10 @@ document.addEventListener('DOMContentLoaded', () => {
     let routesGenerated = false;
 
     userMap = L.map('userMap', {zoomControl: false}).setView(startLoc, 15);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-        maxZoom: 19
+    L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+        maxZoom: 20,
+        subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+        attribution: '&copy; Google Maps'
     }).addTo(userMap);
 
     const userIcon = L.icon({
@@ -1142,18 +1143,47 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Travel Mode
     const modeButtons = document.querySelectorAll('.mode-btn');
+    const carNumberGroup = document.getElementById('carNumberGroup');
+    const carNumberInput = document.getElementById('carNumberInput');
+    const carNumberIcon = document.getElementById('carNumberIcon');
+
+    function updateVehicleInputByMode(mode) {
+        if (!carNumberGroup) return;
+        if (mode === 'walking') {
+            carNumberGroup.style.display = 'none';
+            if (carNumberInput) carNumberInput.value = '';
+        } else if (mode === 'bike') {
+            carNumberGroup.style.display = 'flex';
+            if (carNumberInput) carNumberInput.placeholder = 'Enter Bike / Two-Wheeler Number';
+            if (carNumberIcon) carNumberIcon.className = 'las la-motorcycle';
+        } else {
+            carNumberGroup.style.display = 'flex';
+            if (carNumberInput) carNumberInput.placeholder = 'Enter Vehicle / Car Number';
+            if (carNumberIcon) carNumberIcon.className = 'las la-car-side';
+        }
+    }
+
     if (modeButtons) {
         modeButtons.forEach(btn => {
             btn.addEventListener('click', () => {
                 modeButtons.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 
+                const currentMode = btn.getAttribute('data-mode') || 'walking';
+                updateVehicleInputByMode(currentMode);
+
                 // Recalculate route if destination is currently set
                 if (destinationLoc && destInput && destInput.value) {
                     processDestination(destinationLoc[0], destinationLoc[1], destInput.value);
                 }
             });
         });
+
+        // Initialize state based on active button
+        const initialActive = document.querySelector('.mode-btn.active');
+        if (initialActive) {
+            updateVehicleInputByMode(initialActive.getAttribute('data-mode') || 'walking');
+        }
     }
     
     // Deviation Triggers

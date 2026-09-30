@@ -70,9 +70,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if(isMapInit) return;
         isMapInit = true;
         policeMap = L.map('policeMap', {zoomControl: false}).setView([12.9716, 77.5946], 14);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-            maxZoom: 19
+        L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+            maxZoom: 20,
+            subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+            attribution: '&copy; Google Maps'
         }).addTo(policeMap);
         
         const dangerIcon = L.icon({

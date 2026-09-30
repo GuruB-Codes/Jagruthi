@@ -248,7 +248,13 @@ h1, h2, h3 { color: var(--text-dark); font-weight: 700; }
 }
 
 /* Location Inputs */
-.location-input-section { padding: 20px; display: flex; gap: 16px; }
+.location-input-section { 
+    padding: 20px; 
+    display: flex; 
+    gap: 16px; 
+    position: relative; 
+    z-index: 50; 
+}
 
 .location-timeline {
     display: flex;
@@ -989,7 +995,9 @@ h1, h2, h3 { color: var(--text-dark); font-weight: 700; }
 }
 
 .tab-view.active {
-    display: block;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
     animation: tabViewFadeIn 0.22s ease-out;
 }
 

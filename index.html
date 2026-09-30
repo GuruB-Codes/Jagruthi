@@ -51,7 +51,7 @@
             <div class="tab-view active" id="tab-home">
                 
                 <!-- Safety Status Hero Card -->
-                <section class="card widget-status" style="margin-bottom: 16px;">
+                <section class="card widget-status">
                     <div class="status-widget-content" style="display: flex; align-items: center; justify-content: space-between; gap: 14px;">
                         <div class="status-pulse green-pulse"></div>
                         <div class="status-desc" style="flex: 1;">
@@ -66,7 +66,7 @@
                 </section>
 
                 <!-- Current Location & Quick Start Journey Card -->
-                <section class="card" style="margin-bottom: 16px;">
+                <section class="card">
                     <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                         <h2 class="section-title" style="font-size: 1.1rem; margin: 0;"><i class="las la-crosshairs text-blue"></i> Current Location</h2>
                         <span style="font-size: 0.78rem; color: var(--primary); font-weight: 600;" id="homeGpsStatus">Live GPS</span>
@@ -86,7 +86,7 @@
                 </section>
 
                 <!-- Quick SOS Trigger Card -->
-                <section class="card" style="margin-bottom: 16px; background: linear-gradient(135deg, #fff1f2, #ffe4e6); border: 1px solid #fecdd3;">
+                <section class="card" style="background: linear-gradient(135deg, #fff1f2, #ffe4e6); border: 1px solid #fecdd3;">
                     <div style="display: flex; align-items: center; justify-content: space-between;">
                         <div>
                             <span style="font-size: 0.75rem; font-weight: 700; color: #be123c; text-transform: uppercase;">Emergency Assist</span>
@@ -100,7 +100,7 @@
                 </section>
 
                 <!-- "Are You Safe?" Verification Widget -->
-                <section class="card" style="margin-bottom: 16px;">
+                <section class="card">
                     <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                         <h2 class="section-title" style="font-size: 1.1rem; margin: 0;"><i class="las la-shield-alt text-purple"></i> Safety Check-in</h2>
                         <span class="badge" style="background: #e0e7ff; color: var(--primary); font-size: 0.75rem; padding: 4px 8px; border-radius: 12px; font-weight: 600;">Verification</span>
@@ -209,9 +209,9 @@
                             </div>
                         </div>
 
-                        <div class="input-group">
+                        <div class="input-group" id="carNumberGroup" style="display: none;">
                             <div class="input-icon-wrapper text-orange">
-                                <i class="las la-car-side"></i>
+                                <i class="las la-car-side" id="carNumberIcon"></i>
                             </div>
                             <input type="text" placeholder="Enter Vehicle/Car Number" class="location-input"
                                 id="carNumberInput" autocomplete="off">
@@ -244,7 +244,7 @@
                 </section>
 
                 <!-- Journey Details & Geofencing Card -->
-                <section class="card" style="margin-top: 16px;">
+                <section class="card">
                     <h2 class="section-title" style="font-size: 1.1rem;"><i class="las la-shield-alt text-purple"></i> Route Monitoring & Geofence</h2>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
                         <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px 12px;">
@@ -264,7 +264,7 @@
             <div class="tab-view" id="tab-sos">
                 
                 <!-- SOS Hero Trigger Card -->
-                <section class="card" style="background: linear-gradient(135deg, #450a0a, #881337); color: white; text-align: center; padding: 28px 20px; border-radius: var(--radius-md); box-shadow: 0 12px 32px rgba(225, 29, 72, 0.25); margin-bottom: 20px;">
+                <section class="card" style="background: linear-gradient(135deg, #450a0a, #881337); color: white; text-align: center; padding: 28px 20px; border-radius: var(--radius-md); box-shadow: 0 12px 32px rgba(225, 29, 72, 0.25);">
                     <div style="width: 80px; height: 80px; background: rgba(255, 255, 255, 0.15); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; border: 2px dashed rgba(255, 255, 255, 0.5);">
                         <i class="las la-broadcast-tower" style="font-size: 2.5rem; color: #fecdd3;"></i>
                     </div>
@@ -277,7 +277,7 @@
                 </section>
 
                 <!-- Live Evidence Security Card (STATE 1, 2, 3, 4) -->
-                <section class="card evidence-card" id="womenEvidenceCard" style="margin-bottom: 20px;">
+                <section class="card evidence-card" id="womenEvidenceCard">
                     <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
                         <h2 class="section-title" style="font-size: 1.1rem; margin: 0;"><i class="las la-shield-alt text-purple"></i> Evidence Status</h2>
                         <span class="badge" id="evidenceOverallBadge" style="background: #e0e7ff; color: var(--primary); font-size: 0.75rem; padding: 4px 10px; border-radius: 12px; font-weight: 700;">Standby</span>
@@ -325,7 +325,7 @@
                 </section>
 
                 <!-- Current Location Sharing Card -->
-                <section class="card" style="margin-bottom: 20px;">
+                <section class="card">
                     <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                         <h2 class="section-title" style="font-size: 1.1rem; margin: 0;"><i class="las la-map-pin text-danger"></i> Location Sharing</h2>
                         <span class="badge" style="background: var(--success-light); color: var(--success-dark); font-size: 0.75rem; padding: 4px 8px; border-radius: 12px; font-weight: 600;">Broadcasting</span>
@@ -371,7 +371,7 @@
             <!-- ================= TAB 4: ALERTS ================= -->
             <div class="tab-view" id="tab-alerts">
                 
-                <section class="card" style="margin-bottom: 16px;">
+                <section class="card">
                     <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
                         <h2 class="section-title" style="font-size: 1.15rem; margin: 0;"><i class="las la-bell text-blue"></i> Safety & Alert Center</h2>
                         <span class="badge badge-active-count" style="background: #e0e7ff; color: var(--primary); font-size: 0.75rem; padding: 4px 8px; border-radius: 12px; font-weight: 700;">Live Feed</span>
@@ -423,7 +423,7 @@
             <div class="tab-view" id="tab-profile">
                 
                 <!-- Profile Hero Card -->
-                <div class="profile-hero-card">
+                <div class="profile-hero-card" style="margin-bottom: 0;">
                     <img id="profileTabAvatar" src="https://ui-avatars.com/api/?name=User&background=ffffff&color=4f46e5&rounded=true" alt="Profile Avatar" class="profile-hero-avatar">
                     <div class="profile-hero-info">
                         <h3 id="profileTabName">Bimba K</h3>
@@ -433,7 +433,7 @@
                 </div>
 
                 <!-- Emergency Contacts Section -->
-                <section class="card" style="margin-bottom: 16px;">
+                <section class="card">
                     <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                         <h2 class="section-title" style="font-size: 1.1rem; margin: 0;"><i class="las la-address-book text-purple"></i> Emergency Contacts</h2>
                         <span class="badge badge-success" style="font-size: 0.72rem; background: var(--success-light); color: var(--success-dark); padding: 3px 8px; border-radius: 8px; font-weight: 600;">2 Connected</span>
