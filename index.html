@@ -74,8 +74,8 @@
                     <div style="background: #f8fafc; border-radius: var(--radius-sm); padding: 12px 14px; border: 1px solid #e2e8f0; display: flex; align-items: center; gap: 10px;">
                         <i class="las la-map-marker-alt" style="font-size: 1.6rem; color: var(--primary);"></i>
                         <div style="flex: 1;">
-                            <strong style="display: block; font-size: 0.95rem; color: var(--text-dark);" id="homeCurrentLocText">Presidency University</strong>
-                            <span style="font-size: 0.78rem; color: var(--text-medium);">Bengaluru, Karnataka</span>
+                            <strong style="display: block; font-size: 0.95rem; color: var(--text-dark);" id="homeCurrentLocText">Detecting location...</strong>
+                            <span style="font-size: 0.78rem; color: var(--text-medium);">Real-time Device GPS</span>
                         </div>
                     </div>
                     <button class="btn-start-journey" style="margin-top: 14px; width: 100%;" onclick="document.getElementById('navTabJourney').click();">
@@ -332,8 +332,8 @@
                     </div>
                     <div style="background: #f8fafc; border-radius: var(--radius-sm); padding: 12px 14px; border: 1px solid #e2e8f0; margin-bottom: 10px;">
                         <span style="font-size: 0.75rem; color: var(--text-light); display: block;">Live GPS Coordinates</span>
-                        <strong style="font-size: 0.95rem; color: var(--text-dark);" id="sosCoordsDisplay">Lat: 13.1682, Lng: 77.5354</strong>
-                        <p style="font-size: 0.8rem; color: var(--text-medium); margin-top: 4px;" id="sosAddressDisplay">Presidency University, Rajanakunte, Bengaluru</p>
+                        <strong style="font-size: 0.95rem; color: var(--text-dark);" id="sosCoordsDisplay">Acquiring GPS...</strong>
+                        <p style="font-size: 0.8rem; color: var(--text-medium); margin-top: 4px;" id="sosAddressDisplay">Waiting for location fix</p>
                     </div>
                     <div style="display: flex; gap: 8px;">
                         <button onclick="navigator.clipboard.writeText(document.getElementById('sosCoordsDisplay').innerText); alert('Location coordinates copied to clipboard!');" style="flex: 1; padding: 10px; background: white; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 0.85rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
@@ -380,40 +380,10 @@
 
                     <!-- Alert Feed List -->
                     <div style="display: flex; flex-direction: column; gap: 10px;" id="womenAlertsFeedList">
-                        
-                        <div style="background: white; border: 1px solid #fee2e2; border-left: 4px solid var(--danger); border-radius: var(--radius-sm); padding: 14px; box-shadow: var(--shadow-sm);">
-                            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                                <div style="display: flex; align-items: center; gap: 8px;">
-                                    <i class="las la-exclamation-triangle" style="color: var(--danger); font-size: 1.3rem;"></i>
-                                    <strong style="font-size: 0.95rem; color: var(--text-dark);">Route Deviation Protection</strong>
-                                </div>
-                                <span style="font-size: 0.75rem; color: #94a3b8;">Active</span>
-                            </div>
-                            <p style="font-size: 0.82rem; color: var(--text-medium); margin-top: 6px;">Deviation detection is armed. Automated verification prompt triggers after 100m variance.</p>
+                        <div style="text-align: center; color: #94a3b8; padding: 20px; font-size: 0.85rem; background: #f8fafc; border-radius: var(--radius-sm);">
+                            <i class="las la-spinner la-spin" style="font-size: 1.3rem; margin-bottom: 6px; display: block;"></i>
+                            Loading alert records...
                         </div>
-
-                        <div style="background: white; border: 1px solid #e0e7ff; border-left: 4px solid var(--primary); border-radius: var(--radius-sm); padding: 14px; box-shadow: var(--shadow-sm);">
-                            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                                <div style="display: flex; align-items: center; gap: 8px;">
-                                    <i class="las la-user-check" style="color: var(--primary); font-size: 1.3rem;"></i>
-                                    <strong style="font-size: 0.95rem; color: var(--text-dark);">"Are You Safe?" Verification</strong>
-                                </div>
-                                <span style="font-size: 0.75rem; color: #94a3b8;">10 mins ago</span>
-                            </div>
-                            <p style="font-size: 0.82rem; color: var(--text-medium); margin-top: 6px;">Safety prompt was answered safely. Emergency escalation cleared.</p>
-                        </div>
-
-                        <div style="background: white; border: 1px solid #e2e8f0; border-left: 4px solid var(--success); border-radius: var(--radius-sm); padding: 14px; box-shadow: var(--shadow-sm);">
-                            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                                <div style="display: flex; align-items: center; gap: 8px;">
-                                    <i class="las la-shield-alt" style="color: var(--success); font-size: 1.3rem;"></i>
-                                    <strong style="font-size: 0.95rem; color: var(--text-dark);">Emergency Contacts Linked</strong>
-                                </div>
-                                <span style="font-size: 0.75rem; color: #94a3b8;">Today</span>
-                            </div>
-                            <p style="font-size: 0.82rem; color: var(--text-medium); margin-top: 6px;">Parent/Guardian contact is synchronized with real-time push alerts.</p>
-                        </div>
-
                     </div>
                 </section>
 
@@ -426,8 +396,8 @@
                 <div class="profile-hero-card" style="margin-bottom: 0;">
                     <img id="profileTabAvatar" src="https://ui-avatars.com/api/?name=User&background=ffffff&color=4f46e5&rounded=true" alt="Profile Avatar" class="profile-hero-avatar">
                     <div class="profile-hero-info">
-                        <h3 id="profileTabName">Bimba K</h3>
-                        <p id="profileTabPhone">+91 98765 43210</p>
+                        <h3 id="profileTabName">User</h3>
+                        <p id="profileTabPhone">--</p>
                         <span class="role-badge-pill">Primary User</span>
                     </div>
                 </div>
@@ -436,31 +406,11 @@
                 <section class="card">
                     <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                         <h2 class="section-title" style="font-size: 1.1rem; margin: 0;"><i class="las la-address-book text-purple"></i> Emergency Contacts</h2>
-                        <span class="badge badge-success" style="font-size: 0.72rem; background: var(--success-light); color: var(--success-dark); padding: 3px 8px; border-radius: 8px; font-weight: 600;">2 Connected</span>
+                        <span class="badge" id="userContactCountBadge" style="font-size: 0.72rem; padding: 3px 8px; border-radius: 8px; font-weight: 600;">0 Connected</span>
                     </div>
                     
-                    <div style="display: flex; flex-direction: column; gap: 8px;">
-                        <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;">
-                            <div style="display: flex; align-items: center; gap: 10px;">
-                                <div style="width: 36px; height: 36px; border-radius: 50%; background: #e0e7ff; color: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem;">P</div>
-                                <div>
-                                    <h4 style="font-size: 0.9rem; margin: 0;">Parent Contact (Primary)</h4>
-                                    <span style="font-size: 0.78rem; color: #64748b;">+91 98765 00001</span>
-                                </div>
-                            </div>
-                            <a href="tel:+919876500001" style="color: var(--primary); font-size: 1.4rem;"><i class="las la-phone"></i></a>
-                        </div>
-
-                        <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;">
-                            <div style="display: flex; align-items: center; gap: 10px;">
-                                <div style="width: 36px; height: 36px; border-radius: 50%; background: #f3e8ff; color: var(--secondary); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem;">G</div>
-                                <div>
-                                    <h4 style="font-size: 0.9rem; margin: 0;">Guardian Contact</h4>
-                                    <span style="font-size: 0.78rem; color: #64748b;">+91 98765 00002</span>
-                                </div>
-                            </div>
-                            <a href="tel:+919876500002" style="color: var(--primary); font-size: 1.4rem;"><i class="las la-phone"></i></a>
-                        </div>
+                    <div style="display: flex; flex-direction: column; gap: 8px;" id="userEmergencyContactsList">
+                        <div style="padding: 12px; text-align: center; color: #94a3b8; font-size: 0.85rem;">Loading contacts...</div>
                     </div>
                 </section>
 

@@ -142,17 +142,12 @@ document.addEventListener('DOMContentLoaded', () => {
     function initAdminMap() {
         if(isMapInit) return;
         isMapInit = true;
-        adminMap = L.map('adminMap', {zoomControl: false}).setView([12.9716, 77.5946], 13);
+        adminMap = L.map('adminMap', {zoomControl: false}).setView([12.9716, 77.5946], 12);
         L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
             maxZoom: 20,
             subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
             attribution: '&copy; Google Maps'
         }).addTo(adminMap);
-        const policeIcon = L.icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png', shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png', iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34] });
-        const userIcon = L.icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png', shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png', iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34] });
-        L.marker([12.9650, 77.5850], {icon: policeIcon}).addTo(adminMap).bindPopup("Police Unit 4");
-        L.marker([12.9800, 77.6000], {icon: userIcon}).addTo(adminMap).bindPopup("Safe User");
-        L.marker([12.9500, 77.5900], {icon: userIcon}).addTo(adminMap).bindPopup("Safe User");
     }
     setTimeout(initAdminMap, 500);
 
@@ -851,6 +846,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 }, 200);
             }
 
+            // Refresh tab data
+            if (targetTab === 'tab-adm-users') {
+                loadAdminUsersTable();
+                loadAdminContactsList();
+                loadAdminPoliceUnits();
+            }
+
+            if (targetTab === 'tab-adm-reports') {
+                loadClosedCasesArchive();
+                loadAdminIncidentReports();
+            }
+
             // Rebuild analytics if entering Analytics tab
             if (targetTab === 'tab-adm-analytics') {
                 buildAnalyticsDashboard();
@@ -860,6 +867,186 @@ document.addEventListener('DOMContentLoaded', () => {
             window.scrollTo({ top: 0, behavior: 'smooth' });
         });
     });
+
+    // =====================================================
+    // Dynamic Table & List Loaders from Supabase
+    // =====================================================
+    async function loadAdminUsersTable() {
+        const tbody = document.getElementById('adminUsersTableBody');
+        if (!tbody || !supabase) return;
+        try {
+            const { data: users, error } = await supabase
+                .from('users')
+                .select('id, full_name, phone, role, created_at')
+                .eq('role', 'user')
+                .order('created_at', { ascending: false });
+
+            if (error || !users || users.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #94a3b8; padding: 24px;">No registered users found.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = users.map(u => `
+                <tr>
+                    <td><strong>${u.full_name || 'Anonymous User'}</strong></td>
+                    <td>${u.phone || '--'}</td>
+                    <td><span style="background:#ecfdf5;color:#10b981;padding:2px 8px;border-radius:12px;font-size:0.75rem;font-weight:600;">ACTIVE</span></td>
+                    <td><span style="color:#64748b;font-size:0.8rem;">${u.created_at ? new Date(u.created_at).toLocaleDateString() : 'Registered'}</span></td>
+                </tr>
+            `).join('');
+        } catch (e) {
+            tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #94a3b8; padding: 24px;">No registered users available.</td></tr>`;
+        }
+    }
+
+    async function loadAdminContactsList() {
+        const container = document.getElementById('adminContactsList');
+        if (!container || !supabase) return;
+        try {
+            const { data: contacts } = await supabase
+                .from('emergency_contacts')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if (contacts && contacts.length > 0) {
+                container.innerHTML = contacts.map(c => `
+                    <div class="admin-list-item" style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:#f8fafc;border-radius:10px;margin-bottom:8px;border:1px solid #e2e8f0;">
+                        <div>
+                            <div style="font-weight:600;font-size:0.9rem;color:#1e293b;">${c.contact_name || c.name || 'Emergency Contact'}</div>
+                            <div style="font-size:0.8rem;color:#64748b;"><i class="las la-phone"></i> ${c.contact_phone || c.phone || '--'} · Relation: ${c.relationship || c.relation || 'Guardian'}</div>
+                        </div>
+                        <span style="font-size:0.75rem;padding:3px 8px;border-radius:12px;background:#e0e7ff;color:#4338ca;font-weight:500;">Linked</span>
+                    </div>
+                `).join('');
+                return;
+            }
+
+            // Fallback: check users table where emergency_contact is present
+            const { data: usersWithContacts } = await supabase
+                .from('users')
+                .select('full_name, phone, emergency_contact')
+                .not('emergency_contact', 'is', null)
+                .neq('emergency_contact', '');
+
+            if (usersWithContacts && usersWithContacts.length > 0) {
+                container.innerHTML = usersWithContacts.map(u => `
+                    <div class="admin-list-item" style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:#f8fafc;border-radius:10px;margin-bottom:8px;border:1px solid #e2e8f0;">
+                        <div>
+                            <div style="font-weight:600;font-size:0.9rem;color:#1e293b;">Guardian for ${u.full_name || u.phone}</div>
+                            <div style="font-size:0.8rem;color:#64748b;"><i class="las la-phone"></i> ${u.emergency_contact}</div>
+                        </div>
+                        <span style="font-size:0.75rem;padding:3px 8px;border-radius:12px;background:#e0e7ff;color:#4338ca;font-weight:500;">Linked</span>
+                    </div>
+                `).join('');
+                return;
+            }
+
+            container.innerHTML = `<div style="text-align: center; color: #94a3b8; padding: 20px;"><i class="las la-info-circle"></i> No emergency contacts registered yet.</div>`;
+        } catch (e) {
+            container.innerHTML = `<div style="text-align: center; color: #94a3b8; padding: 20px;"><i class="las la-info-circle"></i> No emergency contacts available.</div>`;
+        }
+    }
+
+    async function loadAdminPoliceUnits() {
+        const container = document.getElementById('adminPoliceUnitsList');
+        if (!container || !supabase) return;
+        try {
+            const { data: policeUnits, error } = await supabase
+                .from('users')
+                .select('id, full_name, phone, role, created_at')
+                .eq('role', 'police');
+
+            if (error || !policeUnits || policeUnits.length === 0) {
+                container.innerHTML = `<div style="text-align: center; color: #94a3b8; padding: 20px;"><i class="las la-shield-alt"></i> No police units registered in database.</div>`;
+                return;
+            }
+
+            container.innerHTML = policeUnits.map(p => `
+                <div class="admin-list-item" style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:#f8fafc;border-radius:10px;margin-bottom:8px;border:1px solid #e2e8f0;">
+                    <div>
+                        <div style="font-weight:600;font-size:0.9rem;color:#1e293b;"><i class="las la-shield-alt text-blue"></i> ${p.full_name || 'Police Officer'}</div>
+                        <div style="font-size:0.8rem;color:#64748b;"><i class="las la-phone"></i> ${p.phone || '--'}</div>
+                    </div>
+                    <span style="font-size:0.75rem;padding:3px 8px;border-radius:12px;background:#ecfdf5;color:#10b981;font-weight:500;">Active Unit</span>
+                </div>
+            `).join('');
+        } catch (e) {
+            container.innerHTML = `<div style="text-align: center; color: #94a3b8; padding: 20px;"><i class="las la-shield-alt"></i> No police units available.</div>`;
+        }
+    }
+
+    async function loadClosedCasesArchive() {
+        const container = document.getElementById('closedCasesList');
+        if (!container || !supabase) return;
+        try {
+            const { data: closedAlerts, error } = await supabase
+                .from('emergency_alerts')
+                .select('*')
+                .eq('status', 'resolved')
+                .order('created_at', { ascending: false })
+                .limit(50);
+
+            if (error || !closedAlerts || closedAlerts.length === 0) {
+                container.innerHTML = `<div style="text-align: center; color: #94a3b8; padding: 20px;"><i class="las la-archive"></i> No resolved cases in system logs yet.</div>`;
+                return;
+            }
+
+            container.innerHTML = closedAlerts.map(a => `
+                <div class="closed-case-item" style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:#f8fafc;border-radius:10px;margin-bottom:8px;border:1px solid #e2e8f0;">
+                    <div>
+                        <div style="font-weight:600;font-size:0.85rem;color:#1e293b;">Case #${a.id ? a.id.substring(0, 8) : 'UNK'} · ${a.alert_type || 'SOS'}</div>
+                        <div style="font-size:0.78rem;color:#64748b;"><i class="las la-phone"></i> ${a.user_phone || '--'} · <i class="las la-map-marker"></i> ${a.latitude ? `${parseFloat(a.latitude).toFixed(4)}, ${parseFloat(a.longitude).toFixed(4)}` : 'Location Logged'}</div>
+                    </div>
+                    <div style="text-align:right;">
+                        <span style="font-size:0.72rem;background:#ecfdf5;color:#10b981;padding:2px 8px;border-radius:10px;font-weight:600;">Resolved</span>
+                        <div style="font-size:0.72rem;color:#94a3b8;margin-top:3px;">${a.created_at ? new Date(a.created_at).toLocaleTimeString() : '--'}</div>
+                    </div>
+                </div>
+            `).join('');
+        } catch (e) {
+            container.innerHTML = `<div style="text-align: center; color: #94a3b8; padding: 20px;"><i class="las la-archive"></i> No resolved cases found.</div>`;
+        }
+    }
+
+    async function loadAdminIncidentReports() {
+        const tbody = document.getElementById('adminReportsTableBody');
+        if (!tbody || !supabase) return;
+        try {
+            const { data: alerts, error } = await supabase
+                .from('emergency_alerts')
+                .select('*')
+                .order('created_at', { ascending: false })
+                .limit(50);
+
+            if (error || !alerts || alerts.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #94a3b8; padding: 24px;">No incident reports logged yet.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = alerts.map(a => {
+                const isResolved = a.status === 'resolved';
+                const badgeBg = isResolved ? '#ecfdf5' : '#fef2f2';
+                const badgeColor = isResolved ? '#10b981' : '#ef4444';
+                return `
+                    <tr>
+                        <td><strong>#${a.id ? a.id.substring(0, 8) : 'INC'}</strong></td>
+                        <td>${a.alert_type || 'SOS Alert'}</td>
+                        <td>${a.created_at ? new Date(a.created_at).toLocaleTimeString() : '--'}</td>
+                        <td><span style="background:${badgeBg};color:${badgeColor};padding:2px 8px;border-radius:12px;font-size:0.75rem;font-weight:600;">${(a.status || 'ACTIVE').toUpperCase()}</span></td>
+                    </tr>
+                `;
+            }).join('');
+        } catch (e) {
+            tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #94a3b8; padding: 24px;">No incident reports available.</td></tr>`;
+        }
+    }
+
+    // Initial data loaders
+    loadAdminUsersTable();
+    loadAdminContactsList();
+    loadAdminPoliceUnits();
+    loadClosedCasesArchive();
+    loadAdminIncidentReports();
 
     // Populate Admin profile
     const admProfileName = document.getElementById('admProfileName');

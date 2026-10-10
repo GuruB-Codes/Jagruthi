@@ -1,18 +1,4 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Automatically purge/migrate any legacy stored demo names from browser cache
-    try {
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            const val = localStorage.getItem(key);
-            if (val && typeof val === 'string' && (val.includes('Kavya') || val.includes('kavya'))) {
-                const updatedVal = val.replace(/Kavya Sharma/gi, 'Bimba K').replace(/Kavya/gi, 'Bimba K');
-                localStorage.setItem(key, updatedVal);
-            }
-        }
-    } catch(e) {
-        console.warn('LocalStorage sanitize error:', e);
-    }
-
     const supabase = window.supabaseClient;
     
     // Auth Check
@@ -24,7 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Populate Initials Badge
-    const contactName = localStorage.getItem('fullName') || localStorage.getItem('userName') || 'Parent User';
+    const contactName = localStorage.getItem('fullName') || localStorage.getItem('userName') || 'Emergency Contact';
     const badge = document.getElementById('contactInitialsBadge');
     if (badge) {
         const initials = contactName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
@@ -67,13 +53,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // Track which Supabase alert IDs we've already processed so we don't re-trigger
     let processedAlertIds = new Set();
 
-    // Default coordinates (Presidency University, Rajanakunte)
-    const DEFAULT_COORDS = [13.1682, 77.5354];
-
     // Helper: Update Connected Ward / Person Card info
     function updateConnectedPersonInfo(name, phone) {
-        const wardName = name || localStorage.getItem('connectedWardName') || 'Bimba K';
-        const wardPhone = phone || localStorage.getItem('connectedWardPhone') || '+91 98765 43210';
+        const wardName = name || localStorage.getItem('connectedWardName') || null;
+        const wardPhone = phone || localStorage.getItem('connectedWardPhone') || null;
         
         const homeName = document.getElementById('homeConnectedUserName');
         const homePhone = document.getElementById('homeConnectedUserPhone');
@@ -83,15 +66,106 @@ document.addEventListener('DOMContentLoaded', () => {
         const profName = document.getElementById('profileConnectedUserName');
         const profAvatar = document.getElementById('profileConnectedUserAvatar');
 
-        const initials = wardName.trim().split(/\s+/).map(n => n[0]).join('').toUpperCase().substring(0, 2) || 'B';
-        
-        if (homeName) homeName.innerText = wardName;
-        if (homePhone) homePhone.innerText = wardPhone;
-        if (homeAvatar) homeAvatar.innerText = initials;
-        if (homeCallBtn) homeCallBtn.href = `tel:${wardPhone.replace(/\s+/g, '')}`;
-        
-        if (profName) profName.innerText = wardName;
-        if (profAvatar) profAvatar.innerText = initials;
+        if (wardName) {
+            const initials = wardName.trim().split(/\s+/).map(n => n[0]).join('').toUpperCase().substring(0, 2) || 'W';
+            if (homeName) homeName.innerText = wardName;
+            if (homePhone) homePhone.innerText = wardPhone || '--';
+            if (homeAvatar) homeAvatar.innerText = initials;
+            if (homeCallBtn && wardPhone) homeCallBtn.href = `tel:${wardPhone.replace(/\s+/g, '')}`;
+            
+            if (profName) profName.innerText = wardName;
+            if (profAvatar) profAvatar.innerText = initials;
+        } else {
+            if (homeName) homeName.innerText = "No Ward Linked";
+            if (homePhone) homePhone.innerText = "Awaiting connection from user";
+            if (homeAvatar) homeAvatar.innerText = "--";
+            if (homeCallBtn) homeCallBtn.removeAttribute('href');
+            
+            if (profName) profName.innerText = "No Ward Linked";
+            if (profAvatar) profAvatar.innerText = "--";
+        }
+    }
+
+    // Helper: Fetch real connected ward from Supabase
+    async function fetchConnectedWardInfo() {
+        const myPhone = localStorage.getItem('userPhone');
+        if (!myPhone || !supabase) return;
+
+        try {
+            // Find woman user who configured myPhone as their emergency_contact
+            const { data: users, error } = await supabase
+                .from('users')
+                .select('full_name, phone')
+                .ilike('emergency_contact', `%${myPhone.replace(/\D/g, '').slice(-10)}%`)
+                .limit(1);
+
+            if (users && users.length > 0) {
+                localStorage.setItem('connectedWardName', users[0].full_name);
+                localStorage.setItem('connectedWardPhone', users[0].phone);
+                updateConnectedPersonInfo(users[0].full_name, users[0].phone);
+            } else {
+                // If not directly found by clean search, check latest alert
+                const { data: latestAlert } = await supabase
+                    .from('emergency_alerts')
+                    .select('user_phone')
+                    .order('created_at', { ascending: false })
+                    .limit(1);
+
+                if (latestAlert && latestAlert.length > 0) {
+                    const { data: wardUser } = await supabase
+                        .from('users')
+                        .select('full_name, phone')
+                        .eq('phone', latestAlert[0].user_phone)
+                        .single();
+
+                    if (wardUser) {
+                        updateConnectedPersonInfo(wardUser.full_name, wardUser.phone);
+                    } else {
+                        updateConnectedPersonInfo("Ward", latestAlert[0].user_phone);
+                    }
+                } else {
+                    updateConnectedPersonInfo(null, null);
+                }
+            }
+        } catch (e) {
+            console.warn("Could not query connected ward from Supabase:", e);
+        }
+    }
+
+    // Helper: Load Dynamic Alert History from Supabase
+    async function loadAlertHistory() {
+        if (!historyList || !supabase) return;
+        try {
+            const { data: alerts, error } = await supabase
+                .from('emergency_alerts')
+                .select('*')
+                .order('created_at', { ascending: false })
+                .limit(10);
+
+            if (error || !alerts || alerts.length === 0) {
+                historyList.innerHTML = `<div style="text-align: center; color: #94a3b8; padding: 24px; font-size: 0.9rem;"><i class="las la-shield-alt" style="font-size: 1.5rem; display: block; margin-bottom: 4px; color: #10b981;"></i>No alert history found. All records clear.</div>`;
+                return;
+            }
+
+            historyList.innerHTML = alerts.map(a => {
+                const isResolved = a.status === 'resolved';
+                const timeStr = new Date(a.created_at).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' });
+                return `
+                    <div class="history-card">
+                        <div class="history-icon ${isResolved ? 'bg-gray' : 'bg-red'}">
+                            <i class="las ${isResolved ? 'la-check-circle text-gray' : 'la-exclamation-triangle text-danger'}"></i>
+                        </div>
+                        <div class="history-content">
+                            <h4>${a.alert_type || 'Emergency SOS'}</h4>
+                            <p>${timeStr} &middot; ${a.user_phone}</p>
+                        </div>
+                        <div class="history-status ${isResolved ? 'badge-resolved' : 'badge-active'}">${a.status.toUpperCase()}</div>
+                    </div>
+                `;
+            }).join('');
+        } catch (e) {
+            console.warn("Could not load alert history from Supabase:", e);
+        }
     }
 
     // Helper: Update Last Known Location Preview on Home Tab
@@ -104,7 +178,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 addrEl.innerText = address;
             } else if (lat && lng) {
                 addrEl.innerText = `Lat: ${Number(lat).toFixed(4)}, Lng: ${Number(lng).toFixed(4)}`;
-                // Asynchronously fetch friendly name
                 reverseGeocode(lat, lng).then(resolved => {
                     if (resolved && addrEl) addrEl.innerText = resolved;
                 });
@@ -116,31 +189,24 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Wait until map is visible to init properly
+    // Initialize map centered neutrally without fake danger markers
     function initContactMap() {
         if(isMapInit) return;
         isMapInit = true;
-        contactMap = L.map('contactMap', {zoomControl: false}).setView(DEFAULT_COORDS, 15);
+        contactMap = L.map('contactMap', {zoomControl: false}).setView([12.9716, 77.5946], 12);
         L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
             maxZoom: 20,
             subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
             attribution: '&copy; Google Maps'
         }).addTo(contactMap);
-        
-        const dangerIcon = L.icon({
-            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
-            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-            iconSize: [25, 41], iconAnchor: [12, 41]
-        });
-        
-        trackingMarkerObj = L.marker(DEFAULT_COORDS, {icon: dangerIcon}).addTo(contactMap);
     }
     
-    // Call init anyway in case we load directly into emergency
+    // Call init in case we load directly into emergency
     setTimeout(initContactMap, 500);
 
-    // Initial setup for connected person
-    updateConnectedPersonInfo();
+    // Initial setup for connected person & history
+    fetchConnectedWardInfo();
+    loadAlertHistory();
 
     // Listen for cross-tab communication from User Dashboard via localStorage
     // ONLY react to genuine NEW alerts sent by the user dashboard
@@ -234,10 +300,17 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // 5. Update Live Victim Marker
-        if(trackingMarkerObj) {
+        if(!trackingMarkerObj) {
+            const dangerIcon = L.icon({
+                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+                iconSize: [25, 41], iconAnchor: [12, 41]
+            });
+            trackingMarkerObj = L.marker(newCoords, {icon: dangerIcon}).addTo(contactMap);
+        } else {
             trackingMarkerObj.setLatLng(newCoords);
-            contactMap.setView(newCoords, Math.max(14, contactMap.getZoom())); // Keep centered on user
         }
+        contactMap.setView(newCoords, Math.max(14, contactMap.getZoom())); // Keep centered on user
     }
 
     // Helper: Calculate distance between two lat/lng points in km
@@ -465,8 +538,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         currentCaseData = data;
 
-        const victimName = data.userName || data.user_name || 'Bimba K';
-        const victimPhone = data.phone || data.user_phone || '+91 98765 43210';
+        const victimName = data.userName || data.user_name || 'User';
+        const victimPhone = data.phone || data.user_phone || '--';
 
         // Update connected person card & profile card
         updateConnectedPersonInfo(victimName, victimPhone);
@@ -698,7 +771,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 .single();
             
             if (userData && !userError && userData.full_name) {
-                actualUserName = userData.full_name.includes('Kavya') ? 'Bimba K' : userData.full_name;
+                actualUserName = userData.full_name;
             }
         } catch (e) {
             console.error('Failed to fetch user name:', e);
@@ -876,8 +949,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const emProfileName = document.getElementById('emProfileName');
     const emProfilePhone = document.getElementById('emProfilePhone');
     const contactProfileBadge = document.getElementById('contactProfileBadge');
-    const curUserName = localStorage.getItem('userName') || 'Parent Contact';
-    const curPhone = localStorage.getItem('userPhone') || '+91 98765 00001';
+    const curUserName = localStorage.getItem('fullName') || localStorage.getItem('userName') || 'Emergency Contact';
+    const curPhone = localStorage.getItem('userPhone') || '--';
     if (emProfileName) emProfileName.innerText = curUserName;
     if (emProfilePhone) emProfilePhone.innerText = curPhone;
     if (contactProfileBadge) {
@@ -924,10 +997,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     time: new Date(latestLoc.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
                     isDeviated: latestLoc.alert_status === 'deviated'
                 });
+            } else {
+                const addrEl = document.getElementById('homeLastKnownAddress');
+                const timeEl = document.getElementById('homeLastKnownTime');
+                if (addrEl) addrEl.innerText = "No location recorded yet";
+                if (timeEl) timeEl.innerText = "Awaiting live location signal";
             }
         } catch (err) {
-            // Default stays Presidency University
-            console.log("Startup location hydration checked:", err);
+            const addrEl = document.getElementById('homeLastKnownAddress');
+            const timeEl = document.getElementById('homeLastKnownTime');
+            if (addrEl) addrEl.innerText = "No location recorded yet";
+            if (timeEl) timeEl.innerText = "Awaiting live location signal";
         }
     }
     hydrateLatestLocationFromDb();

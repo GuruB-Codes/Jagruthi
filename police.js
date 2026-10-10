@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Populate Officer Initials
-    const officerName = localStorage.getItem('fullName') || 'Officer Singh';
+    const officerName = localStorage.getItem('fullName') || localStorage.getItem('userName') || 'Police Officer';
     const badge = document.getElementById('officerInitialsBadge');
     if (badge) {
         const initials = officerName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
@@ -59,28 +59,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnMarkResolved = document.getElementById('btnMarkResolved');
 
     let currentCaseData = null;
-    let policeMap, victimMarker, policeMarker, policeNavRoute;
-    let sourceMarkerObj, destMarkerObj, routeLineObj, deviationLineObj; // Added context markers
-    const policeUnitLocation = [12.9650, 77.5850]; // Mock police starting loc
+    let policeMap, victimMarker = null, policeMarker = null, policeNavRoute = null;
+    let sourceMarkerObj, destMarkerObj, routeLineObj, deviationLineObj;
     let isMapInit = false;
-    // Track which Supabase alert IDs we've already processed so we don't re-trigger
     let processedAlertIds = new Set();
 
     function initPoliceMap() {
         if(isMapInit) return;
         isMapInit = true;
-        policeMap = L.map('policeMap', {zoomControl: false}).setView([12.9716, 77.5946], 14);
+        policeMap = L.map('policeMap', {zoomControl: false}).setView([12.9716, 77.5946], 12);
         L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
             maxZoom: 20,
             subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
             attribution: '&copy; Google Maps'
         }).addTo(policeMap);
-        
-        const dangerIcon = L.icon({
-            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
-            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-            iconSize: [25, 41], iconAnchor: [12, 41]
-        });
         
         const policeIcon = L.icon({
             iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
@@ -88,11 +80,73 @@ document.addEventListener('DOMContentLoaded', () => {
             iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34]
         });
 
-        victimMarker = L.marker([12.9716, 77.5946], {icon: dangerIcon}).addTo(policeMap);
-        policeMarker = L.marker(policeUnitLocation, {icon: policeIcon}).addTo(policeMap).bindPopup("Unit 4");
+        // Use real officer GPS if permitted by browser
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(pos => {
+                const myLoc = [pos.coords.latitude, pos.coords.longitude];
+                if (!policeMarker) {
+                    policeMarker = L.marker(myLoc, {icon: policeIcon}).addTo(policeMap).bindPopup(`Officer Unit: ${officerName}`);
+                } else {
+                    policeMarker.setLatLng(myLoc);
+                }
+                policeMap.setView(myLoc, 14);
+            }, err => {
+                console.log("Police officer GPS not acquired:", err.message);
+            });
+        }
     }
 
     setTimeout(initPoliceMap, 500);
+
+    async function fetchPoliceStatsAndCases() {
+        if (!supabase) return;
+        try {
+            // Active emergencies count
+            const { count: activeCount } = await supabase
+                .from('emergency_alerts')
+                .select('*', { count: 'exact', head: true })
+                .eq('status', 'active');
+
+            const dashActiveCount = document.getElementById('dashActiveCount');
+            if (dashActiveCount) dashActiveCount.innerText = activeCount ?? 0;
+            if (activeCasesCount) activeCasesCount.innerText = `${activeCount ?? 0} Active`;
+
+            // Resolved cases count
+            const { count: closedCount } = await supabase
+                .from('emergency_alerts')
+                .select('*', { count: 'exact', head: true })
+                .eq('status', 'resolved');
+
+            const dashClosedCount = document.getElementById('dashClosedCount');
+            if (dashClosedCount) dashClosedCount.innerText = closedCount ?? 0;
+
+            // Fetch active emergencies from DB and render into queue
+            const { data: activeList } = await supabase
+                .from('emergency_alerts')
+                .select('*')
+                .eq('status', 'active')
+                .order('created_at', { ascending: false });
+
+            if (activeList && activeList.length > 0) {
+                if (activeCasesList) activeCasesList.innerHTML = '';
+                for (const alert of activeList) {
+                    processedAlertIds.add(alert.id);
+                    updateActiveList({
+                        ...alert,
+                        userName: alert.user_phone,
+                        status: 'ACTIVE',
+                        timestamp: new Date(alert.created_at).toLocaleTimeString()
+                    });
+                }
+            } else if (activeCasesList) {
+                activeCasesList.innerHTML = `<p style="color: #94a3b8; font-size: 0.9rem;">No active emergencies.</p>`;
+            }
+        } catch (e) {
+            console.warn("Could not fetch police stats/cases:", e);
+        }
+    }
+
+    fetchPoliceStatsAndCases();
 
     // Listen to localStorage for simulated real-time emergency events
     console.log("Police Dashboard: Listening for emergency alerts...");
@@ -611,9 +665,18 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // Update victim marker on map
-        if(victimMarker && data.latitude && data.longitude) {
+        if(data.latitude && data.longitude) {
             const victimCoords = [parseFloat(data.latitude), parseFloat(data.longitude)];
-            victimMarker.setLatLng(victimCoords);
+            if (!victimMarker) {
+                const dangerIcon = L.icon({
+                    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+                    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+                    iconSize: [25, 41], iconAnchor: [12, 41]
+                });
+                victimMarker = L.marker(victimCoords, {icon: dangerIcon}).addTo(policeMap).bindPopup("Victim Location");
+            } else {
+                victimMarker.setLatLng(victimCoords);
+            }
             if(policeMap) policeMap.panTo(victimCoords);
         }
 
@@ -911,7 +974,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const polProfileId = document.getElementById('polProfileId');
     const officerProfileBadge = document.getElementById('officerProfileBadge');
     const polStationName = document.getElementById('polStationName');
-    const officerNameVal = localStorage.getItem('userName') || 'Officer Singh';
+    const officerNameVal = localStorage.getItem('fullName') || localStorage.getItem('userName') || 'Police Officer';
     if (polProfileName) polProfileName.innerText = officerNameVal;
     if (officerProfileBadge) {
         const initials = officerNameVal.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);

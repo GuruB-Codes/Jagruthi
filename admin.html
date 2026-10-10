@@ -102,7 +102,7 @@
                         <div class="stat-icon bg-success-light text-success"><i class="las la-check-circle"></i></div>
                         <div class="stat-info">
                             <span class="stat-label text-success fw-600">Resolved</span>
-                            <h3 class="stat-value text-success" id="statResolved">45</h3>
+                            <h3 class="stat-value text-success" id="statResolved">0</h3>
                         </div>
                     </div>
                 </section>
@@ -151,18 +151,11 @@
                                     <th>Action</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody id="adminUsersTableBody">
                                 <tr>
-                                    <td><div class="fw-600">Priya M.</div><div class="text-xs text-medium">2 Contacts</div></td>
-                                    <td>+91 98765 00001</td>
-                                    <td><span class="badge badge-success">Active</span></td>
-                                    <td><button class="action-edit"><i class="las la-pen"></i></button></td>
-                                </tr>
-                                <tr>
-                                    <td><div class="fw-600">Sarah J.</div><div class="text-xs text-medium">1 Contact</div></td>
-                                    <td>+91 98765 00002</td>
-                                    <td><span class="badge badge-danger">Blocked</span></td>
-                                    <td><button class="action-edit"><i class="las la-pen"></i></button></td>
+                                    <td colspan="4" style="text-align: center; color: #94a3b8; padding: 20px;">
+                                        <i class="las la-spinner la-spin"></i> Loading registered users...
+                                    </td>
                                 </tr>
                             </tbody>
                         </table>
@@ -173,22 +166,9 @@
                 <!-- Emergency Contact Management -->
                 <section class="card admin-card" style="margin-bottom: 16px;">
                     <h2 class="section-title text-admin-dark"><i class="las la-address-card"></i> Contact Management</h2>
-                    <div class="admin-list-container">
-                        <div class="contact-card-admin">
-                            <div class="contact-icon bg-indigo-light text-indigo"><i class="las la-user"></i></div>
-                            <div class="contact-info">
-                                <h4>Ramesh Kumar</h4>
-                                <p>Linked to: Priya M.</p>
-                            </div>
-                            <button class="btn-icon-soft"><i class="las la-ellipsis-v"></i></button>
-                        </div>
-                        <div class="contact-card-admin">
-                            <div class="contact-icon bg-indigo-light text-indigo"><i class="las la-user"></i></div>
-                            <div class="contact-info">
-                                <h4>Anita Singh</h4>
-                                <p>Linked to: Bimba K.</p>
-                            </div>
-                            <button class="btn-icon-soft"><i class="las la-ellipsis-v"></i></button>
+                    <div class="admin-list-container" id="adminContactsList">
+                        <div style="text-align: center; color: #94a3b8; padding: 16px;">
+                            <i class="las la-spinner la-spin"></i> Loading contacts...
                         </div>
                     </div>
                 </section>
@@ -196,22 +176,9 @@
                 <!-- Police Management Section -->
                 <section class="card admin-card">
                     <h2 class="section-title text-admin-dark"><i class="las la-building"></i> Police Unit Management</h2>
-                    <div class="admin-list-container">
-                        <div class="police-unit-card">
-                            <div class="unit-status status-busy"></div>
-                            <div class="unit-details">
-                                <h4>Central Station - Unit 4</h4>
-                                <p>Officer: R. Sharma</p>
-                            </div>
-                            <span class="badge badge-warning">Busy</span>
-                        </div>
-                        <div class="police-unit-card">
-                            <div class="unit-status status-avail"></div>
-                            <div class="unit-details">
-                                <h4>North Station - Unit 2</h4>
-                                <p>Officer: V. Patel</p>
-                            </div>
-                            <span class="badge badge-success">Available</span>
+                    <div class="admin-list-container" id="adminPoliceUnitsList">
+                        <div style="text-align: center; color: #94a3b8; padding: 16px;">
+                            <i class="las la-spinner la-spin"></i> Loading police units...
                         </div>
                     </div>
                     <button class="btn-outline-admin mt-3 w-100"><i class="las la-plus"></i> Add Unit Route</button>
@@ -244,18 +211,11 @@
                                     <th>Status</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody id="adminReportsTableBody">
                                 <tr>
-                                    <td><strong>#INC-9042</strong></td>
-                                    <td><span class="text-danger">SOS Alert</span></td>
-                                    <td>10:45 AM</td>
-                                    <td><span class="badge badge-success">Resolved</span></td>
-                                </tr>
-                                <tr>
-                                    <td><strong>#INC-9038</strong></td>
-                                    <td><span class="text-warning">Deviation</span></td>
-                                    <td>08:20 AM</td>
-                                    <td><span class="badge badge-success">Resolved</span></td>
+                                    <td colspan="4" style="text-align: center; color: #94a3b8; padding: 20px;">
+                                        <i class="las la-spinner la-spin"></i> Loading incident reports...
+                                    </td>
                                 </tr>
                             </tbody>
                         </table>

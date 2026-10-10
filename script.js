@@ -1,16 +1,4 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Automatically purge/migrate any legacy stored demo names from browser cache
-    try {
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            const val = localStorage.getItem(key);
-            if (val && typeof val === 'string' && (val.includes('Kavya') || val.includes('kavya'))) {
-                const updatedVal = val.replace(/Kavya Sharma/gi, 'Bimba K').replace(/Kavya/gi, 'Bimba K');
-                localStorage.setItem(key, updatedVal);
-            }
-        }
-    } catch(e) {}
-
     const supabase = window.supabaseClient;
     const roleMap = { 'index.html': 'user', 'emergency.html': 'emergency', 'police.html': 'police', 'admin.html': 'admin' };
     
@@ -23,47 +11,28 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     // Set Profile Image based on user name
-    const userName = localStorage.getItem('userName') || 'Bimba K';
+    const userName = localStorage.getItem('fullName') || localStorage.getItem('userName') || 'User';
     const profileImg = document.getElementById('userProfileImg');
     if (profileImg) {
         profileImg.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=7b2cbf&color=fff&rounded=true`;
     }
-    
-    // 15 Dummy Drivers Dataset
-    const dummyDrivers = [
-        { name: "Rajesh Kumar", phone: "+91 9876543211", carNumber: "KA-01-AB-1234", carModel: "Maruti Swift" },
-        { name: "Suresh Reddy", phone: "+91 9876543212", carNumber: "KA-02-CD-5678", carModel: "Hyundai i20" },
-        { name: "Amit Singh", phone: "+91 9876543213", carNumber: "KA-03-EF-9012", carModel: "Tata Nexon" },
-        { name: "Priya Sharma", phone: "+91 9876543214", carNumber: "KA-04-GH-3456", carModel: "Honda City" },
-        { name: "Vikram Das", phone: "+91 9876543215", carNumber: "KA-05-IJ-7890", carModel: "Mahindra XUV300" },
-        { name: "Anita Patel", phone: "+91 9876543216", carNumber: "KA-01-KL-1234", carModel: "Kia Seltos" },
-        { name: "Ramesh Babu", phone: "+91 9876543217", carNumber: "KA-02-MN-5678", carModel: "Toyota Innova" },
-        { name: "Sandeep Gupta", phone: "+91 9876543218", carNumber: "KA-03-OP-9012", carModel: "Maruti Dzire" },
-        { name: "Kiran Rao", phone: "+91 9876543219", carNumber: "KA-04-QR-3456", carModel: "Hyundai Creta" },
-        { name: "Pooja Desai", phone: "+91 9876543220", carNumber: "KA-05-ST-7890", carModel: "Tata Tiago" },
-        { name: "Rahul Verma", phone: "+91 9876543221", carNumber: "KA-01-UV-1234", carModel: "Renault Kwid" },
-        { name: "Neha Joshi", phone: "+91 9876543222", carNumber: "KA-02-WX-5678", carModel: "Skoda Kushaq" },
-        { name: "Manoj Tiwari", phone: "+91 9876543223", carNumber: "KA-03-YZ-9012", carModel: "VW Polo" },
-        { name: "Sunita Iyer", phone: "+91 9876543224", carNumber: "KA-04-AB-3456", carModel: "Maruti Baleno" },
-        { name: "Deepak Nair", phone: "+91 9876543225", carNumber: "KA-05-CD-7890", carModel: "Hyundai Venue" }
-    ];
 
     /* =========================================
-       1. MAP INITIALIZATION — Only user marker
+       1. MAP INITIALIZATION — Real Device Geolocation
        ========================================= */
     let userMap, userMarker, destMarker, liveTrackingInterval;
     let safestRouteLine, altRouteLine, shortestRouteLine;
     let deviationLine;
     
-    const defaultLoc = [13.1682, 77.5354]; // Presidency University, Rajanakunte
-    let startLoc = defaultLoc;
-    let destinationLoc = null; // NULL until user searches
+    let startLoc = null; // Dynamically acquired from GPS
+    let destinationLoc = null; // Set when user searches
     let activePathCoords = null;
     let safestPath = null, shortPath = null, altPath = null;
     let currentStep = 0;
     let routesGenerated = false;
 
-    userMap = L.map('userMap', {zoomControl: false}).setView(startLoc, 15);
+    // Initialize map view centered neutrally until location is acquired
+    userMap = L.map('userMap', {zoomControl: false}).setView([12.9716, 77.5946], 12);
     L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
         maxZoom: 20,
         subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
@@ -82,50 +51,74 @@ document.addEventListener('DOMContentLoaded', () => {
         iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34]
     });
 
-    // Place user marker at default first, then update with real GPS
-    userMarker = L.marker(startLoc, {icon: userIcon, zIndexOffset: 1000}).addTo(userMap).bindPopup("Detecting your location...").openPopup();
+    const sourceInput = document.getElementById('sourceInput');
+    const homeCurrentLocText = document.getElementById('homeCurrentLocText');
+    const homeGpsStatus = document.getElementById('homeGpsStatus');
+
+    function applyUserGpsPosition(latitude, longitude) {
+        startLoc = [latitude, longitude];
+        if (!userMarker) {
+            userMarker = L.marker(startLoc, {icon: userIcon, zIndexOffset: 1000}).addTo(userMap);
+        } else {
+            userMarker.setLatLng(startLoc);
+        }
+        userMarker.bindPopup("Your Current Location (GPS)").openPopup();
+        userMap.setView(startLoc, 16);
+
+        if (sourceInput) sourceInput.value = "Current Location (GPS)";
+        updateCoordsDisplays(startLoc);
+
+        // Reverse geocode to show friendly address on Home tab
+        reverseGeocode(latitude, longitude).then(addr => {
+            if (addr && homeCurrentLocText) {
+                homeCurrentLocText.innerText = addr;
+            }
+        });
+    }
+
+    async function reverseGeocode(lat, lng) {
+        if (!lat || !lng) return null;
+        try {
+            const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=16&addressdetails=1`, {
+                headers: { 'Accept-Language': 'en' }
+            });
+            const data = await res.json();
+            return data.display_name || null;
+        } catch (e) {
+            console.error('Reverse geocode failed:', e);
+            return null;
+        }
+    }
+
+    function handleLocationError(error) {
+        console.warn("Geolocation access notice:", error?.message || "Unavailable");
+        if (sourceInput) {
+            sourceInput.value = "";
+            sourceInput.placeholder = "Location unavailable — enter starting point";
+        }
+        if (homeGpsStatus) {
+            homeGpsStatus.innerText = "GPS Offline";
+            homeGpsStatus.style.color = "var(--text-light)";
+        }
+        if (homeCurrentLocText) {
+            homeCurrentLocText.innerText = "Location permission needed";
+        }
+    }
 
     // Auto-detect REAL GPS location on page load
-    const sourceInput = document.getElementById('sourceInput');
-    if (sourceInput) sourceInput.value = "Detecting location...";
-
-    function fetchLocationByIP() {
-        // IP Geolocation gives incorrect ISP node (Kasturba Road). 
-        // Bypassing directly to exact precision fallback for demo purposes.
-        fallbackToDefault();
-    }
-
-    function fallbackToDefault() {
-        if (sourceInput) sourceInput.value = "Presidency University";
-        startLoc = defaultLoc;
-        if(userMarker) {
-            userMarker.setLatLng(startLoc);
-            userMarker.bindPopup("Current Location: Presidency University").openPopup();
-        }
-        if(userMap) { 
-            userMap.setView(startLoc, 15);
-        }
-    }
-
     if (navigator.geolocation) {
+        if (sourceInput) sourceInput.value = "Detecting your location...";
         navigator.geolocation.getCurrentPosition(
             (position) => {
-                startLoc = [position.coords.latitude, position.coords.longitude];
-                console.log("Real GPS detected:", startLoc);
-                userMarker.setLatLng(startLoc);
-                userMarker.bindPopup("Current Location (GPS)").openPopup();
-                userMap.setView(startLoc, 15);
-                if (sourceInput) sourceInput.value = "Current Location (GPS)";
+                applyUserGpsPosition(position.coords.latitude, position.coords.longitude);
             },
             (error) => {
-                console.warn("GPS denied or unavailable, using IP fallback:", error.message);
-                fetchLocationByIP();
+                handleLocationError(error);
             },
-            { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+            { enableHighAccuracy: true, timeout: 12000, maximumAge: 30000 }
         );
     } else {
-        console.warn("Geolocation not supported by browser");
-        fetchLocationByIP();
+        handleLocationError({ message: "Geolocation not supported by browser" });
     }
 
     /* =========================================
@@ -730,17 +723,20 @@ document.addEventListener('DOMContentLoaded', () => {
         const activeModeObj = document.querySelector('.mode-btn.active span');
         if (activeModeObj) travelMode = activeModeObj.innerText;
         
-        const fallbackLat = "13.1682";
-        const fallbackLng = "77.5354";
-
         // Use the captured deviated position if available, otherwise use current marker position
         let alertLat, alertLng;
         if (lastDeviatedPosition) {
             alertLat = lastDeviatedPosition[0].toFixed(4);
             alertLng = lastDeviatedPosition[1].toFixed(4);
+        } else if (userMarker) {
+            alertLat = userMarker.getLatLng().lat.toFixed(4);
+            alertLng = userMarker.getLatLng().lng.toFixed(4);
+        } else if (startLoc) {
+            alertLat = Number(startLoc[0]).toFixed(4);
+            alertLng = Number(startLoc[1]).toFixed(4);
         } else {
-            alertLat = userMarker ? userMarker.getLatLng().lat.toFixed(4) : fallbackLat;
-            alertLng = userMarker ? userMarker.getLatLng().lng.toFixed(4) : fallbackLng;
+            alertLat = "0.0000";
+            alertLng = "0.0000";
         }
 
         // 1. Get authenticated user ID UUID
@@ -758,37 +754,42 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Check for attached driver/vehicle info
         const carNumberInput = document.getElementById('carNumberInput');
-        let driverInfo = null;
+        let driverData = null;
         if (carNumberInput && carNumberInput.value.trim() !== '') {
             const enteredNum = carNumberInput.value.trim().toUpperCase();
-            let found = dummyDrivers.find(d => d.carNumber.toUpperCase().includes(enteredNum) || enteredNum.includes(d.carNumber.toUpperCase()));
-            driverInfo = Object.assign({}, found || dummyDrivers[Math.floor(Math.random() * dummyDrivers.length)]);
-            driverInfo.carNumber = enteredNum;
-        } else if (travelMode === 'Car') {
-            driverInfo = Object.assign({}, dummyDrivers[Math.floor(Math.random() * dummyDrivers.length)]);
+            driverData = {
+                driverCarNumber: enteredNum
+            };
         }
-
-        let driverData = driverInfo ? {
-            driverName: driverInfo.name,
-            driverPhone: driverInfo.phone,
-            driverCarNumber: driverInfo.carNumber,
-            driverCarModel: driverInfo.carModel
-        } : null;
 
         let fullMessage = message;
-        if (driverData) {
-            fullMessage += ` | Vehicle: ${driverData.driverCarNumber} (${driverData.driverCarModel}), Driver: ${driverData.driverName} (${driverData.driverPhone})`;
+        if (driverData && driverData.driverCarNumber) {
+            fullMessage += ` | Vehicle: ${driverData.driverCarNumber}`;
         }
+
+        let alertAddress = "";
+        if (destInput && destInput.value.trim()) {
+            alertAddress = destInput.value.trim();
+        } else if (homeCurrentLocText && homeCurrentLocText.innerText && homeCurrentLocText.innerText !== "Location permission needed") {
+            alertAddress = homeCurrentLocText.innerText;
+        } else if (alertLat !== "0.0000") {
+            alertAddress = `Coordinates: ${alertLat}, ${alertLng}`;
+        } else {
+            alertAddress = "Location coordinates pending";
+        }
+
+        const currentUserName = localStorage.getItem('fullName') || localStorage.getItem('userName') || "User";
+        const currentUserPhone = localStorage.getItem('userPhone') || "";
 
         const emergencyData = {
             id: Date.now(),
             sos_id: activeSosId,
             user_id: activeUserId,
-            userName: localStorage.getItem('userName') || "Bimba K",
-            phone: localStorage.getItem('userPhone') || "+91 98765 43210",
+            userName: currentUserName,
+            phone: currentUserPhone,
             latitude: alertLat,
             longitude: alertLng,
-            address: destInput ? destInput.value || "Presidency University, Rajanakunte" : "Presidency University, Rajanakunte",
+            address: alertAddress,
             alertType: type,
             message: fullMessage,
             travelMode: travelMode,
@@ -1232,20 +1233,15 @@ document.addEventListener('DOMContentLoaded', () => {
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
                     (pos) => {
-                        const realLoc = [pos.coords.latitude, pos.coords.longitude];
-                        if(userMarker) userMarker.setLatLng(realLoc);
-                        if(userMap) { userMap.panTo(realLoc); userMap.setZoom(16); }
-                        if(sourceInput) sourceInput.value = "My Current Location";
-                        updateCoordsDisplays(realLoc);
+                        applyUserGpsPosition(pos.coords.latitude, pos.coords.longitude);
                     },
                     (error) => {
-                        console.warn("GPS failed on click, using IP fallback:", error.message);
-                        fetchLocationByIP();
+                        handleLocationError(error);
                     },
                     { enableHighAccuracy: true, timeout: 10000 }
                 );
             } else {
-                fetchLocationByIP();
+                handleLocationError({ message: "Geolocation not supported" });
             }
         });
     }
@@ -1254,7 +1250,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const sosCoords = document.getElementById('sosCoordsDisplay');
         if (sosCoords) sosCoords.innerText = `Lat: ${coords[0].toFixed(4)}, Lng: ${coords[1].toFixed(4)}`;
         const homeGps = document.getElementById('homeGpsStatus');
-        if (homeGps) homeGps.innerText = `GPS Active (${coords[0].toFixed(2)}, ${coords[1].toFixed(2)})`;
+        if (homeGps) {
+            homeGps.innerText = `GPS Active (${coords[0].toFixed(2)}, ${coords[1].toFixed(2)})`;
+            homeGps.style.color = "var(--primary)";
+        }
     }
 
     /* =========================================
@@ -1303,15 +1302,128 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Populate profile tab info from localStorage
+    // Populate profile tab info from real user session
     const profileTabName = document.getElementById('profileTabName');
     const profileTabPhone = document.getElementById('profileTabPhone');
     const profileTabAvatar = document.getElementById('profileTabAvatar');
-    if (profileTabName) profileTabName.innerText = localStorage.getItem('userName') || 'Bimba K';
-    if (profileTabPhone) profileTabPhone.innerText = localStorage.getItem('userPhone') || '+91 98765 43210';
+    const curUserName = localStorage.getItem('fullName') || localStorage.getItem('userName') || 'User';
+    const curUserPhone = localStorage.getItem('userPhone') || '';
+    if (profileTabName) profileTabName.innerText = curUserName;
+    if (profileTabPhone) profileTabPhone.innerText = curUserPhone || 'No phone registered';
     if (profileTabAvatar) {
-        profileTabAvatar.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(localStorage.getItem('userName') || 'User')}&background=4f46e5&color=fff&rounded=true`;
+        profileTabAvatar.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(curUserName)}&background=4f46e5&color=fff&rounded=true`;
     }
+
+    // Dynamic Emergency Contacts Loader
+    async function loadUserEmergencyContacts() {
+        const contactsContainer = document.getElementById('userEmergencyContactsList');
+        const countBadge = document.getElementById('userContactCountBadge');
+        const phone = localStorage.getItem('userPhone');
+        if (!phone) return;
+
+        let contacts = [];
+        if (supabase) {
+            try {
+                // Fetch emergency contact from users table
+                const { data: userRow } = await supabase
+                    .from('users')
+                    .select('emergency_contact')
+                    .eq('phone', phone)
+                    .single();
+
+                if (userRow?.emergency_contact) {
+                    contacts.push({
+                        name: 'Primary Emergency Contact',
+                        phone: userRow.emergency_contact,
+                        initial: 'P'
+                    });
+                }
+            } catch (e) {
+                console.warn("Could not load user contact from DB:", e);
+            }
+        }
+
+        if (countBadge) {
+            countBadge.innerText = `${contacts.length} Connected`;
+            countBadge.className = contacts.length > 0 ? 'badge badge-success' : 'badge';
+        }
+
+        if (contactsContainer) {
+            if (contacts.length === 0) {
+                contactsContainer.innerHTML = `
+                    <div style="padding: 14px; text-align: center; color: #94a3b8; font-size: 0.85rem; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 10px;">
+                        <i class="las la-user-plus" style="font-size: 1.5rem; display: block; margin-bottom: 4px;"></i>
+                        No emergency contacts configured. Please add one during registration or in profile.
+                    </div>
+                `;
+            } else {
+                contactsContainer.innerHTML = contacts.map(c => `
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; margin-bottom: 8px;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div style="width: 36px; height: 36px; border-radius: 50%; background: #e0e7ff; color: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem;">${c.initial}</div>
+                            <div>
+                                <h4 style="font-size: 0.9rem; margin: 0;">${c.name}</h4>
+                                <span style="font-size: 0.78rem; color: #64748b;">${c.phone}</span>
+                            </div>
+                        </div>
+                        <a href="tel:${c.phone.replace(/\\s+/g, '')}" style="color: var(--primary); font-size: 1.4rem;"><i class="las la-phone"></i></a>
+                    </div>
+                `).join('');
+            }
+        }
+    }
+
+    // Dynamic Recent Alerts Loader
+    async function loadUserRecentAlerts() {
+        const feedList = document.getElementById('womenAlertsFeedList');
+        const phone = localStorage.getItem('userPhone');
+        if (!feedList || !phone || !supabase) return;
+
+        try {
+            const { data: alerts, error } = await supabase
+                .from('emergency_alerts')
+                .select('*')
+                .eq('user_phone', phone)
+                .order('created_at', { ascending: false })
+                .limit(5);
+
+            if (error || !alerts || alerts.length === 0) {
+                feedList.innerHTML = `
+                    <div style="padding: 20px; text-align: center; color: #94a3b8; font-size: 0.85rem; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: var(--radius-sm);">
+                        <i class="las la-shield-alt" style="font-size: 1.6rem; display: block; margin-bottom: 6px; color: #10b981;"></i>
+                        No recent SOS alerts. Your safety status is clear.
+                    </div>
+                `;
+                return;
+            }
+
+            feedList.innerHTML = alerts.map(a => {
+                const isResolved = a.status === 'resolved';
+                const borderCol = isResolved ? 'var(--success)' : 'var(--danger)';
+                const iconCol = isResolved ? 'var(--success)' : 'var(--danger)';
+                const icon = isResolved ? 'la-check-circle' : 'la-exclamation-triangle';
+                const time = new Date(a.created_at).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' });
+                return `
+                    <div style="background: white; border: 1px solid #e2e8f0; border-left: 4px solid ${borderCol}; border-radius: var(--radius-sm); padding: 14px; box-shadow: var(--shadow-sm); margin-bottom: 8px;">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <i class="las ${icon}" style="color: ${iconCol}; font-size: 1.3rem;"></i>
+                                <strong style="font-size: 0.95rem; color: var(--text-dark);">${a.alert_type || 'SOS Alert'}</strong>
+                            </div>
+                            <span class="badge ${isResolved ? 'badge-success' : 'badge-danger'}" style="font-size: 0.72rem;">${a.status.toUpperCase()}</span>
+                        </div>
+                        <p style="font-size: 0.82rem; color: var(--text-medium); margin-top: 6px;">${a.message || 'Emergency trigger recorded.'}</p>
+                        <span style="font-size: 0.72rem; color: #94a3b8; display: block; margin-top: 4px;"><i class="las la-clock"></i> ${time}</span>
+                    </div>
+                `;
+            }).join('');
+        } catch (e) {
+            console.warn("Could not load user alerts feed:", e);
+        }
+    }
+
+    loadUserEmergencyContacts();
+    loadUserRecentAlerts();
 
     // Direct SOS Button in SOS Tab
     const directSosTriggerBtn = document.getElementById('directSosTriggerBtn');
