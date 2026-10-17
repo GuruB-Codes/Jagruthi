@@ -82,6 +82,25 @@ window.jagruthiSosService = {
     },
 
     /**
+     * Updates an SOS event location with real verified live GPS coordinates
+     */
+    async updateSosEventLocation(sosId, latitude, longitude) {
+        const client = window.supabaseClient;
+        if (!client || !sosId) return;
+        try {
+            await client
+                .from('sos_events')
+                .update({
+                    latitude: typeof latitude === 'number' ? latitude : parseFloat(latitude),
+                    longitude: typeof longitude === 'number' ? longitude : parseFloat(longitude)
+                })
+                .eq('id', sosId);
+        } catch (err) {
+            console.warn("Exception in updateSosEventLocation:", err);
+        }
+    },
+
+    /**
      * Resolves an SOS event by setting status to RESOLVED and ended_at
      */
     async resolveSosEvent(sosId) {

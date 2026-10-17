@@ -55,21 +55,41 @@ document.addEventListener('DOMContentLoaded', () => {
     const homeCurrentLocText = document.getElementById('homeCurrentLocText');
     const homeGpsStatus = document.getElementById('homeGpsStatus');
 
-    function applyUserGpsPosition(latitude, longitude) {
-        startLoc = [latitude, longitude];
+    let liveUserCoords = null; // { lat, lng, accuracy, timestamp }
+    let globalGpsWatchId = null;
+
+    function applyUserGpsPosition(latitude, longitude, accuracy = null) {
+        if (!latitude || !longitude || isNaN(latitude) || isNaN(longitude)) return;
+
+        const lat = Number(latitude);
+        const lng = Number(longitude);
+
+        liveUserCoords = {
+            lat: lat,
+            lng: lng,
+            accuracy: accuracy || 10,
+            timestamp: Date.now()
+        };
+        startLoc = [lat, lng];
+
         if (!userMarker) {
             userMarker = L.marker(startLoc, {icon: userIcon, zIndexOffset: 1000}).addTo(userMap);
         } else {
             userMarker.setLatLng(startLoc);
         }
-        userMarker.bindPopup("Your Current Location (GPS)").openPopup();
+        userMarker.bindPopup("Your Current Location (Live GPS)").openPopup();
         userMap.setView(startLoc, 16);
 
-        if (sourceInput) sourceInput.value = "Current Location (GPS)";
+        if (sourceInput) sourceInput.value = "Current Location (Live GPS)";
         updateCoordsDisplays(startLoc);
 
+        // If emergency is currently counting down or active, propagate live coordinates immediately
+        if (isEmergencyCountdownActive || isEmergencyDispatchedActive) {
+            onDispatchedLocationSecured(lat, lng, accuracy || 8);
+        }
+
         // Reverse geocode to show friendly address on Home tab
-        reverseGeocode(latitude, longitude).then(addr => {
+        reverseGeocode(lat, lng).then(addr => {
             if (addr && homeCurrentLocText) {
                 homeCurrentLocText.innerText = addr;
             }
@@ -92,34 +112,56 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function handleLocationError(error) {
         console.warn("Geolocation access notice:", error?.message || "Unavailable");
-        if (sourceInput) {
+        if (sourceInput && !startLoc) {
             sourceInput.value = "";
             sourceInput.placeholder = "Location unavailable — enter starting point";
         }
-        if (homeGpsStatus) {
+        if (homeGpsStatus && !startLoc) {
             homeGpsStatus.innerText = "GPS Offline";
             homeGpsStatus.style.color = "var(--text-light)";
         }
-        if (homeCurrentLocText) {
+        if (homeCurrentLocText && !startLoc) {
             homeCurrentLocText.innerText = "Location permission needed";
         }
     }
 
-    // Auto-detect REAL GPS location on page load
-    if (navigator.geolocation) {
-        if (sourceInput) sourceInput.value = "Detecting your location...";
+    // Continuous Real-Time GPS Tracking & Satellite Watcher
+    function initGlobalGpsWatcher() {
+        if (!navigator.geolocation) {
+            handleLocationError({ message: "Geolocation not supported by device" });
+            return;
+        }
+
+        if (sourceInput && !startLoc) sourceInput.value = "Acquiring live GPS...";
+
+        // 1. Immediate fast cached/network fix (< 800ms)
         navigator.geolocation.getCurrentPosition(
             (position) => {
-                applyUserGpsPosition(position.coords.latitude, position.coords.longitude);
+                applyUserGpsPosition(position.coords.latitude, position.coords.longitude, position.coords.accuracy);
             },
-            (error) => {
-                handleLocationError(error);
+            (err) => {
+                console.warn("Fast GPS hint:", err?.message);
             },
-            { enableHighAccuracy: true, timeout: 12000, maximumAge: 30000 }
+            { enableHighAccuracy: false, timeout: 6000, maximumAge: 60000 }
         );
-    } else {
-        handleLocationError({ message: "Geolocation not supported by browser" });
+
+        // 2. High-precision continuous hardware GPS satellite watcher
+        try {
+            globalGpsWatchId = navigator.geolocation.watchPosition(
+                (position) => {
+                    applyUserGpsPosition(position.coords.latitude, position.coords.longitude, position.coords.accuracy);
+                },
+                (error) => {
+                    handleLocationError(error);
+                },
+                { enableHighAccuracy: true, timeout: 15000, maximumAge: 5000 }
+            );
+        } catch (e) {
+            console.warn("watchPosition error:", e);
+        }
     }
+
+    initGlobalGpsWatcher();
 
     /* =========================================
        2. DESTINATION SEARCH (Nominatim API)
@@ -723,17 +765,23 @@ document.addEventListener('DOMContentLoaded', () => {
         const activeModeObj = document.querySelector('.mode-btn.active span');
         if (activeModeObj) travelMode = activeModeObj.innerText;
         
-        // Use the captured deviated position if available, otherwise use current marker position
+        // Determine real live GPS position for SOS record
         let alertLat, alertLng;
-        if (lastDeviatedPosition) {
-            alertLat = lastDeviatedPosition[0].toFixed(4);
-            alertLng = lastDeviatedPosition[1].toFixed(4);
+        if (activeSosLat && activeSosLng) {
+            alertLat = Number(activeSosLat).toFixed(5);
+            alertLng = Number(activeSosLng).toFixed(5);
+        } else if (liveUserCoords) {
+            alertLat = Number(liveUserCoords.lat).toFixed(5);
+            alertLng = Number(liveUserCoords.lng).toFixed(5);
+        } else if (lastDeviatedPosition) {
+            alertLat = lastDeviatedPosition[0].toFixed(5);
+            alertLng = lastDeviatedPosition[1].toFixed(5);
         } else if (userMarker) {
-            alertLat = userMarker.getLatLng().lat.toFixed(4);
-            alertLng = userMarker.getLatLng().lng.toFixed(4);
+            alertLat = userMarker.getLatLng().lat.toFixed(5);
+            alertLng = userMarker.getLatLng().lng.toFixed(5);
         } else if (startLoc) {
-            alertLat = Number(startLoc[0]).toFixed(4);
-            alertLng = Number(startLoc[1]).toFixed(4);
+            alertLat = Number(startLoc[0]).toFixed(5);
+            alertLng = Number(startLoc[1]).toFixed(5);
         } else {
             alertLat = "0.0000";
             alertLng = "0.0000";
@@ -1939,6 +1987,9 @@ document.addEventListener('DOMContentLoaded', () => {
         isEmergencyCountdownActive = true;
         countdownRemaining = 5;
 
+        // Pre-fetch live GPS immediately during countdown so satellites are locked before dispatch
+        acquireLiveEmergencyGps();
+
         // Reset UI elements
         if (emCountdownNum) emCountdownNum.innerText = "5";
         if (emCountdownSecondsText) emCountdownSecondsText.innerText = "5";
@@ -2030,7 +2081,41 @@ document.addEventListener('DOMContentLoaded', () => {
         `).join('');
     }
 
+    // High-priority Live GPS Resolution for SOS
+    function acquireLiveEmergencyGps() {
+        // If we already have fresh liveUserCoords, secure it immediately
+        if (liveUserCoords) {
+            onDispatchedLocationSecured(liveUserCoords.lat, liveUserCoords.lng, liveUserCoords.accuracy);
+        }
+
+        if (!navigator.geolocation) return;
+
+        // Fresh high-accuracy query
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                applyUserGpsPosition(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy);
+                onDispatchedLocationSecured(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy);
+            },
+            (err) => {
+                console.warn("Emergency high-accuracy GPS query error:", err);
+                // Fallback to standard network position if satellite lock is slow indoors
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                        applyUserGpsPosition(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy);
+                        onDispatchedLocationSecured(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy);
+                    },
+                    (netErr) => {
+                        console.warn("Emergency network geolocation query error:", netErr);
+                    },
+                    { enableHighAccuracy: false, timeout: 6000, maximumAge: 60000 }
+                );
+            },
+            { enableHighAccuracy: true, timeout: 8000, maximumAge: 3000 }
+        );
+    }
+
     function onDispatchedLocationSecured(lat, lng, accuracy = 8) {
+        if (!lat || !lng || isNaN(lat) || isNaN(lng)) return;
         activeSosLat = Number(lat);
         activeSosLng = Number(lng);
 
@@ -2038,23 +2123,47 @@ document.addEventListener('DOMContentLoaded', () => {
             emLocationStatusTitle.innerText = "Exact Location Secured";
         }
         if (emLocationDisplay) {
-            emLocationDisplay.innerText = `Lat: ${activeSosLat.toFixed(4)}, Lng: ${activeSosLng.toFixed(4)} (±${Math.round(accuracy)}m)`;
+            emLocationDisplay.innerHTML = `<span style="font-size:0.95rem; font-weight:600; color:#0f172a;">Lat: ${activeSosLat.toFixed(5)}, Lng: ${activeSosLng.toFixed(5)}</span> <span style="font-size:0.75rem; color:#059669; font-weight:600;">(±${Math.round(accuracy)}m)</span>`;
         }
         if (btnViewOnMap) {
             btnViewOnMap.classList.remove('hidden');
         }
 
-        // Show SMS Popup automatically as requested in Image 1 ("Once the siren started one pop as sent now will show")
-        if (emSmsPopupBackdrop) {
+        // Reverse geocode to show street address prominently
+        reverseGeocode(activeSosLat, activeSosLng).then(addr => {
+            if (addr && emLocationDisplay) {
+                emLocationDisplay.innerHTML = `
+                    <div style="font-size:0.9rem; font-weight:600; color:#0f172a; margin-bottom:2px; line-height:1.3;">${escapeHtml(addr)}</div>
+                    <div style="font-size:0.76rem; color:#64748b;">Lat: ${activeSosLat.toFixed(5)}, Lng: ${activeSosLng.toFixed(5)} (±${Math.round(accuracy)}m)</div>
+                `;
+            }
+        });
+
+        // Update active SOS record in database with verified live GPS coordinates
+        if (activeSosId && window.jagruthiSosService?.updateSosEventLocation) {
+            window.jagruthiSosService.updateSosEventLocation(activeSosId, activeSosLat, activeSosLng);
+        }
+
+        // Show SMS Popup automatically
+        if (emSmsPopupBackdrop && isEmergencyDispatchedActive) {
             setTimeout(() => {
-                emSmsPopupBackdrop.classList.remove('hidden');
+                if (isEmergencyDispatchedActive && emSmsPopupBackdrop.classList.contains('hidden')) {
+                    emSmsPopupBackdrop.classList.remove('hidden');
+                }
             }, 300);
         }
     }
 
     function sendEmergencySmsNow() {
-        const lat = activeSosLat || (startLoc ? Number(startLoc[0]) : 13.0827);
-        const lng = activeSosLng || (startLoc ? Number(startLoc[1]) : 80.2707);
+        const lat = activeSosLat || (liveUserCoords ? liveUserCoords.lat : (startLoc ? Number(startLoc[0]) : null));
+        const lng = activeSosLng || (liveUserCoords ? liveUserCoords.lng : (startLoc ? Number(startLoc[1]) : null));
+
+        if (!lat || !lng) {
+            showAppToast("Acquiring live GPS fix... Please hold 2 seconds", "warning");
+            acquireLiveEmergencyGps();
+            return;
+        }
+
         const mapsUrl = `https://maps.google.com/?q=${Number(lat).toFixed(6)},${Number(lng).toFixed(6)}`;
         const smsMessage = `EMERGENCY! I am in danger. Please help me! My live location: ${mapsUrl}`;
 
@@ -2108,10 +2217,20 @@ document.addEventListener('DOMContentLoaded', () => {
         // Populate emergency contacts matching Images 2 & 3
         populateDispatchedContacts();
 
-        // Initial Location state: "Locating..."
-        if (emLocationStatusTitle) emLocationStatusTitle.innerText = "Locating...";
-        if (emLocationDisplay) emLocationDisplay.innerText = "Acquiring live GPS fix...";
-        if (btnViewOnMap) btnViewOnMap.classList.add('hidden');
+        // Check if real live coordinates are already available
+        if (liveUserCoords) {
+            onDispatchedLocationSecured(liveUserCoords.lat, liveUserCoords.lng, liveUserCoords.accuracy);
+        } else if (startLoc) {
+            onDispatchedLocationSecured(startLoc[0], startLoc[1], 15);
+        } else {
+            // Initial Location state: "Locating..."
+            if (emLocationStatusTitle) emLocationStatusTitle.innerHTML = `<i class="las la-spinner la-spin" style="color:#ef4444;"></i> Locating...`;
+            if (emLocationDisplay) emLocationDisplay.innerText = "Securing live GPS location...";
+            if (btnViewOnMap) btnViewOnMap.classList.add('hidden');
+        }
+
+        // Re-request high accuracy position
+        acquireLiveEmergencyGps();
 
         // Start Siren and Flashlight
         emergencySiren.start();
@@ -2120,35 +2239,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Heavy alarm vibration
         if ('vibrate' in navigator) navigator.vibrate([400, 200, 400, 200, 600]);
-
-        // Request real high accuracy location immediately
-        let locationFound = false;
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                (pos) => {
-                    locationFound = true;
-                    onDispatchedLocationSecured(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy);
-                },
-                (err) => {
-                    console.warn("Geolocation immediate error:", err);
-                    if (!locationFound) {
-                        const fallbackLat = startLoc ? Number(startLoc[0]) : 13.0827;
-                        const fallbackLng = startLoc ? Number(startLoc[1]) : 80.2707;
-                        onDispatchedLocationSecured(fallbackLat, fallbackLng, 15);
-                    }
-                },
-                { enableHighAccuracy: true, timeout: 6000, maximumAge: 0 }
-            );
-        }
-
-        // Safety fallback: if GPS takes more than 1.6s, show secured with startLoc / user marker
-        setTimeout(() => {
-            if (!locationFound && !activeSosLat) {
-                const fallbackLat = startLoc ? Number(startLoc[0]) : (userMarker ? userMarker.getLatLng().lat : 13.0827);
-                const fallbackLng = startLoc ? Number(startLoc[1]) : (userMarker ? userMarker.getLatLng().lng : 80.2707);
-                onDispatchedLocationSecured(fallbackLat, fallbackLng, 12);
-            }
-        }, 1600);
 
         // Dispatch alert to backend / Supabase
         try {
@@ -2211,9 +2301,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     if (btnViewOnMap) {
         btnViewOnMap.addEventListener('click', () => {
-            const lat = activeSosLat || (startLoc ? Number(startLoc[0]) : 13.0827);
-            const lng = activeSosLng || (startLoc ? Number(startLoc[1]) : 80.2707);
-            window.open(`https://www.google.com/maps?q=${Number(lat).toFixed(6)},${Number(lng).toFixed(6)}`, '_blank');
+            const lat = activeSosLat || (liveUserCoords ? liveUserCoords.lat : (startLoc ? Number(startLoc[0]) : null));
+            const lng = activeSosLng || (liveUserCoords ? liveUserCoords.lng : (startLoc ? Number(startLoc[1]) : null));
+            if (lat && lng) {
+                window.open(`https://www.google.com/maps?q=${Number(lat).toFixed(6)},${Number(lng).toFixed(6)}`, '_blank');
+            } else {
+                showAppToast("Acquiring GPS fix...", "warning");
+                acquireLiveEmergencyGps();
+            }
         });
     }
     if (btnDismissSmsPopup) {
