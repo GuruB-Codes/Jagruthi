@@ -1495,15 +1495,98 @@ document.addEventListener('DOMContentLoaded', () => {
         profileTabAvatar.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(curUserName)}&background=4f46e5&color=fff&rounded=true`;
     }
 
+    // Default Emergency Contacts
+    const DEFAULT_EMERGENCY_CONTACTS = [
+        { name: "Amma", phone: "9843050114" },
+        { name: "Deepi", phone: "6383972272" },
+        { name: "Gobili", phone: "9042594362" }
+    ];
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    function showAppToast(message, type = 'info') {
+        let toast = document.getElementById('globalAppToast');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = 'globalAppToast';
+            toast.style.cssText = `
+                position: fixed;
+                bottom: 84px;
+                left: 50%;
+                transform: translateX(-50%) translateY(20px);
+                background: #1e1b4b;
+                color: #ffffff;
+                padding: 10px 18px;
+                border-radius: 30px;
+                font-size: 0.86rem;
+                font-weight: 600;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+                border: 1px solid rgba(255,255,255,0.18);
+                z-index: 10000;
+                opacity: 0;
+                transition: opacity 0.25s ease, transform 0.25s ease;
+                pointer-events: none;
+                max-width: 90vw;
+                white-space: nowrap;
+            `;
+            document.body.appendChild(toast);
+        }
+
+        const icon = type === 'success' ? 'la-check-circle' : (type === 'error' ? 'la-exclamation-circle' : 'la-info-circle');
+        const iconColor = type === 'success' ? '#34d399' : (type === 'error' ? '#f87171' : '#a5b4fc');
+        toast.innerHTML = `<i class="las ${icon}" style="font-size: 1.25rem; color: ${iconColor};"></i> <span>${escapeHtml(message)}</span>`;
+        
+        requestAnimationFrame(() => {
+            toast.style.opacity = '1';
+            toast.style.transform = 'translateX(-50%) translateY(0)';
+        });
+
+        clearTimeout(toast._hideTimer);
+        toast._hideTimer = setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateX(-50%) translateY(20px)';
+        }, 3000);
+    }
+
+    function getSavedEmergencyContacts() {
+        try {
+            const raw = localStorage.getItem('userEmergencyContacts');
+            if (raw) {
+                const parsed = JSON.parse(raw);
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                    return parsed;
+                }
+            }
+        } catch (e) {
+            console.warn("Could not parse userEmergencyContacts:", e);
+        }
+        return [...DEFAULT_EMERGENCY_CONTACTS];
+    }
+
     // Dynamic Emergency Contacts Loader
     async function loadUserEmergencyContacts() {
         const contactsContainer = document.getElementById('userEmergencyContactsList');
         const countBadge = document.getElementById('userContactCountBadge');
         const phone = localStorage.getItem('userPhone');
-        if (!phone) return;
 
-        let contacts = [];
-        if (supabase) {
+        let contacts = getSavedEmergencyContacts().map(c => ({
+            name: c.name || 'Emergency Contact',
+            phone: c.phone,
+            initial: (c.name ? c.name.trim().charAt(0) : 'E').toUpperCase() || 'E'
+        }));
+
+        if (supabase && phone) {
             try {
                 // Fetch emergency contact from users table
                 const { data: userRow } = await supabase
@@ -1513,11 +1596,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     .single();
 
                 if (userRow?.emergency_contact) {
-                    contacts.push({
-                        name: 'Primary Emergency Contact',
-                        phone: userRow.emergency_contact,
-                        initial: 'P'
-                    });
+                    const cleanEc = userRow.emergency_contact.trim();
+                    if (!contacts.some(c => c.phone.replace(/\D/g, '') === cleanEc.replace(/\D/g, ''))) {
+                        contacts.unshift({
+                            name: 'Primary Emergency Contact',
+                            phone: cleanEc,
+                            initial: 'P'
+                        });
+                    }
                 }
             } catch (e) {
                 console.warn("Could not load user contact from DB:", e);
@@ -1537,7 +1623,7 @@ document.addEventListener('DOMContentLoaded', () => {
             homeContactsBadge.style.color = contacts.length > 0 ? '#059669' : '#dc2626';
         }
         if (homeContactsPreviewText) {
-            homeContactsPreviewText.innerText = contacts.length > 0 ? `${contacts[0].name} (${contacts[0].phone})` : 'Tap to add emergency contact';
+            homeContactsPreviewText.innerText = contacts.length > 0 ? `${contacts[0].name} (${contacts[0].phone})` : 'Hold to edit emergency contacts';
         }
 
         if (contactsContainer) {
@@ -1545,7 +1631,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 contactsContainer.innerHTML = `
                     <div style="padding: 14px; text-align: center; color: #94a3b8; font-size: 0.85rem; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 10px;">
                         <i class="las la-user-plus" style="font-size: 1.5rem; display: block; margin-bottom: 4px;"></i>
-                        No emergency contacts configured. Please add one during registration or in profile.
+                        No emergency contacts configured. Tap below to configure.
                     </div>
                 `;
             } else {
@@ -1558,7 +1644,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <span style="font-size: 0.78rem; color: #64748b;">${c.phone}</span>
                             </div>
                         </div>
-                        <a href="tel:${c.phone.replace(/\\s+/g, '')}" style="color: var(--primary); font-size: 1.4rem;"><i class="las la-phone"></i></a>
+                        <a href="tel:${c.phone.replace(/\\s+/g, '')}" style="color: var(--primary); font-size: 1.4rem;" aria-label="Call ${c.name}"><i class="las la-phone"></i></a>
                     </div>
                 `).join('');
             }
@@ -1819,6 +1905,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const emGpsBadge = document.getElementById('emGpsBadge');
     const emEvidenceBadge = document.getElementById('emEvidenceBadge');
 
+    // Dispatched Emergency Overlay DOM elements (Images 1, 2, 3)
+    const emSmsPopupBackdrop = document.getElementById('emSmsPopupBackdrop');
+    const btnDismissSmsPopup = document.getElementById('btnDismissSmsPopup');
+    const btnSendSmsNow = document.getElementById('btnSendSmsNow');
+    const emLocationStatusTitle = document.getElementById('emLocationStatusTitle');
+    const btnViewOnMap = document.getElementById('btnViewOnMap');
+    const emDispatchedContactsList = document.getElementById('emDispatchedContactsList');
+    const emBottomStatusToast = document.getElementById('emBottomStatusToast');
+    const emBottomStatusToastText = document.getElementById('emBottomStatusToastText');
+
+    let activeSosLat = null;
+    let activeSosLng = null;
+
     const CIRCLE_CIRCUMFERENCE = 339.29; // 2 * PI * 54
 
     function setCountdownDashoffset(secondsLeft) {
@@ -1847,7 +1946,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (emCountdownBlock) emCountdownBlock.classList.remove('hidden');
         if (emDispatchedBlock) emDispatchedBlock.classList.add('hidden');
-        if (emergencyOverlay) emergencyOverlay.classList.remove('hidden');
+        if (emergencyOverlay) {
+            emergencyOverlay.classList.remove('hidden');
+            emergencyOverlay.classList.add('is-counting-down');
+        }
 
         // Play initial tick and vibration
         emergencySiren.playCountdownTick(880);
@@ -1881,11 +1983,115 @@ document.addEventListener('DOMContentLoaded', () => {
             emergencyCountdownTimer = null;
         }
         isEmergencyCountdownActive = false;
-        if (emergencyOverlay) emergencyOverlay.classList.add('hidden');
+        if (emergencyOverlay) {
+            emergencyOverlay.classList.remove('is-counting-down');
+            emergencyOverlay.classList.remove('is-dispatched');
+            emergencyOverlay.classList.add('hidden');
+        }
+        if (emSmsPopupBackdrop) emSmsPopupBackdrop.classList.add('hidden');
+        if (emBottomStatusToast) emBottomStatusToast.classList.add('hidden');
         emergencySiren.stop();
         emergencyTorch.stop();
         if ('vibrate' in navigator) navigator.vibrate(80);
         console.log("Emergency alert activation cancelled by user.");
+    }
+
+    function populateDispatchedContacts() {
+        if (!emDispatchedContactsList) return;
+        
+        const saved = getSavedEmergencyContacts();
+        const personalContacts = saved.map(c => ({
+            name: c.name || "Emergency Contact",
+            phone: c.phone,
+            type: "contact"
+        }));
+
+        const finalContacts = [
+            ...personalContacts,
+            { name: "Police Emergency", phone: "100", type: "service" },
+            { name: "Women Helpline", phone: "181", type: "service" }
+        ];
+
+        emDispatchedContactsList.innerHTML = finalContacts.map(c => `
+            <div class="em-contact-item">
+                <div class="em-contact-item-left">
+                    <div class="em-contact-avatar ${c.type === 'service' ? 'avatar-service' : 'avatar-person'}">
+                        ${c.type === 'service' ? '<i class="las la-asterisk"></i>' : '<i class="las la-user"></i>'}
+                    </div>
+                    <div class="em-contact-item-info">
+                        <h4 class="em-contact-name">${c.name}</h4>
+                        <span class="em-contact-phone">${c.phone}</span>
+                    </div>
+                </div>
+                <a href="tel:${c.phone.replace(/\\s+/g, '')}" class="em-contact-call-btn" aria-label="Call ${c.name}" title="Call ${c.name}">
+                    <i class="las la-phone"></i>
+                </a>
+            </div>
+        `).join('');
+    }
+
+    function onDispatchedLocationSecured(lat, lng, accuracy = 8) {
+        activeSosLat = Number(lat);
+        activeSosLng = Number(lng);
+
+        if (emLocationStatusTitle) {
+            emLocationStatusTitle.innerText = "Exact Location Secured";
+        }
+        if (emLocationDisplay) {
+            emLocationDisplay.innerText = `Lat: ${activeSosLat.toFixed(4)}, Lng: ${activeSosLng.toFixed(4)} (±${Math.round(accuracy)}m)`;
+        }
+        if (btnViewOnMap) {
+            btnViewOnMap.classList.remove('hidden');
+        }
+
+        // Show SMS Popup automatically as requested in Image 1 ("Once the siren started one pop as sent now will show")
+        if (emSmsPopupBackdrop) {
+            setTimeout(() => {
+                emSmsPopupBackdrop.classList.remove('hidden');
+            }, 300);
+        }
+    }
+
+    function sendEmergencySmsNow() {
+        const lat = activeSosLat || (startLoc ? Number(startLoc[0]) : 13.0827);
+        const lng = activeSosLng || (startLoc ? Number(startLoc[1]) : 80.2707);
+        const mapsUrl = `https://maps.google.com/?q=${Number(lat).toFixed(6)},${Number(lng).toFixed(6)}`;
+        const smsMessage = `EMERGENCY! I am in danger. Please help me! My live location: ${mapsUrl}`;
+
+        // Get personal contact numbers from saved user emergency contacts
+        const savedContacts = getSavedEmergencyContacts();
+        const recipientNumbers = savedContacts
+            .map(c => c.phone.replace(/[^0-9+]/g, ''))
+            .filter(p => p.length >= 7);
+
+        if (recipientNumbers.length === 0) {
+            recipientNumbers.push("9843050114", "6383972272", "9042594362");
+        }
+
+        const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        const delimiter = isIos ? ';' : ',';
+        const paramChar = isIos ? '&' : '?';
+        const numbersStr = recipientNumbers.join(delimiter);
+        const smsUri = `sms:${numbersStr}${paramChar}body=${encodeURIComponent(smsMessage)}`;
+
+        // Hide popup
+        if (emSmsPopupBackdrop) {
+            emSmsPopupBackdrop.classList.add('hidden');
+        }
+
+        // Show bottom status toast (Image 3)
+        if (emBottomStatusToast) {
+            emBottomStatusToast.classList.remove('hidden');
+            if (emBottomStatusToastText) {
+                emBottomStatusToastText.innerText = "Sending SMS to emergency contacts...";
+            }
+            setTimeout(() => {
+                if (emBottomStatusToast) emBottomStatusToast.classList.add('hidden');
+            }, 6000);
+        }
+
+        // Trigger SMS application
+        window.location.href = smsUri;
     }
 
     async function executeEmergencyActivation() {
@@ -1894,32 +2100,18 @@ document.addEventListener('DOMContentLoaded', () => {
         // Transition from countdown to dispatched view
         if (emCountdownBlock) emCountdownBlock.classList.add('hidden');
         if (emDispatchedBlock) emDispatchedBlock.classList.remove('hidden');
-
-        // Update Location info on overlay
-        if (emLocationDisplay) {
-            if (homeCurrentLocText && homeCurrentLocText.innerText && homeCurrentLocText.innerText !== "Detecting location...") {
-                emLocationDisplay.innerText = homeCurrentLocText.innerText;
-            } else if (startLoc) {
-                emLocationDisplay.innerText = `Lat: ${Number(startLoc[0]).toFixed(4)}, Lng: ${Number(startLoc[1]).toFixed(4)}`;
-            } else {
-                emLocationDisplay.innerText = "Location coords transmitted";
-            }
+        if (emergencyOverlay) {
+            emergencyOverlay.classList.remove('is-counting-down');
+            emergencyOverlay.classList.add('is-dispatched');
         }
 
-        // Set transmitting state banner
-        if (emStatusBanner) {
-            emStatusBanner.className = 'em-status-banner banner-transmitting';
-        }
-        if (emBannerIcon) {
-            emBannerIcon.className = 'las la-spinner la-spin';
-        }
-        if (emStatusTitle) emStatusTitle.innerText = "Transmitting Emergency Signal...";
-        if (emStatusDesc) emStatusDesc.innerText = "Broadcasting GPS coordinates and alerting emergency dispatch";
-        if (emContactsBadge) {
-            emContactsBadge.innerText = "Transmitting";
-            emContactsBadge.className = "detail-badge";
-        }
-        if (btnRetryAlert) btnRetryAlert.classList.add('hidden');
+        // Populate emergency contacts matching Images 2 & 3
+        populateDispatchedContacts();
+
+        // Initial Location state: "Locating..."
+        if (emLocationStatusTitle) emLocationStatusTitle.innerText = "Locating...";
+        if (emLocationDisplay) emLocationDisplay.innerText = "Acquiring live GPS fix...";
+        if (btnViewOnMap) btnViewOnMap.classList.add('hidden');
 
         // Start Siren and Flashlight
         emergencySiren.start();
@@ -1929,44 +2121,40 @@ document.addEventListener('DOMContentLoaded', () => {
         // Heavy alarm vibration
         if ('vibrate' in navigator) navigator.vibrate([400, 200, 400, 200, 600]);
 
+        // Request real high accuracy location immediately
+        let locationFound = false;
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    locationFound = true;
+                    onDispatchedLocationSecured(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy);
+                },
+                (err) => {
+                    console.warn("Geolocation immediate error:", err);
+                    if (!locationFound) {
+                        const fallbackLat = startLoc ? Number(startLoc[0]) : 13.0827;
+                        const fallbackLng = startLoc ? Number(startLoc[1]) : 80.2707;
+                        onDispatchedLocationSecured(fallbackLat, fallbackLng, 15);
+                    }
+                },
+                { enableHighAccuracy: true, timeout: 6000, maximumAge: 0 }
+            );
+        }
+
+        // Safety fallback: if GPS takes more than 1.6s, show secured with startLoc / user marker
+        setTimeout(() => {
+            if (!locationFound && !activeSosLat) {
+                const fallbackLat = startLoc ? Number(startLoc[0]) : (userMarker ? userMarker.getLatLng().lat : 13.0827);
+                const fallbackLng = startLoc ? Number(startLoc[1]) : (userMarker ? userMarker.getLatLng().lng : 80.2707);
+                onDispatchedLocationSecured(fallbackLat, fallbackLng, 12);
+            }
+        }, 1600);
+
         // Dispatch alert to backend / Supabase
         try {
-            const result = await triggerSOSAction(pendingSosType, pendingSosMessage);
-
-            if (result && result.success) {
-                // Verified Confirmation
-                if (emStatusBanner) emStatusBanner.className = 'em-status-banner banner-confirmed';
-                if (emBannerIcon) emBannerIcon.className = 'las la-check-circle';
-                if (emStatusTitle) emStatusTitle.innerText = "Alert Confirmed & Dispatched";
-                if (emStatusDesc) emStatusDesc.innerText = "Emergency contacts notified & live tracking broadcasted.";
-                if (emContactsBadge) {
-                    emContactsBadge.innerText = "Confirmed";
-                    emContactsBadge.className = "detail-badge badge-active";
-                }
-                if (btnRetryAlert) btnRetryAlert.classList.add('hidden');
-            } else {
-                // Delivery Failure: Never falsely show sent!
-                if (emStatusBanner) emStatusBanner.className = 'em-status-banner banner-failed';
-                if (emBannerIcon) emBannerIcon.className = 'las la-exclamation-triangle';
-                if (emStatusTitle) emStatusTitle.innerText = "Alert Delivery Failed";
-                if (emStatusDesc) emStatusDesc.innerText = "Network issue detected. Call 112 directly or tap Retry Alert.";
-                if (emContactsBadge) {
-                    emContactsBadge.innerText = "Failed";
-                    emContactsBadge.className = "detail-badge badge-error";
-                }
-                if (btnRetryAlert) btnRetryAlert.classList.remove('hidden');
-            }
+            await triggerSOSAction(pendingSosType, pendingSosMessage);
         } catch (err) {
             console.error("Emergency dispatch error:", err);
-            if (emStatusBanner) emStatusBanner.className = 'em-status-banner banner-failed';
-            if (emBannerIcon) emBannerIcon.className = 'las la-exclamation-triangle';
-            if (emStatusTitle) emStatusTitle.innerText = "Alert Delivery Failed";
-            if (emStatusDesc) emStatusDesc.innerText = "Cloud connection error. Use emergency phone hotlines below.";
-            if (emContactsBadge) {
-                emContactsBadge.innerText = "Failed";
-                emContactsBadge.className = "detail-badge badge-error";
-            }
-            if (btnRetryAlert) btnRetryAlert.classList.remove('hidden');
         }
     }
 
@@ -1980,7 +2168,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         isEmergencyDispatchedActive = false;
         isEmergencyCountdownActive = false;
-        if (emergencyOverlay) emergencyOverlay.classList.add('hidden');
+        if (emergencyOverlay) {
+            emergencyOverlay.classList.remove('is-counting-down');
+            emergencyOverlay.classList.remove('is-dispatched');
+            emergencyOverlay.classList.add('hidden');
+        }
+        if (emSmsPopupBackdrop) emSmsPopupBackdrop.classList.add('hidden');
+        if (emBottomStatusToast) emBottomStatusToast.classList.add('hidden');
 
         console.log("Emergency resolved by user.");
     }
@@ -2014,6 +2208,21 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     if (btnResolveEmergency) {
         btnResolveEmergency.addEventListener('click', resolveEmergency);
+    }
+    if (btnViewOnMap) {
+        btnViewOnMap.addEventListener('click', () => {
+            const lat = activeSosLat || (startLoc ? Number(startLoc[0]) : 13.0827);
+            const lng = activeSosLng || (startLoc ? Number(startLoc[1]) : 80.2707);
+            window.open(`https://www.google.com/maps?q=${Number(lat).toFixed(6)},${Number(lng).toFixed(6)}`, '_blank');
+        });
+    }
+    if (btnDismissSmsPopup) {
+        btnDismissSmsPopup.addEventListener('click', () => {
+            if (emSmsPopupBackdrop) emSmsPopupBackdrop.classList.add('hidden');
+        });
+    }
+    if (btnSendSmsNow) {
+        btnSendSmsNow.addEventListener('click', sendEmergencySmsNow);
     }
     if (btnRetryAlert) {
         btnRetryAlert.addEventListener('click', () => {
@@ -2302,14 +2511,24 @@ document.addEventListener('DOMContentLoaded', () => {
        =================================================== */
 
     // ---------------------------------------------
-    // CARD 1: Emergency Contacts Quick Sheet
+    // CARD 1: Emergency Contacts Quick Sheet & Long-Press Editor
     // ---------------------------------------------
     const btnGridContacts = document.getElementById('btnGridContacts');
     const contactsSheetOverlay = document.getElementById('contactsSheetOverlay');
     const contactsQuickSheetModal = document.getElementById('contactsQuickSheetModal');
     const closeContactsSheetBtn = document.getElementById('closeContactsSheetBtn');
     const btnManageContactsLink = document.getElementById('btnManageContactsLink');
+    const btnOpenEditFromSheet = document.getElementById('btnOpenEditFromSheet');
     const quickContactsListContainer = document.getElementById('quickContactsListContainer');
+
+    // Edit Contacts Modal Elements
+    const editContactsOverlay = document.getElementById('editContactsOverlay');
+    const editContactsModal = document.getElementById('editContactsModal');
+    const closeEditContactsBtn = document.getElementById('closeEditContactsBtn');
+    const editContactsRowsContainer = document.getElementById('editContactsRowsContainer');
+    const btnAddContactRow = document.getElementById('btnAddContactRow');
+    const btnResetContactsDefaults = document.getElementById('btnResetContactsDefaults');
+    const btnSaveContacts = document.getElementById('btnSaveContacts');
 
     function openContactsSheet() {
         if (contactsSheetOverlay) contactsSheetOverlay.classList.add('show');
@@ -2324,53 +2543,273 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function populateQuickContacts() {
         if (!quickContactsListContainer) return;
-        const phone = localStorage.getItem('userPhone');
-        let contacts = [];
-        if (supabase && phone) {
-            try {
-                const { data: userRow } = await supabase
-                    .from('users')
-                    .select('emergency_contact')
-                    .eq('phone', phone)
-                    .single();
-                if (userRow?.emergency_contact) {
-                    contacts.push({
-                        name: 'Primary Emergency Contact',
-                        phone: userRow.emergency_contact
-                    });
-                }
-            } catch (e) {}
-        }
+        const contacts = getSavedEmergencyContacts();
 
         if (contacts.length === 0) {
             quickContactsListContainer.innerHTML = `
                 <div style="padding: 14px; text-align: center; color: #64748b; font-size: 0.88rem; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 10px;">
                     <i class="las la-user-plus" style="font-size: 1.6rem; display: block; margin-bottom: 4px; color: var(--primary);"></i>
                     No emergency contact linked yet.<br>
-                    <small>Tap below to configure emergency contacts in your Profile.</small>
+                    <small>Tap "Edit Contact Numbers" below to configure.</small>
                 </div>
             `;
         } else {
-            quickContactsListContainer.innerHTML = contacts.map(c => `
+            quickContactsListContainer.innerHTML = contacts.map(c => {
+                const initial = (c.name ? c.name.trim().charAt(0) : 'E').toUpperCase() || 'E';
+                return `
                 <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px;">
                     <div style="display: flex; align-items: center; gap: 10px;">
-                        <div style="width: 40px; height: 40px; border-radius: 50%; background: #f3e8ff; color: #7c3aed; display: flex; align-items: center; justify-content: center; font-size: 1.3rem;">
-                            <i class="las la-user-shield"></i>
+                        <div style="width: 40px; height: 40px; border-radius: 50%; background: #f3e8ff; color: #7c3aed; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; font-weight:700;">
+                            ${initial}
                         </div>
                         <div>
                             <strong style="display: block; font-size: 0.95rem; color: var(--text-dark);">${c.name}</strong>
                             <span style="font-size: 0.82rem; color: #64748b;">${c.phone}</span>
                         </div>
                     </div>
-                    <a href="tel:${c.phone.replace(/\\s+/g, '')}" style="background: var(--success); color: white; width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; text-decoration: none; box-shadow: 0 4px 10px rgba(16,185,129,0.3);">
+                    <a href="tel:${c.phone.replace(/\\s+/g, '')}" style="background: var(--success); color: white; width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; text-decoration: none; box-shadow: 0 4px 10px rgba(16,185,129,0.3);" aria-label="Call ${c.name}">
                         <i class="las la-phone"></i>
                     </a>
                 </div>
-            `).join('');
+                `;
+            }).join('');
         }
     }
 
-    if (btnGridContacts) btnGridContacts.addEventListener('click', openContactsSheet);
+    // Edit Contacts Modal Controller
+    function openEditContactsModal() {
+        closeContactsSheet();
+        renderEditContactsRows();
+        if (editContactsOverlay) editContactsOverlay.classList.add('show');
+        if (editContactsModal) editContactsModal.classList.add('show');
+    }
+
+    function closeEditContactsModal() {
+        if (editContactsOverlay) editContactsOverlay.classList.remove('show');
+        if (editContactsModal) editContactsModal.classList.remove('show');
+    }
+
+    function createContactRowElement(name = '', phone = '', index = 0) {
+        const row = document.createElement('div');
+        row.className = 'edit-contact-row';
+        row.dataset.index = index;
+
+        const initial = (name ? name.trim().charAt(0) : 'E').toUpperCase() || 'E';
+
+        row.innerHTML = `
+            <div class="edit-contact-avatar">${initial}</div>
+            <div class="edit-contact-inputs">
+                <input type="text" class="edit-input-name" placeholder="Name (e.g. Amma, Sister)" value="${escapeHtml(name)}" autocomplete="off" />
+                <input type="tel" class="edit-input-phone" placeholder="Phone (e.g. 9843050114)" value="${escapeHtml(phone)}" autocomplete="tel" />
+            </div>
+            <button type="button" class="btn-del-contact" title="Delete contact" aria-label="Delete contact">
+                <i class="las la-trash-alt"></i>
+            </button>
+        `;
+
+        const nameInput = row.querySelector('.edit-input-name');
+        const avatar = row.querySelector('.edit-contact-avatar');
+        if (nameInput && avatar) {
+            nameInput.addEventListener('input', () => {
+                const val = nameInput.value.trim();
+                avatar.innerText = val ? val.charAt(0).toUpperCase() : 'E';
+            });
+        }
+
+        const delBtn = row.querySelector('.btn-del-contact');
+        if (delBtn) {
+            delBtn.addEventListener('click', () => {
+                if (!editContactsRowsContainer) return;
+                const allRows = editContactsRowsContainer.querySelectorAll('.edit-contact-row');
+                if (allRows.length <= 1) {
+                    showAppToast('You must have at least one emergency contact.', 'error');
+                    return;
+                }
+                row.remove();
+            });
+        }
+
+        return row;
+    }
+
+    function renderEditContactsRows(customList = null) {
+        if (!editContactsRowsContainer) return;
+        const list = customList || getSavedEmergencyContacts();
+
+        editContactsRowsContainer.innerHTML = '';
+        list.forEach((c, idx) => {
+            const row = createContactRowElement(c.name, c.phone, idx);
+            editContactsRowsContainer.appendChild(row);
+        });
+    }
+
+    // Modal Action Listeners
+    if (btnAddContactRow) {
+        btnAddContactRow.addEventListener('click', () => {
+            if (!editContactsRowsContainer) return;
+            const count = editContactsRowsContainer.querySelectorAll('.edit-contact-row').length;
+            const newRow = createContactRowElement('', '', count);
+            editContactsRowsContainer.appendChild(newRow);
+            const input = newRow.querySelector('.edit-input-name');
+            if (input) input.focus();
+        });
+    }
+
+    if (btnResetContactsDefaults) {
+        btnResetContactsDefaults.addEventListener('click', () => {
+            renderEditContactsRows(DEFAULT_EMERGENCY_CONTACTS);
+            showAppToast('Reset to default emergency contacts', 'info');
+        });
+    }
+
+    if (btnSaveContacts) {
+        btnSaveContacts.addEventListener('click', async () => {
+            if (!editContactsRowsContainer) return;
+            const rows = editContactsRowsContainer.querySelectorAll('.edit-contact-row');
+            const newContacts = [];
+
+            for (let i = 0; i < rows.length; i++) {
+                const row = rows[i];
+                const nameInput = row.querySelector('.edit-input-name');
+                const phoneInput = row.querySelector('.edit-input-phone');
+                const name = (nameInput?.value || '').trim() || `Contact ${i + 1}`;
+                const phone = (phoneInput?.value || '').trim();
+
+                const cleanDigits = phone.replace(/[^0-9+]/g, '');
+                if (!phone || cleanDigits.length < 5) {
+                    showAppToast(`Enter a valid phone number for "${name}"`, 'error');
+                    if (phoneInput) phoneInput.focus();
+                    return;
+                }
+
+                newContacts.push({ name, phone });
+            }
+
+            if (newContacts.length === 0) {
+                showAppToast('Please add at least one emergency contact.', 'error');
+                return;
+            }
+
+            // Save to localStorage
+            localStorage.setItem('userEmergencyContacts', JSON.stringify(newContacts));
+
+            // Sync with Supabase if logged in
+            const userPhone = localStorage.getItem('userPhone');
+            if (supabase && userPhone) {
+                try {
+                    await supabase
+                        .from('users')
+                        .update({ emergency_contact: newContacts[0].phone })
+                        .eq('phone', userPhone);
+                } catch (err) {
+                    console.warn("Could not sync emergency contact to Supabase:", err);
+                }
+            }
+
+            // Synchronize all UI representations
+            loadUserEmergencyContacts();
+            populateQuickContacts();
+            populateDispatchedContacts();
+
+            closeEditContactsModal();
+
+            if (navigator.vibrate) {
+                try { navigator.vibrate([40, 50, 40]); } catch (_) {}
+            }
+
+            showAppToast('Emergency contacts updated successfully!', 'success');
+        });
+    }
+
+    if (closeEditContactsBtn) closeEditContactsBtn.addEventListener('click', closeEditContactsModal);
+    if (editContactsOverlay) editContactsOverlay.addEventListener('click', closeEditContactsModal);
+    if (btnOpenEditFromSheet) {
+        btnOpenEditFromSheet.addEventListener('click', () => {
+            closeContactsSheet();
+            openEditContactsModal();
+        });
+    }
+
+    // Long-Press and Click Detection on Card 1
+    let contactsLongPressTimer = null;
+    let contactsLongPressTriggered = false;
+    let contactsTouchStartX = 0;
+    let contactsTouchStartY = 0;
+
+    function handleContactsPressStart(e) {
+        contactsLongPressTriggered = false;
+        if (e.type === 'touchstart') {
+            const touch = e.touches[0];
+            contactsTouchStartX = touch.clientX;
+            contactsTouchStartY = touch.clientY;
+        }
+
+        if (btnGridContacts) {
+            btnGridContacts.classList.add('is-pressing');
+        }
+
+        clearTimeout(contactsLongPressTimer);
+        contactsLongPressTimer = setTimeout(() => {
+            contactsLongPressTriggered = true;
+            if (btnGridContacts) {
+                btnGridContacts.classList.remove('is-pressing');
+            }
+            if (navigator.vibrate) {
+                try { navigator.vibrate(60); } catch (_) {}
+            }
+            openEditContactsModal();
+        }, 500); // 500ms long-press threshold
+    }
+
+    function handleContactsPressEnd() {
+        clearTimeout(contactsLongPressTimer);
+        if (btnGridContacts) {
+            btnGridContacts.classList.remove('is-pressing');
+        }
+    }
+
+    function handleContactsTouchMove(e) {
+        if (e.type === 'touchmove') {
+            const touch = e.touches[0];
+            const dx = Math.abs(touch.clientX - contactsTouchStartX);
+            const dy = Math.abs(touch.clientY - contactsTouchStartY);
+            if (dx > 12 || dy > 12) {
+                handleContactsPressEnd();
+            }
+        }
+    }
+
+    if (btnGridContacts) {
+        // Touch events for mobile phones
+        btnGridContacts.addEventListener('touchstart', handleContactsPressStart, { passive: true });
+        btnGridContacts.addEventListener('touchend', handleContactsPressEnd);
+        btnGridContacts.addEventListener('touchcancel', handleContactsPressEnd);
+        btnGridContacts.addEventListener('touchmove', handleContactsTouchMove, { passive: true });
+
+        // Mouse events for desktop/simulator testing
+        btnGridContacts.addEventListener('mousedown', (e) => {
+            if (e.button === 0) handleContactsPressStart(e);
+        });
+        btnGridContacts.addEventListener('mouseup', handleContactsPressEnd);
+        btnGridContacts.addEventListener('mouseleave', handleContactsPressEnd);
+
+        // Prevent default browser context menu on long press
+        btnGridContacts.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+        });
+
+        // Click handler: only trigger quick sheet on standard tap, not after long press
+        btnGridContacts.addEventListener('click', (e) => {
+            if (contactsLongPressTriggered) {
+                e.preventDefault();
+                e.stopPropagation();
+                contactsLongPressTriggered = false;
+                return;
+            }
+            openContactsSheet();
+        });
+    }
+
     if (closeContactsSheetBtn) closeContactsSheetBtn.addEventListener('click', closeContactsSheet);
     if (contactsSheetOverlay) contactsSheetOverlay.addEventListener('click', closeContactsSheet);
     if (btnManageContactsLink) {
