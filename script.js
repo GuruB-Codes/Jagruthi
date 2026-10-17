@@ -1003,7 +1003,7 @@ document.addEventListener('DOMContentLoaded', () => {
        =================================================== */
     class PhoneRingtoneEngine {
         constructor() {
-            this.audioEl = new Audio('./assets/audio/ringtone.wav');
+            this.audioEl = new Audio('./assets/audio/fake_call_ringtone.mp3');
             this.audioEl.loop = true;
             this.audioEl.preload = 'auto';
 
@@ -1044,7 +1044,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (playPromise !== undefined) {
                     await playPromise;
                     playedViaHtmlAudio = true;
-                    console.log("[Ringtone] Playing local ringtone WAV file via HTML5 Audio.");
+                    console.log("[Ringtone] Playing user MP3 ringtone via HTML5 Audio.");
                 }
             } catch (err) {
                 console.warn("[Ringtone] HTML5 Audio notice (activating Web Audio synth fallback):", err);

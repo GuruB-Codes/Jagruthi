@@ -4,7 +4,7 @@
    Provides offline capability, caching & installability
    =================================================== */
 
-const CACHE_NAME = 'jagruthi-pwa-v2.1.0';
+const CACHE_NAME = 'jagruthi-pwa-v2.3.0';
 
 const PRECACHE_ASSETS = [
     './',
@@ -15,12 +15,16 @@ const PRECACHE_ASSETS = [
     './mediaService.js',
     './pwaManager.js',
     './manifest.json',
+    './assets/audio/fake_call_ringtone.mp3',
     './assets/audio/ringtone.wav',
+    './assets/icons/empowered-shield.png',
+    './assets/icons/Empowered Profile Shield Icon.png',
     './assets/icons/icon-192.png',
     './assets/icons/icon-512.png',
     './assets/icons/icon-512-maskable.png',
     './assets/icons/apple-touch-icon.png',
-    './assets/icons/favicon.png'
+    './assets/icons/favicon.png',
+    './assets/icons/Jagruthi Women Safety Icon.png'
 ];
 
 // 1. Service Worker Installation
