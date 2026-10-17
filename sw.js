@@ -4,7 +4,7 @@
    Provides offline capability, caching & installability
    =================================================== */
 
-const CACHE_NAME = 'jagruthi-pwa-v2.0.0';
+const CACHE_NAME = 'jagruthi-pwa-v2.1.0';
 
 const PRECACHE_ASSETS = [
     './',
