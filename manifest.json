@@ -1,0 +1,59 @@
+{
+  "id": "jagruthi-women-safety-pwa",
+  "name": "Jagruthi - Women Safety",
+  "short_name": "Jagruthi",
+  "description": "Real-time women safety, instant SOS distress dispatch, live route monitoring, and incident evidence capture.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "portrait",
+  "background_color": "#0f172a",
+  "theme_color": "#dc2626",
+  "lang": "en",
+  "dir": "ltr",
+  "categories": ["safety", "utilities", "lifestyle"],
+  "icons": [
+    {
+      "src": "./assets/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./assets/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./assets/icons/icon-512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Trigger SOS",
+      "short_name": "SOS",
+      "description": "Immediately trigger emergency SOS countdown",
+      "url": "./index.html?action=sos",
+      "icons": [{ "src": "./assets/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Capture Evidence",
+      "short_name": "Evidence",
+      "description": "Open live incident evidence camera",
+      "url": "./index.html?action=evidence",
+      "icons": [{ "src": "./assets/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Safe Journey",
+      "short_name": "Journey",
+      "description": "Start live corridor navigation",
+      "url": "./index.html?action=journey",
+      "icons": [{ "src": "./assets/icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

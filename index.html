@@ -7,6 +7,18 @@
         content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Jagruthi Women Safety Dashboard</title>
     <meta name="description" content="A mobile-first responsive women safety application dashboard.">
+
+    <!-- Progressive Web App (PWA) Manifest & Meta Tags -->
+    <link rel="manifest" href="./manifest.json">
+    <meta name="theme-color" content="#dc2626">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Jagruthi">
+    <link rel="apple-touch-icon" href="./assets/icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="./assets/icons/icon-192.png">
+    <link rel="icon" type="image/png" sizes="64x64" href="./assets/icons/favicon.png">
+
     <!-- Modern Font -->
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- Icons -->
@@ -45,13 +57,6 @@
             <div class="tab-view active" id="tab-home">
                 
                 <div class="home-sos-container">
-                    <!-- Top Safety Status Pill -->
-                    <div class="safety-status-pill">
-                        <span class="status-pulse-dot"></span>
-                        <span class="status-pill-text">Active Protection &bull; GPS &amp; Geofence Active</span>
-                        <span class="status-pill-badge">Safe</span>
-                    </div>
-
                     <!-- Main SOS Button (Center of main content) -->
                     <div class="sos-centerpiece-wrapper">
                         <div class="sos-glow-ring"></div>
@@ -63,20 +68,6 @@
                         </button>
                         <h2 class="sos-caption-title">Tap for Emergency Help</h2>
                         <p class="sos-caption-sub">Instant distress broadcast to emergency contacts &amp; police</p>
-                    </div>
-
-                    <!-- Shake to SOS Instruction & Detection Status -->
-                    <div class="shake-sos-card" id="shakeSosCard">
-                        <div class="shake-icon-box">
-                            <i class="las la-mobile-alt shake-phone-anim"></i>
-                        </div>
-                        <div class="shake-info">
-                            <strong class="shake-title">Shake your phone twice to activate SOS</strong>
-                            <span class="shake-desc" id="shakeStatusDesc">Shake motion sensors ready &bull; 2 deliberate shakes</span>
-                        </div>
-                        <button id="enableShakeBtn" class="btn-enable-shake hidden" title="Enable motion sensors">
-                            Enable
-                        </button>
                     </div>
 
                     <!-- Safety Features 2x2 Grid (matching user reference image) -->
@@ -866,6 +857,23 @@
         </div>
     </div>
 
+    <!-- ================= PWA INSTALL FLOATING BANNER ================= -->
+    <div class="pwa-install-banner hidden" id="pwaInstallBanner" role="alert">
+        <div class="pwa-banner-left">
+            <img src="./assets/icons/icon-192.png" alt="Jagruthi App Icon" class="pwa-app-icon">
+            <div class="pwa-banner-text">
+                <strong>Download Jagruthi App</strong>
+                <span>Install on your phone for instant SOS &amp; offline protection</span>
+            </div>
+        </div>
+        <div class="pwa-banner-actions">
+            <button type="button" class="btn-pwa-install" id="btnPwaInstall">
+                <i class="las la-download"></i> Install
+            </button>
+            <button type="button" class="btn-pwa-dismiss" id="btnPwaDismiss" aria-label="Dismiss banner">&times;</button>
+        </div>
+    </div>
+
     <!-- For demo purpose: trigger modal -->
     <button class="demo-trigger" id="demoTrigger" title="Test Deviation Alert"><i class="las la-vial"></i> Test
         Alert</button>
@@ -874,6 +882,7 @@
     <script src="./supabaseClient.js?v=4"></script>
     <script src="./mediaService.js?v=4"></script>
     <script src="./script.js?v=4"></script>
+    <script src="./pwaManager.js?v=1"></script>
 </body>
 
 </html>
