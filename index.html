@@ -30,17 +30,11 @@
                 </div>
                 <h1 class="app-name">Jagruthi <span>Women Safety</span></h1>
             </div>
-            <div class="nav-right" style="gap: 12px; align-items: center; display: flex;">
-                <div class="icon-btn profile-btn" aria-label="User Profile">
+            <div class="nav-right">
+                <button class="profile-avatar-btn" id="headerProfileBtn" aria-label="User Profile" title="View Profile">
                     <img id="userProfileImg"
                         src="https://ui-avatars.com/api/?name=User&background=7b2cbf&color=fff&rounded=true"
                         alt="User Profile Picture">
-                </div>
-                <button class="logout-btn" aria-label="Logout"
-                    onclick="localStorage.clear(); window.location.href='login.html';" title="Logout"
-                    style="background-color: #fee2e2; color: #ef4444; border-radius: 8px; padding: 6px 12px; font-weight: 600; display: flex; align-items: center; gap: 6px; border: 1px solid #fca5a5; outline: none; cursor: pointer; transition: all 0.2s;">
-                    Logout
-                    <i class="las la-sign-out-alt" style="font-size: 1.2rem;"></i>
                 </button>
             </div>
         </header>
@@ -50,98 +44,91 @@
             <!-- ================= TAB 1: HOME ================= -->
             <div class="tab-view active" id="tab-home">
                 
-                <!-- Safety Status Hero Card -->
-                <section class="card widget-status">
-                    <div class="status-widget-content" style="display: flex; align-items: center; justify-content: space-between; gap: 14px;">
-                        <div class="status-pulse green-pulse"></div>
-                        <div class="status-desc" style="flex: 1;">
-                            <span class="status-label" style="font-size: 0.75rem; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px;">Safety Status</span>
-                            <h3 class="status-headline" style="font-size: 1.15rem; color: var(--text-dark); margin-top: 2px;">Active Protection</h3>
-                            <span style="font-size: 0.8rem; color: var(--success); font-weight: 600; display: flex; align-items: center; gap: 4px; margin-top: 2px;">
-                                <i class="las la-check-circle"></i> GPS & Geofencing Active
-                            </span>
-                        </div>
-                        <div class="status-badge status-green" style="background: var(--success-light); color: var(--success-dark); padding: 6px 12px; border-radius: 20px; font-weight: 700; font-size: 0.85rem;">Safe</div>
+                <div class="home-sos-container">
+                    <!-- Top Safety Status Pill -->
+                    <div class="safety-status-pill">
+                        <span class="status-pulse-dot"></span>
+                        <span class="status-pill-text">Active Protection &bull; GPS &amp; Geofence Active</span>
+                        <span class="status-pill-badge">Safe</span>
                     </div>
-                </section>
 
-                <!-- Current Location & Quick Start Journey Card -->
-                <section class="card">
-                    <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                        <h2 class="section-title" style="font-size: 1.1rem; margin: 0;"><i class="las la-crosshairs text-blue"></i> Current Location</h2>
-                        <span style="font-size: 0.78rem; color: var(--primary); font-weight: 600;" id="homeGpsStatus">Live GPS</span>
+                    <!-- Main SOS Button (Center of main content) -->
+                    <div class="sos-centerpiece-wrapper">
+                        <div class="sos-glow-ring"></div>
+                        <button id="mainCentralSosBtn" class="main-central-sos-btn" aria-label="Activate Emergency SOS">
+                            <div class="sos-btn-inner">
+                                <i class="las la-exclamation-triangle sos-icon"></i>
+                                <span class="sos-label">SOS</span>
+                            </div>
+                        </button>
+                        <h2 class="sos-caption-title">Tap for Emergency Help</h2>
+                        <p class="sos-caption-sub">Instant distress broadcast to emergency contacts &amp; police</p>
                     </div>
-                    <div style="background: #f8fafc; border-radius: var(--radius-sm); padding: 12px 14px; border: 1px solid #e2e8f0; display: flex; align-items: center; gap: 10px;">
-                        <i class="las la-map-marker-alt" style="font-size: 1.6rem; color: var(--primary);"></i>
-                        <div style="flex: 1;">
-                            <strong style="display: block; font-size: 0.95rem; color: var(--text-dark);" id="homeCurrentLocText">Detecting location...</strong>
-                            <span style="font-size: 0.78rem; color: var(--text-medium);">Real-time Device GPS</span>
-                        </div>
-                    </div>
-                    <button class="btn-start-journey" style="margin-top: 14px; width: 100%;" onclick="document.getElementById('navTabJourney').click();">
-                        <i class="las la-route"></i>
-                        <span>Start New Journey</span>
-                        <i class="las la-arrow-right arrow-icon"></i>
-                    </button>
-                </section>
 
-                <!-- Quick SOS Trigger Card -->
-                <section class="card" style="background: linear-gradient(135deg, #fff1f2, #ffe4e6); border: 1px solid #fecdd3;">
-                    <div style="display: flex; align-items: center; justify-content: space-between;">
-                        <div>
-                            <span style="font-size: 0.75rem; font-weight: 700; color: #be123c; text-transform: uppercase;">Emergency Assist</span>
-                            <h3 style="font-size: 1.1rem; color: #9f1239; margin-top: 2px;">Need Immediate Help?</h3>
-                            <p style="font-size: 0.8rem; color: #881337; margin-top: 2px;">Notify emergency contacts & police instantly</p>
+                    <!-- Shake to SOS Instruction & Detection Status -->
+                    <div class="shake-sos-card" id="shakeSosCard">
+                        <div class="shake-icon-box">
+                            <i class="las la-mobile-alt shake-phone-anim"></i>
                         </div>
-                        <button onclick="document.getElementById('navTabSos').click();" style="background: var(--danger); color: white; border: none; padding: 10px 16px; border-radius: var(--radius-sm); font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.35);">
-                            <i class="las la-exclamation-triangle"></i> SOS
+                        <div class="shake-info">
+                            <strong class="shake-title">Shake your phone twice to activate SOS</strong>
+                            <span class="shake-desc" id="shakeStatusDesc">Shake motion sensors ready &bull; 2 deliberate shakes</span>
+                        </div>
+                        <button id="enableShakeBtn" class="btn-enable-shake hidden" title="Enable motion sensors">
+                            Enable
                         </button>
                     </div>
-                </section>
 
-                <!-- "Are You Safe?" Verification Widget -->
-                <section class="card">
-                    <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                        <h2 class="section-title" style="font-size: 1.1rem; margin: 0;"><i class="las la-shield-alt text-purple"></i> Safety Check-in</h2>
-                        <span class="badge" style="background: #e0e7ff; color: var(--primary); font-size: 0.75rem; padding: 4px 8px; border-radius: 12px; font-weight: 600;">Verification</span>
-                    </div>
-                    <p style="font-size: 0.85rem; color: var(--text-medium); margin-bottom: 12px;">Automatic verification prompts trigger if unusual delays or route deviations occur.</p>
-                    <div style="display: flex; gap: 10px;">
-                        <button class="demo-trigger-btn" id="homeTestAlertBtn" style="flex: 1; background: #f1f5f9; border: 1px solid #cbd5e1; color: var(--text-dark); padding: 10px; border-radius: var(--radius-sm); font-weight: 600; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
-                            <i class="las la-vial text-purple"></i> Test Deviation Alert
-                        </button>
-                    </div>
-                </section>
+                    <!-- Safety Features 2x2 Grid (matching user reference image) -->
+                    <div class="safety-section">
+                        <div class="safety-section-header">
+                            <h3 class="safety-section-title">Safety</h3>
+                        </div>
 
-                <!-- Recent Alerts Summary -->
-                <section class="card">
-                    <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                        <h2 class="section-title" style="font-size: 1.1rem; margin: 0;"><i class="las la-bell text-blue"></i> Recent Alerts</h2>
-                        <a href="javascript:void(0)" onclick="document.getElementById('navTabAlerts').click();" style="font-size: 0.8rem; color: var(--primary); font-weight: 600; text-decoration: none;">View All</a>
-                    </div>
-                    <div style="display: flex; flex-direction: column; gap: 8px;">
-                        <div style="background: #f8fafc; border-radius: 10px; padding: 10px 12px; border: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between;">
-                            <div style="display: flex; align-items: center; gap: 10px;">
-                                <div style="width: 32px; height: 32px; border-radius: 8px; background: #e0e7ff; color: var(--primary); display: flex; align-items: center; justify-content: center;"><i class="las la-shield-alt"></i></div>
-                                <div>
-                                    <h4 style="font-size: 0.85rem; margin: 0;">Safe Route Guard Active</h4>
-                                    <span style="font-size: 0.75rem; color: #94a3b8;">Today, Live Monitoring</span>
+                        <div class="safety-grid">
+                            <!-- Card 1: Emergency Contacts -->
+                            <button type="button" class="safety-grid-card" id="btnGridContacts" aria-label="Emergency Contacts">
+                                <div class="safety-card-icon-wrap">
+                                    <i class="las la-user-friends"></i>
                                 </div>
-                            </div>
-                            <span class="badge badge-success" style="font-size: 0.7rem; background: var(--success-light); color: var(--success-dark); padding: 3px 8px; border-radius: 8px; font-weight: 600;">Active</span>
-                        </div>
-                        <div style="background: #f8fafc; border-radius: 10px; padding: 10px 12px; border: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between;">
-                            <div style="display: flex; align-items: center; gap: 10px;">
-                                <div style="width: 32px; height: 32px; border-radius: 8px; background: #fef3c7; color: #d97706; display: flex; align-items: center; justify-content: center;"><i class="las la-map-pin"></i></div>
-                                <div>
-                                    <h4 style="font-size: 0.85rem; margin: 0;">Geofence Perimeter Set</h4>
-                                    <span style="font-size: 0.75rem; color: #94a3b8;">500m Safety Corridor</span>
+                                <span class="safety-card-label">Emergency Contacts</span>
+                                <span class="safety-card-sub" id="homeContactsBadge">1 Linked</span>
+                                <span id="homeContactsPreviewText" style="display:none;">Emergency contacts linked</span>
+                            </button>
+
+                            <!-- Card 2: My Location -->
+                            <button type="button" class="safety-grid-card" id="btnGridLocation" aria-label="My Location">
+                                <div class="safety-card-icon-wrap">
+                                    <i class="las la-crosshairs"></i>
                                 </div>
-                            </div>
-                            <span class="badge" style="font-size: 0.7rem; background: #e2e8f0; color: #475569; padding: 3px 8px; border-radius: 8px; font-weight: 600;">Saved</span>
+                                <span class="safety-card-label">My Location</span>
+                                <span class="safety-card-sub" id="homeGpsStatus">Live GPS</span>
+                                <span id="homeCurrentLocText" style="display:none;">Detecting location...</span>
+                                <span id="homeJourneyStatusTag" style="display:none;">Standby</span>
+                                <span id="homeJourneyDescText" style="display:none;">Safe corridor ready</span>
+                            </button>
+
+                            <!-- Card 3: Capture Evidence -->
+                            <button type="button" class="safety-grid-card" id="btnGridEvidence" aria-label="Capture Evidence">
+                                <div class="safety-card-icon-wrap">
+                                    <i class="las la-camera"></i>
+                                </div>
+                                <span class="safety-card-label">Capture Evidence</span>
+                                <span class="safety-card-sub text-danger" style="color: #ef4444;"><i class="las la-dot-circle"></i> Photo / Video</span>
+                            </button>
+
+                            <!-- Card 4: Fake Call -->
+                            <button type="button" class="safety-grid-card" id="btnGridFakeCall" aria-label="Fake Call">
+                                <div class="safety-card-icon-wrap">
+                                    <i class="las la-phone-volume"></i>
+                                </div>
+                                <span class="safety-card-label">Fake Call</span>
+                                <span class="safety-card-sub text-purple" style="color: #6366f1;">Simulate Ring</span>
+                            </button>
                         </div>
                     </div>
-                </section>
+
+                </div>
 
             </div>
 
@@ -486,13 +473,6 @@
             </button>
         </div>
 
-        <!-- Floating SOS Emergency Button (Accessible from anywhere) -->
-        <button class="sos-btn" id="sosBtn" aria-label="Emergency SOS">
-            <span class="sos-text">SOS</span>
-            <div class="sos-ripple"></div>
-            <div class="sos-ripple delay"></div>
-        </button>
-
         <!-- Fixed Role-Based Bottom Navigation Bar -->
         <nav class="bottom-nav-bar" id="womenBottomNav" aria-label="Main Navigation">
             <button class="nav-item active" data-tab="tab-home" id="navTabHome" aria-label="Home">
@@ -576,14 +556,324 @@
 
     </div>
 
+    <!-- ================= EMERGENCY ACTIVATION FULLSCREEN OVERLAY ================= -->
+    <div class="emergency-screen-overlay hidden" id="emergencyScreenOverlay" role="dialog" aria-modal="true" aria-labelledby="emScreenTitle">
+        <div class="emergency-screen-content">
+            <!-- Top header -->
+            <div class="em-top-bar">
+                <div class="em-logo">
+                    <i class="las la-shield-alt"></i>
+                    <span>JAGRUTHI EMERGENCY</span>
+                </div>
+                <div class="em-live-indicator">
+                    <span class="em-live-dot"></span>
+                    <span>EMERGENCY MODE</span>
+                </div>
+            </div>
+
+            <!-- Center Warning Indicator -->
+            <div class="em-hero-section">
+                <div class="em-indicator-wrapper">
+                    <div class="em-pulse-ring ring-1"></div>
+                    <div class="em-pulse-ring ring-2"></div>
+                    <div class="em-indicator-circle">
+                        <i class="las la-exclamation-triangle"></i>
+                    </div>
+                </div>
+                
+                <h1 class="em-title" id="emScreenTitle">EMERGENCY ACTIVATED</h1>
+                <p class="em-subtitle" id="emScreenSubtitle">Distress signal initiated</p>
+            </div>
+
+            <!-- COUNTDOWN STATE (5 seconds before sending) -->
+            <div class="em-countdown-block" id="emCountdownBlock">
+                <div class="countdown-dial-wrapper">
+                    <svg class="countdown-svg" viewBox="0 0 120 120">
+                        <circle class="countdown-svg-bg" cx="60" cy="60" r="54"></circle>
+                        <circle class="countdown-svg-progress" id="countdownSvgProgress" cx="60" cy="60" r="54"></circle>
+                    </svg>
+                    <div class="countdown-number" id="emCountdownNum">5</div>
+                </div>
+                <p class="countdown-instruction">Sending alerts to emergency contacts and police in <strong id="emCountdownSecondsText">5</strong> seconds</p>
+                <p class="countdown-subinstruction">If this was triggered accidentally, tap Cancel below immediately.</p>
+                
+                <button class="btn-cancel-emergency" id="btnCancelEmergency" aria-label="Cancel Emergency Alert">
+                    <i class="las la-times-circle"></i>
+                    <span>CANCEL</span>
+                </button>
+            </div>
+
+            <!-- ACTIVE DISPATCHED / CONFIRMED STATE (Shown after countdown completes) -->
+            <div class="em-dispatched-block hidden" id="emDispatchedBlock">
+                <!-- Alert Status Banner -->
+                <div class="em-status-banner banner-transmitting" id="emStatusBanner">
+                    <div class="em-banner-icon">
+                        <i class="las la-spinner la-spin" id="emBannerIcon"></i>
+                    </div>
+                    <div class="em-banner-text">
+                        <strong id="emStatusTitle">Transmitting Emergency Signal...</strong>
+                        <span id="emStatusDesc">Connecting with Supabase cloud &amp; emergency dispatch</span>
+                    </div>
+                </div>
+
+                <!-- Emergency Actions Details Grid -->
+                <div class="em-details-card">
+                    <div class="em-detail-row">
+                        <div class="em-detail-item">
+                            <i class="las la-broadcast-tower text-danger"></i>
+                            <div>
+                                <span class="detail-label">GPS Broadcast</span>
+                                <strong class="detail-value" id="emLocationDisplay">Acquiring GPS...</strong>
+                            </div>
+                        </div>
+                        <span class="detail-badge badge-active" id="emGpsBadge">Broadcasting</span>
+                    </div>
+
+                    <div class="em-detail-row">
+                        <div class="em-detail-item">
+                            <i class="las la-user-shield text-purple"></i>
+                            <div>
+                                <span class="detail-label">Emergency Contacts</span>
+                                <strong class="detail-value" id="emContactsDisplay">SMS / Notification</strong>
+                            </div>
+                        </div>
+                        <span class="detail-badge" id="emContactsBadge">Pending</span>
+                    </div>
+
+                    <div class="em-detail-row">
+                        <div class="em-detail-item">
+                            <i class="las la-video text-blue"></i>
+                            <div>
+                                <span class="detail-label">Evidence Recording</span>
+                                <strong class="detail-value" id="emEvidenceDisplay">Video + Audio</strong>
+                            </div>
+                        </div>
+                        <span class="detail-badge badge-active" id="emEvidenceBadge">Capturing</span>
+                    </div>
+                </div>
+
+                <!-- Emergency Hardware Controls (Siren & Flashlight) -->
+                <div class="em-hardware-controls">
+                    <button class="btn-hw-toggle hw-active" id="btnToggleSiren" type="button">
+                        <i class="las la-volume-up" id="sirenIcon"></i>
+                        <span id="sirenText">Siren: ON</span>
+                    </button>
+                    <button class="btn-hw-toggle hw-active" id="btnToggleTorch" type="button">
+                        <i class="las la-lightbulb" id="torchIcon"></i>
+                        <span id="torchText">Torch: ON</span>
+                    </button>
+                </div>
+
+                <!-- Urgent Direct Hotline Access -->
+                <div class="em-hotline-actions">
+                    <a href="tel:112" class="btn-em-call btn-call-police">
+                        <i class="las la-phone"></i>
+                        <span>Call Police (112)</span>
+                    </a>
+                    <a href="tel:1091" class="btn-em-call btn-call-helpline">
+                        <i class="las la-female"></i>
+                        <span>Women Helpline (1091)</span>
+                    </a>
+                </div>
+
+                <!-- Retry button (shown if delivery fails) -->
+                <button class="btn-retry-alert hidden" id="btnRetryAlert" type="button">
+                    <i class="las la-sync-alt"></i>
+                    <span>Retry Sending Alert</span>
+                </button>
+
+                <!-- I AM SAFE / Resolve button -->
+                <button class="btn-resolve-emergency" id="btnResolveEmergency" type="button">
+                    <i class="las la-check-circle"></i>
+                    <span>I AM SAFE &mdash; RESOLVE EMERGENCY</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= INCIDENT EVIDENCE CAPTURE MODAL ================= -->
+    <div class="overlay" id="captureEvidenceOverlay"></div>
+    <div class="modal evidence-capture-modal" id="captureEvidenceModal" role="dialog" aria-modal="true" aria-labelledby="evdModalTitle">
+        <div class="evd-modal-header">
+            <div class="evd-header-left">
+                <div class="evd-header-icon"><i class="las la-camera"></i></div>
+                <div>
+                    <h3 id="evdModalTitle">Capture Incident Evidence</h3>
+                    <span class="evd-header-sub">Encrypted &amp; Geotagged to Cloud Vault</span>
+                </div>
+            </div>
+            <button type="button" class="evd-modal-close" id="closeEvidenceCaptureBtn" aria-label="Close">&times;</button>
+        </div>
+
+        <!-- Live Camera Viewport -->
+        <div class="evd-camera-viewport-wrap">
+            <video id="evidenceLiveVideo" autoplay playsinline muted></video>
+            <canvas id="evidenceSnapshotCanvas" style="display:none;"></canvas>
+            
+            <!-- Live GPS & Time Watermark Overlay -->
+            <div class="evd-watermark-overlay">
+                <span class="evd-watermark-chip" id="evdLiveGpsChip"><i class="las la-map-marker-alt"></i> Acquiring GPS...</span>
+                <span class="evd-watermark-chip" id="evdLiveTimeChip"><i class="las la-clock"></i> Live</span>
+            </div>
+
+            <!-- Recording Indicator -->
+            <div class="evd-recording-indicator hidden" id="evdRecordingIndicator">
+                <span class="evd-rec-dot"></span>
+                <span id="evdRecordingTimer">REC 00:00</span>
+            </div>
+
+            <!-- Camera Switch Button -->
+            <button type="button" class="evd-camera-flip-btn" id="btnFlipCamera" title="Switch Camera" aria-label="Switch Camera">
+                <i class="las la-sync-alt"></i>
+            </button>
+        </div>
+
+        <!-- Capture Mode Selector -->
+        <div class="evd-mode-tabs">
+            <button type="button" class="evd-mode-btn active" id="btnModePhoto" data-mode="photo">
+                <i class="las la-camera"></i> Take Photo
+            </button>
+            <button type="button" class="evd-mode-btn" id="btnModeVideo" data-mode="video">
+                <i class="las la-video"></i> Record Video
+            </button>
+        </div>
+
+        <!-- Main Shutter / Action Controls -->
+        <div class="evd-actions-row">
+            <!-- Gallery File Upload Button -->
+            <label class="evd-btn-gallery" title="Choose photo/video from device">
+                <i class="las la-image"></i>
+                <input type="file" id="evidenceFileInput" accept="image/*,video/*" capture="environment" style="display:none;">
+            </label>
+
+            <!-- Main Capture Button -->
+            <button type="button" class="evd-btn-shutter" id="btnExecuteCapture" aria-label="Capture Photo">
+                <div class="shutter-inner" id="shutterInner"></div>
+            </button>
+
+            <!-- View Stored Evidence Button -->
+            <button type="button" class="evd-btn-vault" id="btnOpenStoredEvidence" title="View Evidence Vault">
+                <i class="las la-folder-open"></i>
+            </button>
+        </div>
+
+        <!-- Feedback / Status Banner -->
+        <div class="evd-status-feedback hidden" id="evdStatusFeedback">
+            <i class="las la-check-circle" id="evdFeedbackIcon"></i>
+            <span id="evdFeedbackText">Evidence captured &amp; encrypted</span>
+        </div>
+    </div>
+
+    <!-- ================= FAKE CALL FULLSCREEN SIMULATOR ================= -->
+    <div class="fake-call-overlay hidden" id="fakeCallModal" role="dialog" aria-modal="true" aria-label="Incoming Call">
+        <div class="fake-call-container">
+            <!-- Caller Info Section -->
+            <div class="fake-call-top">
+                <div class="caller-avatar-circle">
+                    <i class="las la-user"></i>
+                </div>
+                <h2 class="caller-name" id="callerNameText">Dad</h2>
+                <span class="call-type-status" id="callTypeStatusText">Incoming Call...</span>
+                <span class="call-timer-display hidden" id="fakeCallTimerDisplay">00:00</span>
+            </div>
+
+            <!-- Incoming Ring Controls (Decline / Accept) -->
+            <div class="fake-call-ringing-actions" id="fakeCallRingingActions">
+                <div class="call-action-col">
+                    <button type="button" class="btn-call-action btn-decline-call" id="btnDeclineFakeCall" aria-label="Decline Call">
+                        <i class="las la-phone-slash"></i>
+                    </button>
+                    <span class="call-action-label">Decline</span>
+                </div>
+
+                <div class="call-action-col">
+                    <button type="button" class="btn-call-action btn-accept-call" id="btnAcceptFakeCall" aria-label="Accept Call">
+                        <i class="las la-phone"></i>
+                    </button>
+                    <span class="call-action-label">Accept</span>
+                </div>
+            </div>
+
+            <!-- Active Connected Call Controls -->
+            <div class="fake-call-active-actions hidden" id="fakeCallActiveActions">
+                <div class="call-dialpad-icons">
+                    <div class="dialpad-item"><i class="las la-microphone-slash"></i><span>Mute</span></div>
+                    <div class="dialpad-item"><i class="las la-th"></i><span>Keypad</span></div>
+                    <div class="dialpad-item"><i class="las la-volume-up"></i><span>Speaker</span></div>
+                </div>
+                <button type="button" class="btn-call-action btn-end-active-call" id="btnEndActiveCall" aria-label="End Call">
+                    <i class="las la-phone-slash"></i>
+                </button>
+                <span class="call-action-label" style="color:white; margin-top:8px;">End Call</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= MY LOCATION QUICK SHEET ================= -->
+    <div class="overlay" id="locationSheetOverlay"></div>
+    <div class="modal location-sheet-modal" id="myLocationSheetModal" role="dialog" aria-modal="true" aria-labelledby="locSheetTitle">
+        <div class="evd-modal-header">
+            <div class="evd-header-left">
+                <div class="evd-header-icon" style="background:#fee2e2; color:#ef4444;"><i class="las la-map-marker-alt"></i></div>
+                <div>
+                    <h3 id="locSheetTitle" style="color:#0f172a;">My Current Location</h3>
+                    <span class="evd-header-sub">High-Precision Device GPS</span>
+                </div>
+            </div>
+            <button type="button" class="evd-modal-close" id="closeLocSheetBtn" aria-label="Close" style="color:#64748b;">&times;</button>
+        </div>
+        
+        <div class="loc-sheet-body">
+            <div class="loc-info-card">
+                <span class="loc-info-label">Current Address</span>
+                <strong class="loc-info-address" id="locSheetAddress">Detecting location...</strong>
+                <span class="loc-info-coords" id="locSheetCoords">Acquiring GPS fix...</span>
+            </div>
+
+            <div class="loc-sheet-btn-group">
+                <button type="button" class="btn-loc-copy" id="btnCopyCoords">
+                    <i class="las la-copy"></i> Copy Coordinates
+                </button>
+                <button type="button" class="btn-loc-journey" id="btnOpenJourneyFromLoc">
+                    <i class="las la-route"></i> Start Safe Journey &rarr;
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= EMERGENCY CONTACTS QUICK SHEET ================= -->
+    <div class="overlay" id="contactsSheetOverlay"></div>
+    <div class="modal contacts-sheet-modal" id="contactsQuickSheetModal" role="dialog" aria-modal="true" aria-labelledby="contactsSheetTitle">
+        <div class="evd-modal-header">
+            <div class="evd-header-left">
+                <div class="evd-header-icon" style="background:#f3e8ff; color:#7c3aed;"><i class="las la-user-friends"></i></div>
+                <div>
+                    <h3 id="contactsSheetTitle" style="color:#0f172a;">Emergency Contacts</h3>
+                    <span class="evd-header-sub">One-Tap Direct Dial &amp; Alert Link</span>
+                </div>
+            </div>
+            <button type="button" class="evd-modal-close" id="closeContactsSheetBtn" aria-label="Close" style="color:#64748b;">&times;</button>
+        </div>
+
+        <div class="contacts-sheet-body">
+            <div class="contacts-quick-list" id="quickContactsListContainer">
+                <div style="padding: 12px; text-align: center; color: #94a3b8; font-size: 0.85rem;">Loading contacts...</div>
+            </div>
+
+            <button type="button" class="btn-manage-contacts" id="btnManageContactsLink">
+                <i class="las la-user-cog"></i> Manage Contacts in Profile
+            </button>
+        </div>
+    </div>
+
     <!-- For demo purpose: trigger modal -->
     <button class="demo-trigger" id="demoTrigger" title="Test Deviation Alert"><i class="las la-vial"></i> Test
         Alert</button>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./supabaseClient.js?v=3"></script>
-    <script src="./mediaService.js?v=3"></script>
-    <script src="./script.js?v=3"></script>
+    <script src="./supabaseClient.js?v=4"></script>
+    <script src="./mediaService.js?v=4"></script>
+    <script src="./script.js?v=4"></script>
 </body>
 
 </html>

@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Jagruthi — Officer Patrol Unit Tracking</title>
+    <meta name="description" content="Jagruthi Intelligent Women Safety System — Officer Mobile Patrol Tracking & Dispatch Response Hub.">
+    
+    <!-- Modern Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Line Awesome Icons -->
+    <link rel="stylesheet" href="https://maxst.icons8.com/vue-static/landings/line-awesome/line-awesome/1.3.0/css/line-awesome.min.css">
+    
+    <!-- Base Styles & Patrol Styles -->
+    <link rel="stylesheet" href="./style.css">
+    <link rel="stylesheet" href="./patrol.css">
+    
+    <!-- Leaflet Map Library -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body class="patrol-body">
+    <div class="patrol-container">
+        
+        <!-- Top App Bar -->
+        <header class="patrol-header">
+            <div class="patrol-brand">
+                <a href="police.html" class="patrol-back-link" title="Return to Police Dashboard">
+                    <i class="las la-arrow-left"></i>
+                </a>
+                <div class="patrol-logo-icon">
+                    <i class="las la-shield-alt"></i>
+                </div>
+                <div>
+                    <h1 class="patrol-title">Patrol Unit Hub</h1>
+                    <span class="patrol-subtitle" id="patrolOfficerStation">Command Center</span>
+                </div>
+            </div>
+            
+            <div class="patrol-header-right">
+                <div class="duty-status-badge off-duty" id="dutyStatusBadge">
+                    <span class="status-dot"></span>
+                    <span id="dutyStatusText">OFF DUTY</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Officer Profile & Duty Toggle Card -->
+        <section class="officer-control-card">
+            <div class="officer-meta-row">
+                <div class="officer-avatar" id="officerAvatarText">PO</div>
+                <div class="officer-details">
+                    <strong class="officer-name" id="patrolOfficerName">Officer Loading...</strong>
+                    <span class="officer-id-tag"><i class="las la-id-badge"></i> <span id="patrolOfficerId">P-100</span></span>
+                    <span class="officer-phone-tag"><i class="las la-phone"></i> <span id="patrolOfficerPhone">—</span></span>
+                </div>
+            </div>
+
+            <!-- Duty Toggle Switch -->
+            <div class="duty-toggle-wrapper">
+                <div class="duty-desc">
+                    <strong>Patrol Duty Status</strong>
+                    <p id="dutyDescText">Start real-time GPS streaming to command center</p>
+                </div>
+                <button class="btn-duty-toggle" id="btnDutyToggle">
+                    <i class="las la-power-off"></i>
+                    <span id="btnDutyToggleText">Go On-Duty</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- Active Emergency Dispatch Card (Appears on incoming assignment) -->
+        <section class="active-dispatch-card" id="activeDispatchCard" style="display: none;">
+            <div class="dispatch-alert-banner">
+                <div class="dispatch-pulse-icon"><i class="las la-bell"></i></div>
+                <div>
+                    <h3>PRIORITY EMERGENCY DISPATCH</h3>
+                    <small id="dispReceivedTime">Assigned just now</small>
+                </div>
+                <span class="disp-status-pill" id="dispCurrentStatus">ASSIGNED</span>
+            </div>
+
+            <div class="dispatch-details-body">
+                <div class="disp-field-row">
+                    <span class="disp-label">Distress Victim:</span>
+                    <strong class="disp-val" id="dispVictimName">—</strong>
+                </div>
+                <div class="disp-field-row">
+                    <span class="disp-label">Emergency Type:</span>
+                    <strong class="disp-val text-danger" id="dispAlertType">SOS Alert</strong>
+                </div>
+                <div class="disp-field-row">
+                    <span class="disp-label">Location:</span>
+                    <strong class="disp-val" id="dispLocationText">Fetching address...</strong>
+                </div>
+                <div class="disp-field-row">
+                    <span class="disp-label">Est. Distance & ETA:</span>
+                    <strong class="disp-val text-success" id="dispDistanceEta">—</strong>
+                </div>
+                <div class="disp-field-row" id="dispInstructionsRow" style="display:none;">
+                    <span class="disp-label">Instructions:</span>
+                    <span class="disp-val" id="dispInstructionsText">—</span>
+                </div>
+            </div>
+
+            <!-- Dispatch Response Action Lifecycle Pipeline -->
+            <div class="dispatch-actions-grid">
+                <button class="btn-disp-action btn-nav-directions" id="btnOpenNav">
+                    <i class="las la-directions"></i> Turn-by-Turn GPS
+                </button>
+                <button class="btn-disp-action btn-ack" id="btnAckDispatch">
+                    <i class="las la-check"></i> 1. Acknowledge
+                </button>
+                <button class="btn-disp-action btn-enroute" id="btnEnRouteDispatch" disabled>
+                    <i class="las la-car"></i> 2. En Route
+                </button>
+                <button class="btn-disp-action btn-arrived" id="btnArrivedDispatch" disabled>
+                    <i class="las la-map-pin"></i> 3. At Scene
+                </button>
+                <button class="btn-disp-action btn-complete" id="btnCompleteDispatch" disabled>
+                    <i class="las la-flag-checkered"></i> 4. Complete
+                </button>
+            </div>
+        </section>
+
+        <!-- Live GPS Telemetry Status Strip -->
+        <section class="telemetry-grid">
+            <div class="telemetry-pill">
+                <i class="las la-crosshairs text-primary"></i>
+                <div>
+                    <small>GPS Accuracy</small>
+                    <strong id="gpsAccuracyText">—</strong>
+                </div>
+            </div>
+            <div class="telemetry-pill">
+                <i class="las la-tachometer-alt text-warning"></i>
+                <div>
+                    <small>Patrol Speed</small>
+                    <strong id="gpsSpeedText">0 km/h</strong>
+                </div>
+            </div>
+            <div class="telemetry-pill">
+                <i class="las la-compass text-info"></i>
+                <div>
+                    <small>Heading</small>
+                    <strong id="gpsHeadingText">—</strong>
+                </div>
+            </div>
+            <div class="telemetry-pill">
+                <i class="las la-satellite-dish text-success"></i>
+                <div>
+                    <small>Command Feed</small>
+                    <strong id="gpsSyncText">Standby</strong>
+                </div>
+            </div>
+        </section>
+
+        <!-- Live Officer Map View -->
+        <section class="patrol-map-section">
+            <div class="patrol-map-header">
+                <h3><i class="las la-map-marked-alt"></i> Live Patrol Position</h3>
+                <span class="gps-coords-badge" id="gpsCoordsBadge">GPS Standby</span>
+            </div>
+            <div id="patrolMap" class="patrol-map-container"></div>
+        </section>
+
+        <!-- Sound for dispatch alert -->
+        <audio id="dispatchSound" src="https://assets.mixkit.co/active_storage/sfx/992/992-preview.mp3" preload="auto"></audio>
+
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="./supabaseClient.js"></script>
+    <script src="./patrol.js"></script>
+</body>
+</html>

@@ -804,6 +804,9 @@ document.addEventListener('DOMContentLoaded', () => {
         
         localStorage.setItem('safeRouteEmergency', JSON.stringify(emergencyData));
 
+        let insertSuccess = true;
+        let insertError = null;
+
         // 3. INSERT INTO emergency_alerts LINKED WITH sos_id
         if (supabase) {
              const { error } = await supabase.from('emergency_alerts').insert([{
@@ -818,7 +821,7 @@ document.addEventListener('DOMContentLoaded', () => {
              if (error) {
                  console.warn("Supabase insert with sos_id failed, attempting standard insert:", error);
                  // Fallback if sos_id column is missing in legacy schema
-                 await supabase.from('emergency_alerts').insert([{
+                 const { error: fallbackError } = await supabase.from('emergency_alerts').insert([{
                      user_phone: emergencyData.phone,
                      alert_type: type,
                      latitude: parseFloat(alertLat),
@@ -826,6 +829,11 @@ document.addEventListener('DOMContentLoaded', () => {
                      message: `${fullMessage} [MODE:${travelMode}] [SOS:${activeSosId}]`,
                      status: 'active'
                  }]);
+                 if (fallbackError) {
+                     console.error("Supabase fallback insert also failed:", fallbackError);
+                     insertSuccess = false;
+                     insertError = fallbackError;
+                 }
              }
         }
 
@@ -834,9 +842,11 @@ document.addEventListener('DOMContentLoaded', () => {
             newValue: JSON.stringify(emergencyData)
         }));
 
-        // Switch to SOS tab so woman user immediately sees the Live Evidence Status Card
+        // Switch to SOS tab only if the dedicated emergency activation overlay is NOT currently shown
+        const emOverlayEl = document.getElementById('emergencyScreenOverlay');
+        const isEmOverlayVisible = emOverlayEl && !emOverlayEl.classList.contains('hidden');
         const navTabSos = document.getElementById('navTabSos');
-        if (navTabSos && !isAutoTrigger) {
+        if (navTabSos && !isAutoTrigger && !isEmOverlayVisible) {
             navTabSos.click();
         }
 
@@ -857,6 +867,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.error("Evidence capture workflow exception:", err);
             });
         }
+
+        return {
+            success: insertSuccess,
+            sosId: activeSosId,
+            error: insertError,
+            emergencyData: emergencyData
+        };
     }
 
 
@@ -894,6 +911,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 const liveInd = document.querySelector('.live-indicator');
                 if(liveInd) liveInd.style.display = 'flex';
                 if('vibrate' in navigator) navigator.vibrate(50);
+
+                const homeJourneyTag = document.getElementById('homeJourneyStatusTag');
+                const homeJourneyDesc = document.getElementById('homeJourneyDescText');
+                if (homeJourneyTag) {
+                    homeJourneyTag.innerText = "Live";
+                    homeJourneyTag.style.background = "#d1fae5";
+                    homeJourneyTag.style.color = "#059669";
+                }
+                if (homeJourneyDesc) {
+                    homeJourneyDesc.innerText = `En route (${travelMode}) • Corridor Active`;
+                }
                 
                 if(liveTrackingInterval) clearInterval(liveTrackingInterval);
                 
@@ -925,6 +953,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 const liveInd = document.querySelector('.live-indicator');
                 if(liveInd) liveInd.style.display = 'none';
                 if(liveTrackingInterval) clearInterval(liveTrackingInterval);
+
+                const homeJourneyTag = document.getElementById('homeJourneyStatusTag');
+                const homeJourneyDesc = document.getElementById('homeJourneyDescText');
+                if (homeJourneyTag) {
+                    homeJourneyTag.innerText = "Standby";
+                    homeJourneyTag.style.background = "#e0e7ff";
+                    homeJourneyTag.style.color = "var(--primary)";
+                }
+                if (homeJourneyDesc) {
+                    homeJourneyDesc.innerText = "Safe route corridor ready";
+                }
             }
         });
     }
@@ -1348,6 +1387,17 @@ document.addEventListener('DOMContentLoaded', () => {
             countBadge.className = contacts.length > 0 ? 'badge badge-success' : 'badge';
         }
 
+        const homeContactsBadge = document.getElementById('homeContactsBadge');
+        const homeContactsPreviewText = document.getElementById('homeContactsPreviewText');
+        if (homeContactsBadge) {
+            homeContactsBadge.innerText = contacts.length > 0 ? `${contacts.length} Linked` : 'None linked';
+            homeContactsBadge.style.background = contacts.length > 0 ? '#d1fae5' : '#fee2e2';
+            homeContactsBadge.style.color = contacts.length > 0 ? '#059669' : '#dc2626';
+        }
+        if (homeContactsPreviewText) {
+            homeContactsPreviewText.innerText = contacts.length > 0 ? `${contacts[0].name} (${contacts[0].phone})` : 'Tap to add emergency contact';
+        }
+
         if (contactsContainer) {
             if (contacts.length === 0) {
                 contactsContainer.innerHTML = `
@@ -1425,22 +1475,1139 @@ document.addEventListener('DOMContentLoaded', () => {
     loadUserEmergencyContacts();
     loadUserRecentAlerts();
 
+    // Header profile button click -> open Profile tab
+    const headerProfileBtn = document.getElementById('headerProfileBtn');
+    if (headerProfileBtn) {
+        headerProfileBtn.addEventListener('click', () => {
+            const navTabProfile = document.getElementById('navTabProfile');
+            if (navTabProfile) navTabProfile.click();
+        });
+    }
+
+    /* ===================================================
+       9. EMERGENCY SIREN & FLASHLIGHT HARDWARE CONTROLS
+       =================================================== */
+    class EmergencySiren {
+        constructor() {
+            this.audioCtx = null;
+            this.oscillator = null;
+            this.gainNode = null;
+            this.isPlaying = false;
+            this.sirenInterval = null;
+            this.isMuted = false;
+        }
+
+        start() {
+            if (this.isPlaying) return;
+            try {
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContextClass) return;
+                if (!this.audioCtx) {
+                    this.audioCtx = new AudioContextClass();
+                }
+                if (this.audioCtx.state === 'suspended') {
+                    this.audioCtx.resume();
+                }
+
+                this.oscillator = this.audioCtx.createOscillator();
+                this.gainNode = this.audioCtx.createGain();
+
+                this.oscillator.type = 'sawtooth';
+                this.oscillator.frequency.setValueAtTime(700, this.audioCtx.currentTime);
+
+                this.gainNode.gain.setValueAtTime(this.isMuted ? 0 : 0.45, this.audioCtx.currentTime);
+                this.oscillator.connect(this.gainNode);
+                this.gainNode.connect(this.audioCtx.destination);
+
+                this.oscillator.start();
+                this.isPlaying = true;
+
+                let high = false;
+                this.sirenInterval = setInterval(() => {
+                    if (!this.isPlaying || !this.oscillator || !this.audioCtx) return;
+                    const now = this.audioCtx.currentTime;
+                    const targetFreq = high ? 700 : 1150;
+                    this.oscillator.frequency.exponentialRampToValueAtTime(targetFreq, now + 0.45);
+                    high = !high;
+                }, 500);
+            } catch (e) {
+                console.warn("Emergency siren Web Audio init:", e);
+            }
+        }
+
+        stop() {
+            if (this.sirenInterval) {
+                clearInterval(this.sirenInterval);
+                this.sirenInterval = null;
+            }
+            if (this.oscillator) {
+                try {
+                    this.oscillator.stop();
+                    this.oscillator.disconnect();
+                } catch (e) {}
+                this.oscillator = null;
+            }
+            this.isPlaying = false;
+        }
+
+        toggleMute() {
+            this.isMuted = !this.isMuted;
+            if (this.gainNode && this.audioCtx) {
+                this.gainNode.gain.setValueAtTime(this.isMuted ? 0 : 0.45, this.audioCtx.currentTime);
+            }
+            return !this.isMuted;
+        }
+
+        playCountdownTick(freq = 880) {
+            try {
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContextClass) return;
+                if (!this.audioCtx) {
+                    this.audioCtx = new AudioContextClass();
+                }
+                if (this.audioCtx.state === 'suspended') {
+                    this.audioCtx.resume();
+                }
+                const osc = this.audioCtx.createOscillator();
+                const gain = this.audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, this.audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.25, this.audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, this.audioCtx.currentTime + 0.12);
+                osc.connect(gain);
+                gain.connect(this.audioCtx.destination);
+                osc.start();
+                osc.stop(this.audioCtx.currentTime + 0.13);
+            } catch (e) {}
+        }
+    }
+
+    class EmergencyTorch {
+        constructor() {
+            this.stream = null;
+            this.track = null;
+            this.isActive = false;
+        }
+
+        async start() {
+            if (this.isActive) return;
+            try {
+                if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                    this.stream = await navigator.mediaDevices.getUserMedia({
+                        video: { facingMode: 'environment' }
+                    });
+                    const tracks = this.stream.getVideoTracks();
+                    if (tracks.length > 0) {
+                        this.track = tracks[0];
+                        const capabilities = this.track.getCapabilities ? this.track.getCapabilities() : {};
+                        if (capabilities.torch) {
+                            await this.track.applyConstraints({
+                                advanced: [{ torch: true }]
+                            });
+                            this.isActive = true;
+                        }
+                    }
+                }
+            } catch (e) {
+                console.warn("Flashlight/torch not supported or camera in use:", e);
+            }
+        }
+
+        stop() {
+            if (this.track) {
+                try {
+                    this.track.stop();
+                } catch (e) {}
+                this.track = null;
+            }
+            if (this.stream) {
+                try {
+                    this.stream.getTracks().forEach(t => t.stop());
+                } catch (e) {}
+                this.stream = null;
+            }
+            this.isActive = false;
+        }
+
+        async toggle() {
+            if (this.isActive) {
+                this.stop();
+                return false;
+            } else {
+                await this.start();
+                return this.isActive;
+            }
+        }
+    }
+
+    const emergencySiren = new EmergencySiren();
+    const emergencyTorch = new EmergencyTorch();
+
+    /* ===================================================
+       10. EMERGENCY ACTIVATION OVERLAY & COUNTDOWN WORKFLOW
+       =================================================== */
+    let isEmergencyCountdownActive = false;
+    let isEmergencyDispatchedActive = false;
+    let emergencyCountdownTimer = null;
+    let countdownRemaining = 5;
+    let pendingSosType = "Emergency SOS";
+    let pendingSosMessage = "Emergency SOS Activated";
+
+    const emergencyOverlay = document.getElementById('emergencyScreenOverlay');
+    const emCountdownBlock = document.getElementById('emCountdownBlock');
+    const emDispatchedBlock = document.getElementById('emDispatchedBlock');
+    const emCountdownNum = document.getElementById('emCountdownNum');
+    const emCountdownSecondsText = document.getElementById('emCountdownSecondsText');
+    const countdownSvgProgress = document.getElementById('countdownSvgProgress');
+    const btnCancelEmergency = document.getElementById('btnCancelEmergency');
+    const btnResolveEmergency = document.getElementById('btnResolveEmergency');
+    const btnRetryAlert = document.getElementById('btnRetryAlert');
+    const btnToggleSiren = document.getElementById('btnToggleSiren');
+    const btnToggleTorch = document.getElementById('btnToggleTorch');
+    const sirenText = document.getElementById('sirenText');
+    const sirenIcon = document.getElementById('sirenIcon');
+    const torchText = document.getElementById('torchText');
+    const torchIcon = document.getElementById('torchIcon');
+    const emStatusBanner = document.getElementById('emStatusBanner');
+    const emBannerIcon = document.getElementById('emBannerIcon');
+    const emStatusTitle = document.getElementById('emStatusTitle');
+    const emStatusDesc = document.getElementById('emStatusDesc');
+    const emLocationDisplay = document.getElementById('emLocationDisplay');
+    const emContactsBadge = document.getElementById('emContactsBadge');
+    const emGpsBadge = document.getElementById('emGpsBadge');
+    const emEvidenceBadge = document.getElementById('emEvidenceBadge');
+
+    const CIRCLE_CIRCUMFERENCE = 339.29; // 2 * PI * 54
+
+    function setCountdownDashoffset(secondsLeft) {
+        if (!countdownSvgProgress) return;
+        const progressFraction = Math.max(0, Math.min(1, secondsLeft / 5));
+        const offset = CIRCLE_CIRCUMFERENCE * (1 - progressFraction);
+        countdownSvgProgress.style.strokeDashoffset = offset;
+    }
+
+    function startEmergencyCountdown(type = "Emergency SOS", message = "Emergency SOS Activated") {
+        // Prevent duplicate trigger if already in countdown or emergency is active
+        if (isEmergencyCountdownActive || isEmergencyDispatchedActive) {
+            console.log("Emergency activation already active. Skipping duplicate trigger.");
+            return;
+        }
+
+        pendingSosType = type;
+        pendingSosMessage = message;
+        isEmergencyCountdownActive = true;
+        countdownRemaining = 5;
+
+        // Reset UI elements
+        if (emCountdownNum) emCountdownNum.innerText = "5";
+        if (emCountdownSecondsText) emCountdownSecondsText.innerText = "5";
+        setCountdownDashoffset(5);
+
+        if (emCountdownBlock) emCountdownBlock.classList.remove('hidden');
+        if (emDispatchedBlock) emDispatchedBlock.classList.add('hidden');
+        if (emergencyOverlay) emergencyOverlay.classList.remove('hidden');
+
+        // Play initial tick and vibration
+        emergencySiren.playCountdownTick(880);
+        if ('vibrate' in navigator) navigator.vibrate([200, 100, 200]);
+
+        if (emergencyCountdownTimer) clearInterval(emergencyCountdownTimer);
+
+        emergencyCountdownTimer = setInterval(() => {
+            countdownRemaining--;
+            
+            if (countdownRemaining > 0) {
+                if (emCountdownNum) emCountdownNum.innerText = countdownRemaining;
+                if (emCountdownSecondsText) emCountdownSecondsText.innerText = countdownRemaining;
+                setCountdownDashoffset(countdownRemaining);
+                emergencySiren.playCountdownTick(countdownRemaining === 1 ? 1100 : 880);
+                if ('vibrate' in navigator) navigator.vibrate(150);
+            } else {
+                // Countdown reached 0 -> Dispatch Emergency Alert!
+                clearInterval(emergencyCountdownTimer);
+                emergencyCountdownTimer = null;
+                isEmergencyCountdownActive = false;
+                setCountdownDashoffset(0);
+                executeEmergencyActivation();
+            }
+        }, 1000);
+    }
+
+    function cancelEmergencyCountdown() {
+        if (emergencyCountdownTimer) {
+            clearInterval(emergencyCountdownTimer);
+            emergencyCountdownTimer = null;
+        }
+        isEmergencyCountdownActive = false;
+        if (emergencyOverlay) emergencyOverlay.classList.add('hidden');
+        emergencySiren.stop();
+        emergencyTorch.stop();
+        if ('vibrate' in navigator) navigator.vibrate(80);
+        console.log("Emergency alert activation cancelled by user.");
+    }
+
+    async function executeEmergencyActivation() {
+        isEmergencyDispatchedActive = true;
+
+        // Transition from countdown to dispatched view
+        if (emCountdownBlock) emCountdownBlock.classList.add('hidden');
+        if (emDispatchedBlock) emDispatchedBlock.classList.remove('hidden');
+
+        // Update Location info on overlay
+        if (emLocationDisplay) {
+            if (homeCurrentLocText && homeCurrentLocText.innerText && homeCurrentLocText.innerText !== "Detecting location...") {
+                emLocationDisplay.innerText = homeCurrentLocText.innerText;
+            } else if (startLoc) {
+                emLocationDisplay.innerText = `Lat: ${Number(startLoc[0]).toFixed(4)}, Lng: ${Number(startLoc[1]).toFixed(4)}`;
+            } else {
+                emLocationDisplay.innerText = "Location coords transmitted";
+            }
+        }
+
+        // Set transmitting state banner
+        if (emStatusBanner) {
+            emStatusBanner.className = 'em-status-banner banner-transmitting';
+        }
+        if (emBannerIcon) {
+            emBannerIcon.className = 'las la-spinner la-spin';
+        }
+        if (emStatusTitle) emStatusTitle.innerText = "Transmitting Emergency Signal...";
+        if (emStatusDesc) emStatusDesc.innerText = "Broadcasting GPS coordinates and alerting emergency dispatch";
+        if (emContactsBadge) {
+            emContactsBadge.innerText = "Transmitting";
+            emContactsBadge.className = "detail-badge";
+        }
+        if (btnRetryAlert) btnRetryAlert.classList.add('hidden');
+
+        // Start Siren and Flashlight
+        emergencySiren.start();
+        emergencyTorch.start();
+        updateHardwareButtonStyles();
+
+        // Heavy alarm vibration
+        if ('vibrate' in navigator) navigator.vibrate([400, 200, 400, 200, 600]);
+
+        // Dispatch alert to backend / Supabase
+        try {
+            const result = await triggerSOSAction(pendingSosType, pendingSosMessage);
+
+            if (result && result.success) {
+                // Verified Confirmation
+                if (emStatusBanner) emStatusBanner.className = 'em-status-banner banner-confirmed';
+                if (emBannerIcon) emBannerIcon.className = 'las la-check-circle';
+                if (emStatusTitle) emStatusTitle.innerText = "Alert Confirmed & Dispatched";
+                if (emStatusDesc) emStatusDesc.innerText = "Emergency contacts notified & live tracking broadcasted.";
+                if (emContactsBadge) {
+                    emContactsBadge.innerText = "Confirmed";
+                    emContactsBadge.className = "detail-badge badge-active";
+                }
+                if (btnRetryAlert) btnRetryAlert.classList.add('hidden');
+            } else {
+                // Delivery Failure: Never falsely show sent!
+                if (emStatusBanner) emStatusBanner.className = 'em-status-banner banner-failed';
+                if (emBannerIcon) emBannerIcon.className = 'las la-exclamation-triangle';
+                if (emStatusTitle) emStatusTitle.innerText = "Alert Delivery Failed";
+                if (emStatusDesc) emStatusDesc.innerText = "Network issue detected. Call 112 directly or tap Retry Alert.";
+                if (emContactsBadge) {
+                    emContactsBadge.innerText = "Failed";
+                    emContactsBadge.className = "detail-badge badge-error";
+                }
+                if (btnRetryAlert) btnRetryAlert.classList.remove('hidden');
+            }
+        } catch (err) {
+            console.error("Emergency dispatch error:", err);
+            if (emStatusBanner) emStatusBanner.className = 'em-status-banner banner-failed';
+            if (emBannerIcon) emBannerIcon.className = 'las la-exclamation-triangle';
+            if (emStatusTitle) emStatusTitle.innerText = "Alert Delivery Failed";
+            if (emStatusDesc) emStatusDesc.innerText = "Cloud connection error. Use emergency phone hotlines below.";
+            if (emContactsBadge) {
+                emContactsBadge.innerText = "Failed";
+                emContactsBadge.className = "detail-badge badge-error";
+            }
+            if (btnRetryAlert) btnRetryAlert.classList.remove('hidden');
+        }
+    }
+
+    async function resolveEmergency() {
+        emergencySiren.stop();
+        emergencyTorch.stop();
+
+        if (activeSosId && window.jagruthiSosService) {
+            await window.jagruthiSosService.resolveSosEvent(activeSosId);
+        }
+
+        isEmergencyDispatchedActive = false;
+        isEmergencyCountdownActive = false;
+        if (emergencyOverlay) emergencyOverlay.classList.add('hidden');
+
+        console.log("Emergency resolved by user.");
+    }
+
+    function updateHardwareButtonStyles() {
+        if (btnToggleSiren) {
+            if (emergencySiren.isPlaying && !emergencySiren.isMuted) {
+                btnToggleSiren.classList.add('hw-active');
+                if (sirenText) sirenText.innerText = "Siren: ON";
+                if (sirenIcon) sirenIcon.className = "las la-volume-up";
+            } else {
+                btnToggleSiren.classList.remove('hw-active');
+                if (sirenText) sirenText.innerText = "Siren: MUTED";
+                if (sirenIcon) sirenIcon.className = "las la-volume-mute";
+            }
+        }
+        if (btnToggleTorch) {
+            if (emergencyTorch.isActive) {
+                btnToggleTorch.classList.add('hw-active');
+                if (torchText) torchText.innerText = "Torch: ON";
+            } else {
+                btnToggleTorch.classList.remove('hw-active');
+                if (torchText) torchText.innerText = "Torch: OFF";
+            }
+        }
+    }
+
+    // Bind Emergency Activation Overlay Controls
+    if (btnCancelEmergency) {
+        btnCancelEmergency.addEventListener('click', cancelEmergencyCountdown);
+    }
+    if (btnResolveEmergency) {
+        btnResolveEmergency.addEventListener('click', resolveEmergency);
+    }
+    if (btnRetryAlert) {
+        btnRetryAlert.addEventListener('click', () => {
+            executeEmergencyActivation();
+        });
+    }
+    if (btnToggleSiren) {
+        btnToggleSiren.addEventListener('click', () => {
+            emergencySiren.toggleMute();
+            updateHardwareButtonStyles();
+        });
+    }
+    if (btnToggleTorch) {
+        btnToggleTorch.addEventListener('click', async () => {
+            await emergencyTorch.toggle();
+            updateHardwareButtonStyles();
+        });
+    }
+
+    // Bind Central SOS Button on Home Tab
+    const mainCentralSosBtn = document.getElementById('mainCentralSosBtn');
+    if (mainCentralSosBtn) {
+        mainCentralSosBtn.addEventListener('click', () => {
+            startEmergencyCountdown("Emergency SOS", "User tapped central SOS button");
+        });
+    }
+
     // Direct SOS Button in SOS Tab
     const directSosTriggerBtn = document.getElementById('directSosTriggerBtn');
     if (directSosTriggerBtn) {
         directSosTriggerBtn.addEventListener('click', () => {
-            if ('vibrate' in navigator) navigator.vibrate([300, 100, 300, 100, 500]);
-            triggerSOSAction("Emergency SOS", "User triggered manual SOS from Emergency Hub");
-            alert("Emergency SOS Activated! Live coordinates and alert sent.");
+            startEmergencyCountdown("Emergency SOS", "User triggered manual SOS from Emergency Hub");
         });
     }
+
+    /* ===================================================
+       11. SHAKE-TO-SOS IMPLEMENTATION
+       =================================================== */
+    let lastShakeTimestamp = 0;
+    let shakeCooldownActive = false;
+    let lastSensorAcc = { x: 0, y: 0, z: 0 };
+    const SHAKE_THRESHOLD = 18; // m/s² delta threshold for a deliberate shake
+    const SHAKE_WINDOW_MAX_MS = 2500; // max window between 2 shakes
+    const SHAKE_WINDOW_MIN_MS = 300; // debounce between two distinct shakes
+    const shakeStatusDesc = document.getElementById('shakeStatusDesc');
+    const enableShakeBtn = document.getElementById('enableShakeBtn');
+
+    function handleDeviceMotion(event) {
+        if (shakeCooldownActive || isEmergencyCountdownActive || isEmergencyDispatchedActive) {
+            return;
+        }
+
+        const acc = event.accelerationIncludingGravity || event.acceleration;
+        if (!acc || acc.x === null) return;
+
+        const deltaX = Math.abs(acc.x - lastSensorAcc.x);
+        const deltaY = Math.abs(acc.y - lastSensorAcc.y);
+        const deltaZ = Math.abs(acc.z - lastSensorAcc.z);
+
+        lastSensorAcc = { x: acc.x, y: acc.y, z: acc.z };
+
+        const delta = Math.sqrt(deltaX * deltaX + deltaY * deltaY + deltaZ * deltaZ);
+
+        if (delta > SHAKE_THRESHOLD) {
+            const now = Date.now();
+            const timeSinceLastShake = now - lastShakeTimestamp;
+
+            if (lastShakeTimestamp === 0 || timeSinceLastShake > SHAKE_WINDOW_MAX_MS) {
+                // First deliberate shake detected
+                lastShakeTimestamp = now;
+                if ('vibrate' in navigator) navigator.vibrate(80);
+                if (shakeStatusDesc) {
+                    shakeStatusDesc.innerText = "First shake detected! Shake once more to activate SOS...";
+                    shakeStatusDesc.style.color = "#dc2626";
+                    shakeStatusDesc.style.fontWeight = "700";
+                    setTimeout(() => {
+                        if (!isEmergencyCountdownActive && !isEmergencyDispatchedActive && shakeStatusDesc) {
+                            shakeStatusDesc.innerText = "Shake motion sensors ready • 2 deliberate shakes";
+                            shakeStatusDesc.style.color = "#64748b";
+                            shakeStatusDesc.style.fontWeight = "400";
+                        }
+                    }, 3000);
+                }
+            } else if (timeSinceLastShake >= SHAKE_WINDOW_MIN_MS && timeSinceLastShake <= SHAKE_WINDOW_MAX_MS) {
+                // Second deliberate shake detected within time window -> TRIGGER SOS!
+                lastShakeTimestamp = 0;
+                shakeCooldownActive = true;
+                setTimeout(() => { shakeCooldownActive = false; }, 10000); // 10s cooldown
+                
+                if (shakeStatusDesc) {
+                    shakeStatusDesc.innerText = "Double shake verified! Activating Emergency SOS...";
+                    shakeStatusDesc.style.color = "#dc2626";
+                }
+
+                startEmergencyCountdown("Shake-to-SOS Activated", "Emergency triggered via double device shake");
+            }
+        }
+    }
+
+    function initShakeDetection() {
+        if (typeof window.DeviceMotionEvent !== 'undefined') {
+            // Check for iOS 13+ permission model
+            if (typeof DeviceMotionEvent.requestPermission === 'function') {
+                if (enableShakeBtn) {
+                    enableShakeBtn.classList.remove('hidden');
+                    enableShakeBtn.addEventListener('click', async () => {
+                        try {
+                            const permission = await DeviceMotionEvent.requestPermission();
+                            if (permission === 'granted') {
+                                window.addEventListener('devicemotion', handleDeviceMotion, false);
+                                enableShakeBtn.classList.add('hidden');
+                                if (shakeStatusDesc) shakeStatusDesc.innerText = "Shake sensors active • Shake twice for SOS";
+                            } else {
+                                if (shakeStatusDesc) shakeStatusDesc.innerText = "Motion permission denied • Manual SOS ready";
+                            }
+                        } catch (e) {
+                            console.warn("Permission request error:", e);
+                        }
+                    });
+                }
+            } else {
+                // Android, Chrome, and standard mobile browsers
+                window.addEventListener('devicemotion', handleDeviceMotion, false);
+                if (shakeStatusDesc) shakeStatusDesc.innerText = "Shake sensors active • Shake phone twice to activate SOS";
+            }
+        } else {
+            // Desktop or device without accelerometer
+            if (shakeStatusDesc) {
+                shakeStatusDesc.innerText = "Mobile motion sensor active on supported phones • Manual SOS ready";
+            }
+        }
+    }
+
+    /* ===================================================
+       12. SAFETY 2X2 GRID FEATURES (REFERENCE IMAGE)
+       =================================================== */
+
+    // ---------------------------------------------
+    // CARD 1: Emergency Contacts Quick Sheet
+    // ---------------------------------------------
+    const btnGridContacts = document.getElementById('btnGridContacts');
+    const contactsSheetOverlay = document.getElementById('contactsSheetOverlay');
+    const contactsQuickSheetModal = document.getElementById('contactsQuickSheetModal');
+    const closeContactsSheetBtn = document.getElementById('closeContactsSheetBtn');
+    const btnManageContactsLink = document.getElementById('btnManageContactsLink');
+    const quickContactsListContainer = document.getElementById('quickContactsListContainer');
+
+    function openContactsSheet() {
+        if (contactsSheetOverlay) contactsSheetOverlay.classList.add('show');
+        if (contactsQuickSheetModal) contactsQuickSheetModal.classList.add('show');
+        populateQuickContacts();
+    }
+
+    function closeContactsSheet() {
+        if (contactsSheetOverlay) contactsSheetOverlay.classList.remove('show');
+        if (contactsQuickSheetModal) contactsQuickSheetModal.classList.remove('show');
+    }
+
+    async function populateQuickContacts() {
+        if (!quickContactsListContainer) return;
+        const phone = localStorage.getItem('userPhone');
+        let contacts = [];
+        if (supabase && phone) {
+            try {
+                const { data: userRow } = await supabase
+                    .from('users')
+                    .select('emergency_contact')
+                    .eq('phone', phone)
+                    .single();
+                if (userRow?.emergency_contact) {
+                    contacts.push({
+                        name: 'Primary Emergency Contact',
+                        phone: userRow.emergency_contact
+                    });
+                }
+            } catch (e) {}
+        }
+
+        if (contacts.length === 0) {
+            quickContactsListContainer.innerHTML = `
+                <div style="padding: 14px; text-align: center; color: #64748b; font-size: 0.88rem; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 10px;">
+                    <i class="las la-user-plus" style="font-size: 1.6rem; display: block; margin-bottom: 4px; color: var(--primary);"></i>
+                    No emergency contact linked yet.<br>
+                    <small>Tap below to configure emergency contacts in your Profile.</small>
+                </div>
+            `;
+        } else {
+            quickContactsListContainer.innerHTML = contacts.map(c => `
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div style="width: 40px; height: 40px; border-radius: 50%; background: #f3e8ff; color: #7c3aed; display: flex; align-items: center; justify-content: center; font-size: 1.3rem;">
+                            <i class="las la-user-shield"></i>
+                        </div>
+                        <div>
+                            <strong style="display: block; font-size: 0.95rem; color: var(--text-dark);">${c.name}</strong>
+                            <span style="font-size: 0.82rem; color: #64748b;">${c.phone}</span>
+                        </div>
+                    </div>
+                    <a href="tel:${c.phone.replace(/\\s+/g, '')}" style="background: var(--success); color: white; width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; text-decoration: none; box-shadow: 0 4px 10px rgba(16,185,129,0.3);">
+                        <i class="las la-phone"></i>
+                    </a>
+                </div>
+            `).join('');
+        }
+    }
+
+    if (btnGridContacts) btnGridContacts.addEventListener('click', openContactsSheet);
+    if (closeContactsSheetBtn) closeContactsSheetBtn.addEventListener('click', closeContactsSheet);
+    if (contactsSheetOverlay) contactsSheetOverlay.addEventListener('click', closeContactsSheet);
+    if (btnManageContactsLink) {
+        btnManageContactsLink.addEventListener('click', () => {
+            closeContactsSheet();
+            const navTabProfile = document.getElementById('navTabProfile');
+            if (navTabProfile) navTabProfile.click();
+        });
+    }
+
+    // ---------------------------------------------
+    // CARD 2: My Location Quick Sheet
+    // ---------------------------------------------
+    const btnGridLocation = document.getElementById('btnGridLocation');
+    const locationSheetOverlay = document.getElementById('locationSheetOverlay');
+    const myLocationSheetModal = document.getElementById('myLocationSheetModal');
+    const closeLocSheetBtn = document.getElementById('closeLocSheetBtn');
+    const locSheetAddress = document.getElementById('locSheetAddress');
+    const locSheetCoords = document.getElementById('locSheetCoords');
+    const btnCopyCoords = document.getElementById('btnCopyCoords');
+    const btnOpenJourneyFromLoc = document.getElementById('btnOpenJourneyFromLoc');
+
+    function openLocationSheet() {
+        if (locSheetAddress) {
+            locSheetAddress.innerText = (homeCurrentLocText && homeCurrentLocText.innerText && homeCurrentLocText.innerText !== "Detecting location...")
+                ? homeCurrentLocText.innerText
+                : "Acquiring GPS fix...";
+        }
+        if (locSheetCoords) {
+            locSheetCoords.innerText = startLoc
+                ? `Coordinates: Lat ${Number(startLoc[0]).toFixed(5)}, Lng ${Number(startLoc[1]).toFixed(5)}`
+                : "Waiting for GPS satellites...";
+        }
+        if (locationSheetOverlay) locationSheetOverlay.classList.add('show');
+        if (myLocationSheetModal) myLocationSheetModal.classList.add('show');
+    }
+
+    function closeLocationSheet() {
+        if (locationSheetOverlay) locationSheetOverlay.classList.remove('show');
+        if (myLocationSheetModal) myLocationSheetModal.classList.remove('show');
+    }
+
+    if (btnGridLocation) btnGridLocation.addEventListener('click', openLocationSheet);
+    if (closeLocSheetBtn) closeLocSheetBtn.addEventListener('click', closeLocationSheet);
+    if (locationSheetOverlay) locationSheetOverlay.addEventListener('click', closeLocationSheet);
+
+    if (btnCopyCoords) {
+        btnCopyCoords.addEventListener('click', () => {
+            const textToCopy = startLoc
+                ? `Lat: ${startLoc[0]}, Lng: ${startLoc[1]} (https://maps.google.com/?q=${startLoc[0]},${startLoc[1]})`
+                : (locSheetAddress?.innerText || "GPS location unavailable");
+            navigator.clipboard.writeText(textToCopy);
+            btnCopyCoords.innerHTML = '<i class="las la-check"></i> Copied!';
+            setTimeout(() => {
+                btnCopyCoords.innerHTML = '<i class="las la-copy"></i> Copy Coordinates';
+            }, 2000);
+        });
+    }
+
+    if (btnOpenJourneyFromLoc) {
+        btnOpenJourneyFromLoc.addEventListener('click', () => {
+            closeLocationSheet();
+            const navTabJourney = document.getElementById('navTabJourney');
+            if (navTabJourney) navTabJourney.click();
+        });
+    }
+
+    // ---------------------------------------------
+    // CARD 3: Incident Evidence Capture Tool
+    // ---------------------------------------------
+    const btnGridEvidence = document.getElementById('btnGridEvidence');
+    const captureEvidenceOverlay = document.getElementById('captureEvidenceOverlay');
+    const captureEvidenceModal = document.getElementById('captureEvidenceModal');
+    const closeEvidenceCaptureBtn = document.getElementById('closeEvidenceCaptureBtn');
+    const evidenceLiveVideo = document.getElementById('evidenceLiveVideo');
+    const evidenceSnapshotCanvas = document.getElementById('evidenceSnapshotCanvas');
+    const evdLiveGpsChip = document.getElementById('evdLiveGpsChip');
+    const evdLiveTimeChip = document.getElementById('evdLiveTimeChip');
+    const evdRecordingIndicator = document.getElementById('evdRecordingIndicator');
+    const evdRecordingTimer = document.getElementById('evdRecordingTimer');
+    const btnFlipCamera = document.getElementById('btnFlipCamera');
+    const btnModePhoto = document.getElementById('btnModePhoto');
+    const btnModeVideo = document.getElementById('btnModeVideo');
+    const btnExecuteCapture = document.getElementById('btnExecuteCapture');
+    const shutterInner = document.getElementById('shutterInner');
+    const btnOpenStoredEvidence = document.getElementById('btnOpenStoredEvidence');
+    const evidenceFileInput = document.getElementById('evidenceFileInput');
+    const evdStatusFeedback = document.getElementById('evdStatusFeedback');
+    const evdFeedbackText = document.getElementById('evdFeedbackText');
+
+    let interactiveCameraStream = null;
+    let cameraFacingMode = 'environment'; // default rear camera for capturing incidents
+    let currentEvidenceMode = 'photo'; // 'photo' | 'video'
+    let interactiveMediaRecorder = null;
+    let interactiveVideoChunks = [];
+    let isVideoRecording = false;
+    let videoRecordTimerInterval = null;
+    let videoSecondsRecorded = 0;
+    let watermarkClockInterval = null;
+
+    async function startInteractiveCamera() {
+        stopInteractiveCamera();
+        try {
+            const constraints = {
+                video: {
+                    facingMode: { ideal: cameraFacingMode },
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 }
+                },
+                audio: true
+            };
+            interactiveCameraStream = await navigator.mediaDevices.getUserMedia(constraints);
+            if (evidenceLiveVideo) {
+                evidenceLiveVideo.srcObject = interactiveCameraStream;
+                await evidenceLiveVideo.play();
+            }
+        } catch (err) {
+            console.warn("Camera with audio failed, falling back to video-only:", err);
+            try {
+                interactiveCameraStream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: { ideal: cameraFacingMode } }
+                });
+                if (evidenceLiveVideo) {
+                    evidenceLiveVideo.srcObject = interactiveCameraStream;
+                    await evidenceLiveVideo.play();
+                }
+            } catch (camErr) {
+                console.error("Camera access failed:", camErr);
+                showEvidenceFeedback("Camera access permission needed to capture live evidence.", true);
+            }
+        }
+
+        // Start live watermark updates
+        updateWatermarkOverlay();
+        if (watermarkClockInterval) clearInterval(watermarkClockInterval);
+        watermarkClockInterval = setInterval(updateWatermarkOverlay, 1000);
+    }
+
+    function stopInteractiveCamera() {
+        if (videoRecordTimerInterval) {
+            clearInterval(videoRecordTimerInterval);
+            videoRecordTimerInterval = null;
+        }
+        if (watermarkClockInterval) {
+            clearInterval(watermarkClockInterval);
+            watermarkClockInterval = null;
+        }
+        if (interactiveMediaRecorder && interactiveMediaRecorder.state !== 'inactive') {
+            try { interactiveMediaRecorder.stop(); } catch(e) {}
+        }
+        if (interactiveCameraStream) {
+            interactiveCameraStream.getTracks().forEach(t => t.stop());
+            interactiveCameraStream = null;
+        }
+        if (evidenceLiveVideo) {
+            evidenceLiveVideo.srcObject = null;
+        }
+        isVideoRecording = false;
+        if (evdRecordingIndicator) evdRecordingIndicator.classList.add('hidden');
+        if (btnExecuteCapture) btnExecuteCapture.classList.remove('shutter-recording');
+    }
+
+    function updateWatermarkOverlay() {
+        if (evdLiveGpsChip) {
+            if (startLoc) {
+                evdLiveGpsChip.innerHTML = `<i class="las la-map-marker-alt"></i> ${startLoc[0].toFixed(4)}, ${startLoc[1].toFixed(4)}`;
+            } else {
+                evdLiveGpsChip.innerHTML = `<i class="las la-map-marker-alt"></i> GPS Fix Pending`;
+            }
+        }
+        if (evdLiveTimeChip) {
+            evdLiveTimeChip.innerHTML = `<i class="las la-clock"></i> ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`;
+        }
+    }
+
+    function showEvidenceFeedback(msg, isError = false) {
+        if (!evdStatusFeedback || !evdFeedbackText) return;
+        evdFeedbackText.innerText = msg;
+        evdStatusFeedback.style.background = isError ? 'rgba(239, 68, 68, 0.25)' : 'rgba(16, 185, 129, 0.25)';
+        evdStatusFeedback.style.borderColor = isError ? '#ef4444' : '#10b981';
+        evdStatusFeedback.style.color = isError ? '#fca5a5' : '#6ee7b7';
+        evdStatusFeedback.classList.remove('hidden');
+        setTimeout(() => {
+            if (evdStatusFeedback) evdStatusFeedback.classList.add('hidden');
+        }, 5000);
+    }
+
+    function openEvidenceModal() {
+        if (captureEvidenceOverlay) captureEvidenceOverlay.classList.add('show');
+        if (captureEvidenceModal) captureEvidenceModal.classList.add('show');
+        startInteractiveCamera();
+    }
+
+    function closeEvidenceModal() {
+        stopInteractiveCamera();
+        if (captureEvidenceOverlay) captureEvidenceOverlay.classList.remove('show');
+        if (captureEvidenceModal) captureEvidenceModal.classList.remove('show');
+    }
+
+    if (btnGridEvidence) btnGridEvidence.addEventListener('click', openEvidenceModal);
+    if (closeEvidenceCaptureBtn) closeEvidenceCaptureBtn.addEventListener('click', closeEvidenceModal);
+    if (captureEvidenceOverlay) captureEvidenceOverlay.addEventListener('click', closeEvidenceModal);
+
+    // Camera Flip (Front / Back)
+    if (btnFlipCamera) {
+        btnFlipCamera.addEventListener('click', () => {
+            cameraFacingMode = cameraFacingMode === 'user' ? 'environment' : 'user';
+            startInteractiveCamera();
+        });
+    }
+
+    // Switch Photo / Video Modes
+    if (btnModePhoto) {
+        btnModePhoto.addEventListener('click', () => {
+            currentEvidenceMode = 'photo';
+            btnModePhoto.classList.add('active');
+            btnModeVideo.classList.remove('active');
+            btnExecuteCapture.setAttribute('aria-label', 'Capture Photo');
+            shutterInner.style.borderRadius = '50%';
+        });
+    }
+
+    if (btnModeVideo) {
+        btnModeVideo.addEventListener('click', () => {
+            currentEvidenceMode = 'video';
+            btnModeVideo.classList.add('active');
+            btnModePhoto.classList.remove('active');
+            btnExecuteCapture.setAttribute('aria-label', 'Record Video');
+        });
+    }
+
+    // Execute Capture Button (Photo Snapshot or Start/Stop Video)
+    if (btnExecuteCapture) {
+        btnExecuteCapture.addEventListener('click', async () => {
+            if (currentEvidenceMode === 'photo') {
+                await capturePhotoSnapshot();
+            } else {
+                toggleVideoRecording();
+            }
+        });
+    }
+
+    async function capturePhotoSnapshot() {
+        if (!evidenceLiveVideo || !evidenceSnapshotCanvas) return;
+        
+        // Haptic feedback
+        if ('vibrate' in navigator) navigator.vibrate(60);
+
+        const video = evidenceLiveVideo;
+        const canvas = evidenceSnapshotCanvas;
+        canvas.width = video.videoWidth || 640;
+        canvas.height = video.videoHeight || 480;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        // Stamp with GPS & Timestamp Watermark
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+        ctx.fillRect(0, canvas.height - 40, canvas.width, 40);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 16px Outfit, sans-serif';
+        const watermarkText = `Jagruthi Evidence • ${new Date().toLocaleString()} • Lat: ${startLoc ? startLoc[0].toFixed(4) : '--'}, Lng: ${startLoc ? startLoc[1].toFixed(4) : '--'}`;
+        ctx.fillText(watermarkText, 14, canvas.height - 15);
+
+        // Convert to Blob and Save
+        canvas.toBlob(async (blob) => {
+            if (!blob) return;
+            const photoUrl = URL.createObjectURL(blob);
+            
+            // Save to incident evidence record
+            const incidentRecord = {
+                id: Date.now(),
+                type: 'photo',
+                url: photoUrl,
+                capturedAt: new Date().toISOString(),
+                coords: startLoc,
+                address: homeCurrentLocText?.innerText || 'Unknown'
+            };
+
+            const existing = JSON.parse(localStorage.getItem('jagruthiCapturedEvidence') || '[]');
+            existing.unshift(incidentRecord);
+            localStorage.setItem('jagruthiCapturedEvidence', JSON.stringify(existing));
+
+            // Upload to Supabase if client available
+            if (supabase) {
+                try {
+                    const userId = await getAuthenticatedUserId();
+                    const fileName = `photo_${Date.now()}.jpg`;
+                    const storagePath = `${userId}/incidents/${fileName}`;
+                    await supabase.storage.from('jagruthi-evidence').upload(storagePath, blob, { contentType: 'image/jpeg' });
+                } catch (e) {
+                    console.warn("Cloud photo sync notice:", e);
+                }
+            }
+
+            showEvidenceFeedback("✅ Photo Evidence Captured & Encrypted into Vault!");
+        }, 'image/jpeg', 0.92);
+    }
+
+    function toggleVideoRecording() {
+        if (!isVideoRecording) {
+            startVideoRecording();
+        } else {
+            stopVideoRecording();
+        }
+    }
+
+    function startVideoRecording() {
+        if (!interactiveCameraStream) return;
+        interactiveVideoChunks = [];
+
+        try {
+            let mimeType = 'video/webm';
+            if (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported('video/mp4')) {
+                mimeType = 'video/mp4';
+            }
+            interactiveMediaRecorder = new MediaRecorder(interactiveCameraStream, { mimeType });
+            interactiveMediaRecorder.ondataavailable = (e) => {
+                if (e.data && e.data.size > 0) interactiveVideoChunks.push(e.data);
+            };
+
+            interactiveMediaRecorder.onstop = async () => {
+                const videoBlob = new Blob(interactiveVideoChunks, { type: mimeType });
+                const videoUrl = URL.createObjectURL(videoBlob);
+                
+                const incidentRecord = {
+                    id: Date.now(),
+                    type: 'video',
+                    url: videoUrl,
+                    capturedAt: new Date().toISOString(),
+                    coords: startLoc,
+                    address: homeCurrentLocText?.innerText || 'Unknown'
+                };
+
+                const existing = JSON.parse(localStorage.getItem('jagruthiCapturedEvidence') || '[]');
+                existing.unshift(incidentRecord);
+                localStorage.setItem('jagruthiCapturedEvidence', JSON.stringify(existing));
+
+                // Upload to Supabase Storage in background
+                if (supabase) {
+                    try {
+                        const userId = await getAuthenticatedUserId();
+                        const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
+                        const storagePath = `${userId}/incidents/video_${Date.now()}.${ext}`;
+                        await supabase.storage.from('jagruthi-evidence').upload(storagePath, videoBlob, { contentType: mimeType });
+                    } catch (e) {
+                        console.warn("Cloud video sync notice:", e);
+                    }
+                }
+
+                showEvidenceFeedback("✅ Incident Video Secured & Encrypted into Vault!");
+            };
+
+            interactiveMediaRecorder.start(500);
+            isVideoRecording = true;
+            btnExecuteCapture.classList.add('shutter-recording');
+            if (evdRecordingIndicator) evdRecordingIndicator.classList.remove('hidden');
+
+            videoSecondsRecorded = 0;
+            if (evdRecordingTimer) evdRecordingTimer.innerText = "REC 00:00";
+            videoRecordTimerInterval = setInterval(() => {
+                videoSecondsRecorded++;
+                const mins = String(Math.floor(videoSecondsRecorded / 60)).padStart(2, '0');
+                const secs = String(videoSecondsRecorded % 60).padStart(2, '0');
+                if (evdRecordingTimer) evdRecordingTimer.innerText = `REC ${mins}:${secs}`;
+            }, 1000);
+
+            if ('vibrate' in navigator) navigator.vibrate([100, 50, 100]);
+        } catch (err) {
+            console.error("Failed to start video recording:", err);
+            showEvidenceFeedback("Video recording not supported on this device/browser.", true);
+        }
+    }
+
+    function stopVideoRecording() {
+        if (interactiveMediaRecorder && interactiveMediaRecorder.state !== 'inactive') {
+            interactiveMediaRecorder.stop();
+        }
+        isVideoRecording = false;
+        btnExecuteCapture.classList.remove('shutter-recording');
+        if (evdRecordingIndicator) evdRecordingIndicator.classList.add('hidden');
+        if (videoRecordTimerInterval) {
+            clearInterval(videoRecordTimerInterval);
+            videoRecordTimerInterval = null;
+        }
+        if ('vibrate' in navigator) navigator.vibrate(100);
+    }
+
+    // Gallery / File upload fallback
+    if (evidenceFileInput) {
+        evidenceFileInput.addEventListener('change', async (e) => {
+            const file = e.target.files && e.target.files[0];
+            if (!file) return;
+            const fileUrl = URL.createObjectURL(file);
+            const isVid = file.type.includes('video');
+            
+            const incidentRecord = {
+                id: Date.now(),
+                type: isVid ? 'video' : 'photo',
+                url: fileUrl,
+                fileName: file.name,
+                capturedAt: new Date().toISOString(),
+                coords: startLoc,
+                address: homeCurrentLocText?.innerText || 'Unknown'
+            };
+
+            const existing = JSON.parse(localStorage.getItem('jagruthiCapturedEvidence') || '[]');
+            existing.unshift(incidentRecord);
+            localStorage.setItem('jagruthiCapturedEvidence', JSON.stringify(existing));
+
+            showEvidenceFeedback(`✅ ${isVid ? 'Video' : 'Photo'} loaded and saved to incident vault!`);
+        });
+    }
+
+    // View Stored Evidence -> opens #userEvdModal
+    if (btnOpenStoredEvidence) {
+        btnOpenStoredEvidence.addEventListener('click', () => {
+            const userEvdOverlay = document.getElementById('userEvdOverlay');
+            const userEvdModal = document.getElementById('userEvdModal');
+            const userEvdVideo = document.getElementById('userEvdVideo');
+            const userEvdMeta = document.getElementById('userEvdMeta');
+
+            const stored = JSON.parse(localStorage.getItem('jagruthiCapturedEvidence') || '[]');
+            if (stored.length > 0 && userEvdVideo) {
+                userEvdVideo.src = stored[0].url;
+                userEvdVideo.style.display = 'block';
+                if (userEvdMeta) {
+                    userEvdMeta.innerText = `Latest Evidence (${stored[0].type.toUpperCase()}) • ${new Date(stored[0].capturedAt).toLocaleTimeString()}`;
+                }
+            }
+
+            if (userEvdOverlay) userEvdOverlay.classList.add('show');
+            if (userEvdModal) userEvdModal.classList.add('show');
+        });
+    }
+
+    // ---------------------------------------------
+    // CARD 4: Fake Incoming Call Simulator
+    // ---------------------------------------------
+    const btnGridFakeCall = document.getElementById('btnGridFakeCall');
+    const fakeCallModal = document.getElementById('fakeCallModal');
+    const btnDeclineFakeCall = document.getElementById('btnDeclineFakeCall');
+    const btnAcceptFakeCall = document.getElementById('btnAcceptFakeCall');
+    const btnEndActiveCall = document.getElementById('btnEndActiveCall');
+    const fakeCallRingingActions = document.getElementById('fakeCallRingingActions');
+    const fakeCallActiveActions = document.getElementById('fakeCallActiveActions');
+    const callTypeStatusText = document.getElementById('callTypeStatusText');
+    const fakeCallTimerDisplay = document.getElementById('fakeCallTimerDisplay');
+
+    let fakeCallSeconds = 0;
+    let fakeCallTimerInterval = null;
+    let fakeCallVibrateInterval = null;
+
+    function triggerFakeIncomingCall() {
+        if (!fakeCallModal) return;
+
+        // Reset display
+        if (callTypeStatusText) callTypeStatusText.innerText = "Incoming Call...";
+        if (fakeCallTimerDisplay) {
+            fakeCallTimerDisplay.innerText = "00:00";
+            fakeCallTimerDisplay.classList.add('hidden');
+        }
+        if (fakeCallRingingActions) fakeCallRingingActions.classList.remove('hidden');
+        if (fakeCallActiveActions) fakeCallActiveActions.classList.add('hidden');
+
+        fakeCallModal.classList.remove('hidden');
+
+        // Play realistic ringtone
+        fakeCallAudio.currentTime = 0;
+        fakeCallAudio.loop = true;
+        fakeCallAudio.play().catch(e => console.warn("Fake call audio notice:", e));
+
+        // Vibration pattern for incoming call
+        if ('vibrate' in navigator) {
+            navigator.vibrate([1000, 1000, 1000, 1000]);
+            fakeCallVibrateInterval = setInterval(() => {
+                if ('vibrate' in navigator) navigator.vibrate([1000, 1000]);
+            }, 3000);
+        }
+    }
+
+    function declineFakeCall() {
+        fakeCallAudio.pause();
+        fakeCallAudio.currentTime = 0;
+        if (fakeCallVibrateInterval) {
+            clearInterval(fakeCallVibrateInterval);
+            fakeCallVibrateInterval = null;
+        }
+        if (fakeCallTimerInterval) {
+            clearInterval(fakeCallTimerInterval);
+            fakeCallTimerInterval = null;
+        }
+        if (fakeCallModal) fakeCallModal.classList.add('hidden');
+    }
+
+    function acceptFakeCall() {
+        fakeCallAudio.pause();
+        fakeCallAudio.currentTime = 0;
+        if (fakeCallVibrateInterval) {
+            clearInterval(fakeCallVibrateInterval);
+            fakeCallVibrateInterval = null;
+        }
+
+        if (callTypeStatusText) callTypeStatusText.innerText = "Connected";
+        if (fakeCallTimerDisplay) fakeCallTimerDisplay.classList.remove('hidden');
+        if (fakeCallRingingActions) fakeCallRingingActions.classList.add('hidden');
+        if (fakeCallActiveActions) fakeCallActiveActions.classList.remove('hidden');
+
+        fakeCallSeconds = 0;
+        if (fakeCallTimerInterval) clearInterval(fakeCallTimerInterval);
+        fakeCallTimerInterval = setInterval(() => {
+            fakeCallSeconds++;
+            const mins = String(Math.floor(fakeCallSeconds / 60)).padStart(2, '0');
+            const secs = String(fakeCallSeconds % 60).padStart(2, '0');
+            if (fakeCallTimerDisplay) fakeCallTimerDisplay.innerText = `${mins}:${secs}`;
+        }, 1000);
+
+        if ('vibrate' in navigator) navigator.vibrate(80);
+    }
+
+    if (btnGridFakeCall) btnGridFakeCall.addEventListener('click', triggerFakeIncomingCall);
+    if (btnDeclineFakeCall) btnDeclineFakeCall.addEventListener('click', declineFakeCall);
+    if (btnEndActiveCall) btnEndActiveCall.addEventListener('click', declineFakeCall);
+    if (btnAcceptFakeCall) btnAcceptFakeCall.addEventListener('click', acceptFakeCall);
 
     // Home Tab Test Alert Button
     const homeTestAlertBtn = document.getElementById('homeTestAlertBtn');
     if (homeTestAlertBtn) {
         homeTestAlertBtn.addEventListener('click', (e) => {
             e.preventDefault();
-            // Switch to journey tab and trigger deviation alert
             const navTabJourney = document.getElementById('navTabJourney');
             if (navTabJourney) navTabJourney.click();
             setTimeout(() => {
