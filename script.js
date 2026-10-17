@@ -998,6 +998,148 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    /* ===================================================
+       PHONE RINGTONE ENGINE (LOCAL WAV + WEB AUDIO SYNTH)
+       =================================================== */
+    class PhoneRingtoneEngine {
+        constructor() {
+            this.audioEl = new Audio('./assets/audio/ringtone.wav');
+            this.audioEl.loop = true;
+            this.audioEl.preload = 'auto';
+
+            this.audioCtx = null;
+            this.osc1 = null;
+            this.osc2 = null;
+            this.gainNode = null;
+            this.synthInterval = null;
+            this.isSynthPlaying = false;
+            this.isPlaying = false;
+        }
+
+        get currentTime() {
+            return this.audioEl ? this.audioEl.currentTime : 0;
+        }
+
+        set currentTime(val) {
+            if (this.audioEl) {
+                try { this.audioEl.currentTime = val; } catch (e) {}
+            }
+        }
+
+        get loop() {
+            return this.audioEl ? this.audioEl.loop : true;
+        }
+
+        set loop(val) {
+            if (this.audioEl) this.audioEl.loop = val;
+        }
+
+        async play() {
+            this.isPlaying = true;
+            let playedViaHtmlAudio = false;
+
+            try {
+                this.audioEl.currentTime = 0;
+                const playPromise = this.audioEl.play();
+                if (playPromise !== undefined) {
+                    await playPromise;
+                    playedViaHtmlAudio = true;
+                    console.log("[Ringtone] Playing local ringtone WAV file via HTML5 Audio.");
+                }
+            } catch (err) {
+                console.warn("[Ringtone] HTML5 Audio notice (activating Web Audio synth fallback):", err);
+            }
+
+            // Fallback to Web Audio API Synthesizer if HTML5 Audio was blocked or silent
+            if (!playedViaHtmlAudio && this.isPlaying) {
+                this.startSyntheticRingtone();
+            }
+        }
+
+        startSyntheticRingtone() {
+            if (this.isSynthPlaying) return;
+            try {
+                const AudioCtxClass = window.AudioContext || window.webkitAudioContext;
+                if (!AudioCtxClass) return;
+                if (!this.audioCtx) {
+                    this.audioCtx = new AudioCtxClass();
+                }
+                if (this.audioCtx.state === 'suspended') {
+                    this.audioCtx.resume();
+                }
+
+                this.gainNode = this.audioCtx.createGain();
+                this.gainNode.gain.setValueAtTime(0, this.audioCtx.currentTime);
+                this.gainNode.connect(this.audioCtx.destination);
+
+                this.osc1 = this.audioCtx.createOscillator();
+                this.osc2 = this.audioCtx.createOscillator();
+
+                this.osc1.type = 'sine';
+                this.osc2.type = 'sine';
+                this.osc1.frequency.setValueAtTime(440, this.audioCtx.currentTime);
+                this.osc2.frequency.setValueAtTime(480, this.audioCtx.currentTime);
+
+                this.osc1.connect(this.gainNode);
+                this.osc2.connect(this.gainNode);
+
+                this.osc1.start();
+                this.osc2.start();
+                this.isSynthPlaying = true;
+
+                // 2s ringing / 2s silence cadence
+                const ringPulse = () => {
+                    if (!this.isSynthPlaying || !this.audioCtx) return;
+                    const now = this.audioCtx.currentTime;
+                    this.gainNode.gain.cancelScheduledValues(now);
+                    this.gainNode.gain.setValueAtTime(0.35, now);
+                    this.gainNode.gain.setValueAtTime(0.35, now + 1.8);
+                    this.gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 1.85);
+                };
+
+                ringPulse();
+                this.synthInterval = setInterval(ringPulse, 4000);
+                console.log("[Ringtone] Web Audio API Synthesizer dual-tone ringer active.");
+            } catch (e) {
+                console.warn("[Ringtone] Web Audio synth notice:", e);
+            }
+        }
+
+        pause() {
+            this.stop();
+        }
+
+        stop() {
+            this.isPlaying = false;
+            try {
+                this.audioEl.pause();
+                this.audioEl.currentTime = 0;
+            } catch (e) {}
+
+            if (this.synthInterval) {
+                clearInterval(this.synthInterval);
+                this.synthInterval = null;
+            }
+
+            if (this.gainNode && this.audioCtx) {
+                try {
+                    this.gainNode.gain.setValueAtTime(0, this.audioCtx.currentTime);
+                } catch (e) {}
+            }
+
+            if (this.osc1) {
+                try { this.osc1.stop(); this.osc1.disconnect(); } catch (e) {}
+                this.osc1 = null;
+            }
+            if (this.osc2) {
+                try { this.osc2.stop(); this.osc2.disconnect(); } catch (e) {}
+                this.osc2 = null;
+            }
+
+            this.isSynthPlaying = false;
+        }
+    }
+
     /* =========================================
        6. DEVIATION LOGIC
        ========================================= */
@@ -1008,8 +1150,8 @@ document.addEventListener('DOMContentLoaded', () => {
     
     let escalationTimer = null;
     let escalationStage = 1;
-    const fakeCallAudio = new Audio('https://www.soundjay.com/phone/telephone-ring-04.mp3');
-    fakeCallAudio.loop = true;
+    const phoneRingtoneEngine = new PhoneRingtoneEngine();
+    const fakeCallAudio = phoneRingtoneEngine;
 
     function showDeviationAlert() {
         // Reset the alert trigger flag for this new deviation event
@@ -1908,102 +2050,252 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /* ===================================================
-       11. SHAKE-TO-SOS IMPLEMENTATION
+       11. SHAKE-TO-SOS & SENSOR DIAGNOSTICS IMPLEMENTATION
        =================================================== */
     let lastShakeTimestamp = 0;
+    let shakeStrokeCount = 0;
+    let shakeResetTimer = null;
     let shakeCooldownActive = false;
-    let lastSensorAcc = { x: 0, y: 0, z: 0 };
-    const SHAKE_THRESHOLD = 18; // m/s² delta threshold for a deliberate shake
-    const SHAKE_WINDOW_MAX_MS = 2500; // max window between 2 shakes
-    const SHAKE_WINDOW_MIN_MS = 300; // debounce between two distinct shakes
-    const shakeStatusDesc = document.getElementById('shakeStatusDesc');
-    const enableShakeBtn = document.getElementById('enableShakeBtn');
+    let shakeThreshold = 14; // Default: 14 m/s² (Firm & Intentional)
+    let peakRecordedIntensity = 0;
+    let motionListenerActive = false;
+
+    // Diagnostics DOM Elements
+    const shakeDiagnosticsModal = document.getElementById('shakeDiagnosticsModal');
+    const shakeDiagOverlay = document.getElementById('shakeDiagOverlay');
+    const closeShakeDiagBtn = document.getElementById('closeShakeDiagBtn');
+    const btnOpenDiagnostics = document.getElementById('btnOpenDiagnostics');
+    const diagSensorStatus = document.getElementById('diagSensorStatus');
+    const diagPermissionStatus = document.getElementById('diagPermissionStatus');
+    const diagIntensityVal = document.getElementById('diagIntensityVal');
+    const diagIntensityBar = document.getElementById('diagIntensityBar');
+    const diagThresholdMarker = document.getElementById('diagThresholdMarker');
+    const diagThreshLabel = document.getElementById('diagThreshLabel');
+    const diagAccX = document.getElementById('diagAccX');
+    const diagAccY = document.getElementById('diagAccY');
+    const diagAccZ = document.getElementById('diagAccZ');
+    const diagPeakVal = document.getElementById('diagPeakVal');
+    const diagStatusNote = document.getElementById('diagStatusNote');
+    const strokeBubble1 = document.getElementById('strokeBubble1');
+    const strokeBubble2 = document.getElementById('strokeBubble2');
+    const btnResetPeak = document.getElementById('btnResetPeak');
+    const btnSimulateShake = document.getElementById('btnSimulateShake');
+    const btnSensHigh = document.getElementById('btnSensHigh');
+    const btnSensNormal = document.getElementById('btnSensNormal');
+    const btnSensFirm = document.getElementById('btnSensFirm');
 
     function handleDeviceMotion(event) {
         if (shakeCooldownActive || isEmergencyCountdownActive || isEmergencyDispatchedActive) {
+            if (diagStatusNote && shakeCooldownActive) {
+                diagStatusNote.innerText = "Cooldown active (10s)...";
+            }
             return;
         }
 
-        const acc = event.accelerationIncludingGravity || event.acceleration;
-        if (!acc || acc.x === null) return;
+        const acc = event.acceleration;
+        let magnitude = 0;
+        let rx = 0, ry = 0, rz = 0;
 
-        const deltaX = Math.abs(acc.x - lastSensorAcc.x);
-        const deltaY = Math.abs(acc.y - lastSensorAcc.y);
-        const deltaZ = Math.abs(acc.z - lastSensorAcc.z);
+        // 1. Try linear acceleration excluding gravity
+        if (acc && acc.x !== null && acc.y !== null && acc.z !== null &&
+            (Math.abs(acc.x) > 0.001 || Math.abs(acc.y) > 0.001 || Math.abs(acc.z) > 0.001)) {
+            rx = acc.x; ry = acc.y; rz = acc.z;
+            magnitude = Math.sqrt(rx * rx + ry * ry + rz * rz);
+        } else {
+            // 2. Fallback to accelerationIncludingGravity minus standard Earth gravity
+            const gAcc = event.accelerationIncludingGravity;
+            if (gAcc && gAcc.x !== null) {
+                rx = gAcc.x; ry = gAcc.y; rz = gAcc.z;
+                const totalG = Math.sqrt(rx * rx + ry * ry + rz * rz);
+                magnitude = Math.abs(totalG - 9.80665);
+            }
+        }
 
-        lastSensorAcc = { x: acc.x, y: acc.y, z: acc.z };
+        if (magnitude > peakRecordedIntensity) {
+            peakRecordedIntensity = magnitude;
+        }
 
-        const delta = Math.sqrt(deltaX * deltaX + deltaY * deltaY + deltaZ * deltaZ);
+        // Live Diagnostics Readout if modal is open
+        if (shakeDiagnosticsModal && shakeDiagnosticsModal.classList.contains('show')) {
+            if (diagAccX) diagAccX.innerText = (rx >= 0 ? '+' : '') + rx.toFixed(2);
+            if (diagAccY) diagAccY.innerText = (ry >= 0 ? '+' : '') + ry.toFixed(2);
+            if (diagAccZ) diagAccZ.innerText = (rz >= 0 ? '+' : '') + rz.toFixed(2);
+            if (diagIntensityVal) diagIntensityVal.innerText = magnitude.toFixed(2) + " m/s²";
+            if (diagPeakVal) diagPeakVal.innerText = peakRecordedIntensity.toFixed(2) + " m/s²";
+            if (diagIntensityBar) {
+                const pct = Math.min(100, Math.round((magnitude / 30) * 100));
+                diagIntensityBar.style.width = pct + "%";
+            }
+        }
 
-        if (delta > SHAKE_THRESHOLD) {
-            const now = Date.now();
+        // 3. Deliberate Double-Shake Detection State Machine
+        const now = Date.now();
+        if (magnitude >= shakeThreshold) {
             const timeSinceLastShake = now - lastShakeTimestamp;
 
-            if (lastShakeTimestamp === 0 || timeSinceLastShake > SHAKE_WINDOW_MAX_MS) {
-                // First deliberate shake detected
+            // Debounce: must be at least 250ms apart from the previous stroke
+            if (timeSinceLastShake < 250) {
+                return;
+            }
+
+            if (shakeStrokeCount === 0 || timeSinceLastShake > 2500) {
+                // First deliberate shake stroke detected
+                shakeStrokeCount = 1;
                 lastShakeTimestamp = now;
-                if ('vibrate' in navigator) navigator.vibrate(80);
-                if (shakeStatusDesc) {
-                    shakeStatusDesc.innerText = "First shake detected! Shake once more to activate SOS...";
-                    shakeStatusDesc.style.color = "#dc2626";
-                    shakeStatusDesc.style.fontWeight = "700";
-                    setTimeout(() => {
-                        if (!isEmergencyCountdownActive && !isEmergencyDispatchedActive && shakeStatusDesc) {
-                            shakeStatusDesc.innerText = "Shake motion sensors ready • 2 deliberate shakes";
-                            shakeStatusDesc.style.color = "#64748b";
-                            shakeStatusDesc.style.fontWeight = "400";
-                        }
-                    }, 3000);
-                }
-            } else if (timeSinceLastShake >= SHAKE_WINDOW_MIN_MS && timeSinceLastShake <= SHAKE_WINDOW_MAX_MS) {
-                // Second deliberate shake detected within time window -> TRIGGER SOS!
+
+                if ('vibrate' in navigator) navigator.vibrate(60);
+
+                if (strokeBubble1) strokeBubble1.classList.add('active');
+                if (strokeBubble2) strokeBubble2.classList.remove('active');
+                if (diagStatusNote) diagStatusNote.innerText = "Shake 1/2 detected! Shake once more within 2.5s...";
+
+                clearTimeout(shakeResetTimer);
+                shakeResetTimer = setTimeout(() => {
+                    shakeStrokeCount = 0;
+                    lastShakeTimestamp = 0;
+                    if (strokeBubble1) strokeBubble1.classList.remove('active');
+                    if (strokeBubble2) strokeBubble2.classList.remove('active');
+                    if (diagStatusNote) diagStatusNote.innerText = "Waiting for motion...";
+                }, 2500);
+
+            } else if (shakeStrokeCount === 1 && timeSinceLastShake >= 250 && timeSinceLastShake <= 2500) {
+                // Second deliberate shake detected within 2.5s -> TRIGGER EMERGENCY SOS!
+                clearTimeout(shakeResetTimer);
+                shakeStrokeCount = 2;
                 lastShakeTimestamp = 0;
                 shakeCooldownActive = true;
-                setTimeout(() => { shakeCooldownActive = false; }, 10000); // 10s cooldown
-                
-                if (shakeStatusDesc) {
-                    shakeStatusDesc.innerText = "Double shake verified! Activating Emergency SOS...";
-                    shakeStatusDesc.style.color = "#dc2626";
-                }
 
+                if (strokeBubble2) strokeBubble2.classList.add('active');
+                if (diagStatusNote) diagStatusNote.innerText = "🚨 Double Shake Verified! Triggering Emergency SOS...";
+
+                if ('vibrate' in navigator) navigator.vibrate([120, 80, 200]);
+
+                setTimeout(() => {
+                    shakeCooldownActive = false;
+                    shakeStrokeCount = 0;
+                    if (strokeBubble1) strokeBubble1.classList.remove('active');
+                    if (strokeBubble2) strokeBubble2.classList.remove('active');
+                    if (diagStatusNote) diagStatusNote.innerText = "Sensors active • 2 shakes for SOS";
+                }, 10000); // 10s cooldown
+
+                closeShakeDiagnostics();
+
+                // Trigger real SOS workflow
                 startEmergencyCountdown("Shake-to-SOS Activated", "Emergency triggered via double device shake");
             }
         }
     }
 
     function initShakeDetection() {
-        if (typeof window.DeviceMotionEvent !== 'undefined') {
-            // Check for iOS 13+ permission model
-            if (typeof DeviceMotionEvent.requestPermission === 'function') {
-                if (enableShakeBtn) {
-                    enableShakeBtn.classList.remove('hidden');
-                    enableShakeBtn.addEventListener('click', async () => {
-                        try {
-                            const permission = await DeviceMotionEvent.requestPermission();
-                            if (permission === 'granted') {
-                                window.addEventListener('devicemotion', handleDeviceMotion, false);
-                                enableShakeBtn.classList.add('hidden');
-                                if (shakeStatusDesc) shakeStatusDesc.innerText = "Shake sensors active • Shake twice for SOS";
-                            } else {
-                                if (shakeStatusDesc) shakeStatusDesc.innerText = "Motion permission denied • Manual SOS ready";
-                            }
-                        } catch (e) {
-                            console.warn("Permission request error:", e);
-                        }
-                    });
-                }
-            } else {
-                // Android, Chrome, and standard mobile browsers
-                window.addEventListener('devicemotion', handleDeviceMotion, false);
-                if (shakeStatusDesc) shakeStatusDesc.innerText = "Shake sensors active • Shake phone twice to activate SOS";
+        if (typeof window.DeviceMotionEvent === 'undefined') {
+            console.warn("[Shake] DeviceMotionEvent not supported on this platform.");
+            if (diagSensorStatus) {
+                diagSensorStatus.innerText = "Hardware Unavailable";
+                diagSensorStatus.style.background = "#fee2e2";
+                diagSensorStatus.style.color = "#dc2626";
             }
+            if (diagPermissionStatus) diagPermissionStatus.innerText = "Unsupported";
+            return;
+        }
+
+        // Clean up any existing listener to prevent duplicate triggers
+        window.removeEventListener('devicemotion', handleDeviceMotion);
+
+        // iOS 13+ permission check
+        if (typeof DeviceMotionEvent.requestPermission === 'function') {
+            if (diagPermissionStatus) diagPermissionStatus.innerText = "Click to Authorize";
+            const requestIosPermission = async () => {
+                try {
+                    const permission = await DeviceMotionEvent.requestPermission();
+                    if (permission === 'granted') {
+                        window.addEventListener('devicemotion', handleDeviceMotion, { passive: true });
+                        motionListenerActive = true;
+                        if (diagPermissionStatus) {
+                            diagPermissionStatus.innerText = "Granted";
+                            diagPermissionStatus.style.background = "#dcfce7";
+                            diagPermissionStatus.style.color = "#15803d";
+                        }
+                    } else {
+                        if (diagPermissionStatus) diagPermissionStatus.innerText = "Denied";
+                    }
+                } catch (e) {
+                    console.warn("Motion permission request notice:", e);
+                }
+            };
+            window.addEventListener('click', requestIosPermission, { once: true });
         } else {
-            // Desktop or device without accelerometer
-            if (shakeStatusDesc) {
-                shakeStatusDesc.innerText = "Mobile motion sensor active on supported phones • Manual SOS ready";
+            // Android, Chrome, and standard mobile browsers: Register listener immediately
+            try {
+                window.addEventListener('devicemotion', handleDeviceMotion, { passive: true });
+                motionListenerActive = true;
+                if (diagPermissionStatus) {
+                    diagPermissionStatus.innerText = "Granted (Native)";
+                    diagPermissionStatus.style.background = "#dcfce7";
+                    diagPermissionStatus.style.color = "#15803d";
+                }
+                if (diagSensorStatus) {
+                    diagSensorStatus.innerText = "Active & Calibrated";
+                }
+                console.log("[Shake] Device motion sensor active on Android/Chrome.");
+            } catch (regErr) {
+                console.warn("[Shake] Registration error:", regErr);
             }
         }
     }
+
+    function openShakeDiagnostics() {
+        initShakeDetection();
+        if (shakeDiagOverlay) shakeDiagOverlay.classList.add('show');
+        if (shakeDiagnosticsModal) shakeDiagnosticsModal.classList.add('show');
+    }
+
+    function closeShakeDiagnostics() {
+        if (shakeDiagOverlay) shakeDiagOverlay.classList.remove('show');
+        if (shakeDiagnosticsModal) shakeDiagnosticsModal.classList.remove('show');
+    }
+
+    if (btnOpenDiagnostics) btnOpenDiagnostics.addEventListener('click', openShakeDiagnostics);
+    if (closeShakeDiagBtn) closeShakeDiagBtn.addEventListener('click', closeShakeDiagnostics);
+    if (shakeDiagOverlay) shakeDiagOverlay.addEventListener('click', closeShakeDiagnostics);
+
+    if (btnResetPeak) {
+        btnResetPeak.addEventListener('click', () => {
+            peakRecordedIntensity = 0;
+            if (diagPeakVal) diagPeakVal.innerText = "0.00 m/s²";
+        });
+    }
+
+    // Simulate double shake for diagnostic testing
+    if (btnSimulateShake) {
+        btnSimulateShake.addEventListener('click', () => {
+            closeShakeDiagnostics();
+            if ('vibrate' in navigator) navigator.vibrate([120, 80, 200]);
+            startEmergencyCountdown("Simulated Shake SOS", "Triggered via Sensor Diagnostics Simulator");
+        });
+    }
+
+    // Sensitivity adjusters
+    function setShakeSensitivity(thresh, activeBtn) {
+        shakeThreshold = thresh;
+        if (diagThreshLabel) diagThreshLabel.innerText = thresh.toString();
+        if (diagThresholdMarker) {
+            const pct = Math.round((thresh / 30) * 100);
+            diagThresholdMarker.style.left = pct + "%";
+        }
+        [btnSensHigh, btnSensNormal, btnSensFirm].forEach(b => { if (b) b.classList.remove('active'); });
+        if (activeBtn) activeBtn.classList.add('active');
+    }
+
+    if (btnSensHigh) btnSensHigh.addEventListener('click', () => setShakeSensitivity(11, btnSensHigh));
+    if (btnSensNormal) btnSensNormal.addEventListener('click', () => setShakeSensitivity(14, btnSensNormal));
+    if (btnSensFirm) btnSensFirm.addEventListener('click', () => setShakeSensitivity(18, btnSensFirm));
+
+    // Automatically initialize shake detection immediately
+    initShakeDetection();
+    // Also re-verify on user's first touch gesture
+    window.addEventListener('touchstart', () => {
+        if (!motionListenerActive) initShakeDetection();
+    }, { once: true, passive: true });
 
     /* ===================================================
        12. SAFETY 2X2 GRID FEATURES (REFERENCE IMAGE)
@@ -2535,7 +2827,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!fakeCallModal) return;
 
         // Reset display
-        if (callTypeStatusText) callTypeStatusText.innerText = "Incoming Call...";
+        if (callTypeStatusText) {
+            callTypeStatusText.innerHTML = "Incoming Call...<br><span style='font-size:0.75rem; color:#cbd5e1; display:inline-block; margin-top:4px;'>🔊 Turn up phone media volume</span>";
+        }
         if (fakeCallTimerDisplay) {
             fakeCallTimerDisplay.innerText = "00:00";
             fakeCallTimerDisplay.classList.add('hidden');
@@ -2545,23 +2839,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
         fakeCallModal.classList.remove('hidden');
 
-        // Play realistic ringtone
-        fakeCallAudio.currentTime = 0;
-        fakeCallAudio.loop = true;
-        fakeCallAudio.play().catch(e => console.warn("Fake call audio notice:", e));
+        // Play realistic ringtone (HTML5 Audio or Web Audio Synthesizer fallback)
+        fakeCallAudio.play().catch(e => {
+            console.warn("[Fake Call] Ringtone audio playback warning:", e);
+        });
 
-        // Vibration pattern for incoming call
+        // Vibration pattern for incoming call (1s buzz, 1s pause, 1s buzz)
         if ('vibrate' in navigator) {
-            navigator.vibrate([1000, 1000, 1000, 1000]);
-            fakeCallVibrateInterval = setInterval(() => {
-                if ('vibrate' in navigator) navigator.vibrate([1000, 1000]);
-            }, 3000);
+            try {
+                navigator.vibrate([1000, 1000, 1000, 1000]);
+                fakeCallVibrateInterval = setInterval(() => {
+                    if ('vibrate' in navigator) navigator.vibrate([1000, 1000]);
+                }, 3000);
+            } catch (vErr) {}
         }
     }
 
     function declineFakeCall() {
-        fakeCallAudio.pause();
-        fakeCallAudio.currentTime = 0;
+        fakeCallAudio.stop();
+        if ('vibrate' in navigator) {
+            try { navigator.vibrate(0); } catch (e) {}
+        }
         if (fakeCallVibrateInterval) {
             clearInterval(fakeCallVibrateInterval);
             fakeCallVibrateInterval = null;
@@ -2574,8 +2872,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function acceptFakeCall() {
-        fakeCallAudio.pause();
-        fakeCallAudio.currentTime = 0;
+        fakeCallAudio.stop();
+        if ('vibrate' in navigator) {
+            try { navigator.vibrate(0); } catch (e) {}
+        }
         if (fakeCallVibrateInterval) {
             clearInterval(fakeCallVibrateInterval);
             fakeCallVibrateInterval = null;
@@ -2597,6 +2897,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if ('vibrate' in navigator) navigator.vibrate(80);
     }
+
+    window.addEventListener('beforeunload', () => fakeCallAudio.stop());
+    window.addEventListener('pagehide', () => fakeCallAudio.stop());
 
     if (btnGridFakeCall) btnGridFakeCall.addEventListener('click', triggerFakeIncomingCall);
     if (btnDeclineFakeCall) btnDeclineFakeCall.addEventListener('click', declineFakeCall);

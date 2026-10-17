@@ -874,15 +874,121 @@
         </div>
     </div>
 
+    <!-- ================= MOTION SENSOR & SHAKE DIAGNOSTICS MODAL ================= -->
+    <div class="overlay" id="shakeDiagOverlay"></div>
+    <div class="modal shake-diag-modal" id="shakeDiagnosticsModal" role="dialog" aria-modal="true" aria-labelledby="diagModalTitle">
+        <div class="evd-modal-header">
+            <div class="evd-header-left">
+                <div class="evd-header-icon" style="background: #e0f2fe; color: #0284c7;"><i class="las la-wave-square"></i></div>
+                <div>
+                    <h3 id="diagModalTitle" style="color: #0f172a;">Shake Sensor Diagnostics</h3>
+                    <span class="evd-header-sub">Hardware Accelerometer &amp; Calibration</span>
+                </div>
+            </div>
+            <button type="button" class="evd-modal-close" id="closeShakeDiagBtn" aria-label="Close" style="color: #64748b;">&times;</button>
+        </div>
+
+        <div class="diag-body">
+            <!-- Hardware Sensor Status -->
+            <div class="diag-status-card">
+                <div class="diag-status-row">
+                    <span>Sensor Status:</span>
+                    <strong class="diag-pill" id="diagSensorStatus">Active &bull; 60Hz</strong>
+                </div>
+                <div class="diag-status-row">
+                    <span>Motion Permission:</span>
+                    <strong class="diag-pill" id="diagPermissionStatus">Granted</strong>
+                </div>
+            </div>
+
+            <!-- Live Realtime Gauge -->
+            <div class="diag-gauge-card">
+                <div class="diag-gauge-header">
+                    <span>Motion Intensity:</span>
+                    <strong id="diagIntensityVal">0.00 m/s&sup2;</strong>
+                </div>
+                <div class="diag-bar-bg">
+                    <div class="diag-bar-fill" id="diagIntensityBar" style="width: 0%;"></div>
+                    <div class="diag-threshold-marker" id="diagThresholdMarker" style="left: 46%;" title="Trigger Threshold (14 m/s²)"></div>
+                </div>
+                <div class="diag-gauge-sub">
+                    <span>Resting: 0</span>
+                    <span style="color:#ef4444; font-weight:700;">Trigger: <span id="diagThreshLabel">14</span> m/s&sup2;</span>
+                    <span>Max: 30</span>
+                </div>
+            </div>
+
+            <!-- Live Axes Readouts & Peak -->
+            <div class="diag-grid-metrics">
+                <div class="diag-metric-box">
+                    <span class="metric-lbl">X-Axis</span>
+                    <strong id="diagAccX">0.00</strong>
+                </div>
+                <div class="diag-metric-box">
+                    <span class="metric-lbl">Y-Axis</span>
+                    <strong id="diagAccY">0.00</strong>
+                </div>
+                <div class="diag-metric-box">
+                    <span class="metric-lbl">Z-Axis</span>
+                    <strong id="diagAccZ">0.00</strong>
+                </div>
+                <div class="diag-metric-box metric-peak">
+                    <span class="metric-lbl">Peak Spike</span>
+                    <strong id="diagPeakVal">0.00</strong>
+                </div>
+            </div>
+
+            <!-- Shake Stroke Count Tracker -->
+            <div class="diag-stroke-tracker">
+                <div class="tracker-info">
+                    <strong>Shakes in Current Window:</strong>
+                    <span id="diagStatusNote">Waiting for motion...</span>
+                </div>
+                <div class="tracker-pills">
+                    <span class="stroke-bubble" id="strokeBubble1">1</span>
+                    <span class="stroke-bubble" id="strokeBubble2">2</span>
+                </div>
+            </div>
+
+            <!-- Sensitivity Selector -->
+            <div class="diag-sensitivity-wrap">
+                <label>Detection Sensitivity:</label>
+                <div class="sensitivity-btn-group">
+                    <button type="button" class="btn-sens" data-thresh="11" id="btnSensHigh">Sensitive (11)</button>
+                    <button type="button" class="btn-sens active" data-thresh="14" id="btnSensNormal">Normal (14)</button>
+                    <button type="button" class="btn-sens" data-thresh="18" id="btnSensFirm">Firm (18)</button>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="diag-actions-row">
+                <button type="button" class="btn-diag-reset" id="btnResetPeak">Reset Peak</button>
+                <button type="button" class="btn-diag-test" id="btnSimulateShake">
+                    <i class="las la-bolt"></i> Simulate Double Shake
+                </button>
+            </div>
+
+            <!-- Browser limitation notice -->
+            <p class="diag-disclaimer">
+                <i class="las la-info-circle"></i> <b>Platform Notice:</b> Web browsers detect motion when app is in foreground or screen is active. Background detection while phone is fully locked requires native Android system service (APK).
+            </p>
+        </div>
+    </div>
+
+    <!-- Sensor Diagnostics Trigger Button -->
+    <button class="demo-trigger" id="btnOpenDiagnostics" style="bottom: 20px; right: 140px; background: #0284c7;" title="Motion Sensor Diagnostics">
+        <i class="las la-tachometer-alt"></i> Sensor Diag
+    </button>
+
     <!-- For demo purpose: trigger modal -->
     <button class="demo-trigger" id="demoTrigger" title="Test Deviation Alert"><i class="las la-vial"></i> Test
         Alert</button>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./supabaseClient.js?v=4"></script>
-    <script src="./mediaService.js?v=4"></script>
-    <script src="./script.js?v=4"></script>
-    <script src="./pwaManager.js?v=1"></script>
+    <script src="./supabaseClient.js?v=5"></script>
+    <script src="./mediaService.js?v=5"></script>
+    <script src="./script.js?v=5"></script>
+    <script src="./pwaManager.js?v=5"></script>
 </body>
 
 </html>

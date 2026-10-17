@@ -4,7 +4,7 @@
    Provides offline capability, caching & installability
    =================================================== */
 
-const CACHE_NAME = 'jagruthi-pwa-v1.0.0';
+const CACHE_NAME = 'jagruthi-pwa-v2.0.0';
 
 const PRECACHE_ASSETS = [
     './',
@@ -13,7 +13,9 @@ const PRECACHE_ASSETS = [
     './script.js',
     './supabaseClient.js',
     './mediaService.js',
+    './pwaManager.js',
     './manifest.json',
+    './assets/audio/ringtone.wav',
     './assets/icons/icon-192.png',
     './assets/icons/icon-512.png',
     './assets/icons/icon-512-maskable.png',
