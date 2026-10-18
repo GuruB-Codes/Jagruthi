@@ -199,18 +199,18 @@ h1, h2, h3 { color: var(--text-dark); font-weight: 700; }
 .mode-options {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
+    gap: 10px;
 }
 
 .mode-btn {
     background: white;
     border: 2px solid transparent;
     border-radius: var(--radius-md);
-    padding: 16px 12px;
+    padding: 12px 8px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 12px;
+    gap: 8px;
     cursor: pointer;
     transition: var(--transition);
     box-shadow: var(--shadow-sm);
@@ -218,18 +218,18 @@ h1, h2, h3 { color: var(--text-dark); font-weight: 700; }
 }
 
 .mode-icon-bg {
-    width: 48px;
-    height: 48px;
+    width: 38px;
+    height: 38px;
     border-radius: var(--radius-round);
     background: #f1f5f9;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.8rem;
+    font-size: 1.3rem;
     transition: var(--transition);
 }
 
-.mode-btn span { font-weight: 500; font-size: 0.9rem; }
+.mode-btn span { font-weight: 500; font-size: 0.85rem; }
 
 .mode-btn:hover { transform: translateY(-2px); }
 
@@ -243,6 +243,28 @@ h1, h2, h3 { color: var(--text-dark); font-weight: 700; }
     background: var(--primary);
     color: white;
     box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+@media (max-width: 480px) {
+    .mode-options {
+        gap: 8px;
+    }
+
+    .mode-btn {
+        padding: 10px 6px;
+        gap: 6px;
+        border-radius: 14px;
+    }
+
+    .mode-icon-bg {
+        width: 34px;
+        height: 34px;
+        font-size: 1.15rem;
+    }
+
+    .mode-btn span {
+        font-size: 0.8rem;
+    }
 }
 
 /* Location Inputs */
@@ -2670,6 +2692,22 @@ input:checked + .switch-slider:before {
 }
 
 @media (max-width: 360px) {
+    .mode-options {
+        gap: 6px;
+    }
+    .mode-btn {
+        padding: 8px 4px;
+        gap: 4px;
+        border-radius: 12px;
+    }
+    .mode-icon-bg {
+        width: 30px;
+        height: 30px;
+        font-size: 1.05rem;
+    }
+    .mode-btn span {
+        font-size: 0.75rem;
+    }
     .home-hotlines-section {
         padding: 16px 12px;
     }
