@@ -1671,7 +1671,7 @@ document.addEventListener('DOMContentLoaded', () => {
             homeContactsBadge.style.color = contacts.length > 0 ? '#059669' : '#dc2626';
         }
         if (homeContactsPreviewText) {
-            homeContactsPreviewText.innerText = contacts.length > 0 ? `${contacts[0].name} (${contacts[0].phone})` : 'Hold to edit emergency contacts';
+            homeContactsPreviewText.innerText = contacts.length > 0 ? `${contacts[0].name} (${contacts[0].phone})` : 'No contacts added';
         }
 
         if (contactsContainer) {
@@ -3439,6 +3439,46 @@ document.addEventListener('DOMContentLoaded', () => {
     if (btnDeclineFakeCall) btnDeclineFakeCall.addEventListener('click', declineFakeCall);
     if (btnEndActiveCall) btnEndActiveCall.addEventListener('click', declineFakeCall);
     if (btnAcceptFakeCall) btnAcceptFakeCall.addEventListener('click', acceptFakeCall);
+
+    // Safety Instructions Modal
+    const btnGridInstructions = document.getElementById('btnGridInstructions');
+    const instructionsSheetOverlay = document.getElementById('instructionsSheetOverlay');
+    const instructionsSheetModal = document.getElementById('instructionsSheetModal');
+    const closeInstructionsSheetBtn = document.getElementById('closeInstructionsSheetBtn');
+
+    function openInstructionsSheet() {
+        if (instructionsSheetOverlay) instructionsSheetOverlay.classList.add('show');
+        if (instructionsSheetModal) instructionsSheetModal.classList.add('show');
+    }
+
+    function closeInstructionsSheet() {
+        if (instructionsSheetOverlay) instructionsSheetOverlay.classList.remove('show');
+        if (instructionsSheetModal) instructionsSheetModal.classList.remove('show');
+    }
+
+    if (btnGridInstructions) btnGridInstructions.addEventListener('click', openInstructionsSheet);
+    if (closeInstructionsSheetBtn) closeInstructionsSheetBtn.addEventListener('click', closeInstructionsSheet);
+    if (instructionsSheetOverlay) instructionsSheetOverlay.addEventListener('click', closeInstructionsSheet);
+
+    // Emergency Services Modal
+    const btnGridServices = document.getElementById('btnGridServices');
+    const servicesSheetOverlay = document.getElementById('servicesSheetOverlay');
+    const servicesSheetModal = document.getElementById('servicesSheetModal');
+    const closeServicesSheetBtn = document.getElementById('closeServicesSheetBtn');
+
+    function openServicesSheet() {
+        if (servicesSheetOverlay) servicesSheetOverlay.classList.add('show');
+        if (servicesSheetModal) servicesSheetModal.classList.add('show');
+    }
+
+    function closeServicesSheet() {
+        if (servicesSheetOverlay) servicesSheetOverlay.classList.remove('show');
+        if (servicesSheetModal) servicesSheetModal.classList.remove('show');
+    }
+
+    if (btnGridServices) btnGridServices.addEventListener('click', openServicesSheet);
+    if (closeServicesSheetBtn) closeServicesSheetBtn.addEventListener('click', closeServicesSheet);
+    if (servicesSheetOverlay) servicesSheetOverlay.addEventListener('click', closeServicesSheet);
 
     // Home Tab Test Alert Button
     const homeTestAlertBtn = document.getElementById('homeTestAlertBtn');

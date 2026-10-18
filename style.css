@@ -196,70 +196,104 @@ h1, h2, h3 { color: var(--text-dark); font-weight: 700; }
 }
 
 /* Mode Selection */
+.card.mode-selection {
+    padding: 14px 16px;
+}
+
+.mode-selection .section-title {
+    font-size: 0.82rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: var(--text-medium);
+    margin-bottom: 10px;
+}
+
 .mode-options {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
+    gap: 6px;
+    background: #e2e8f0;
+    padding: 4px;
+    border-radius: var(--radius-sm);
 }
 
 .mode-btn {
-    background: white;
-    border: 2px solid transparent;
-    border-radius: var(--radius-md);
-    padding: 12px 8px;
+    background: transparent;
+    border: none;
+    border-radius: calc(var(--radius-sm) - 4px);
+    padding: 8px 6px;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
-    gap: 8px;
+    justify-content: center;
+    gap: 6px;
     cursor: pointer;
     transition: var(--transition);
-    box-shadow: var(--shadow-sm);
+    box-shadow: none;
     color: var(--text-medium);
 }
 
 .mode-icon-bg {
-    width: 38px;
-    height: 38px;
-    border-radius: var(--radius-round);
-    background: #f1f5f9;
-    display: flex;
+    width: auto;
+    height: auto;
+    border-radius: 0;
+    background: transparent !important;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.3rem;
+    font-size: 1.15rem;
     transition: var(--transition);
+    box-shadow: none !important;
+    color: inherit;
 }
 
-.mode-btn span { font-weight: 500; font-size: 0.85rem; }
+.mode-btn span { 
+    font-weight: 600; 
+    font-size: 0.85rem; 
+}
 
-.mode-btn:hover { transform: translateY(-2px); }
+.mode-btn:hover { 
+    transform: none; 
+    color: var(--text-dark);
+}
 
 .mode-btn.active {
-    border-color: var(--primary);
-    background: rgba(99, 102, 241, 0.05);
+    background: white;
     color: var(--primary);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    border: none;
 }
 
 .mode-btn.active .mode-icon-bg {
-    background: var(--primary);
-    color: white;
-    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    background: transparent !important;
+    color: var(--primary);
+    box-shadow: none !important;
 }
 
 @media (max-width: 480px) {
+    .card.mode-selection {
+        padding: 12px 14px;
+    }
+
+    .mode-selection .section-title {
+        font-size: 0.78rem;
+        margin-bottom: 8px;
+    }
+
     .mode-options {
-        gap: 8px;
+        gap: 4px;
+        padding: 3px;
     }
 
     .mode-btn {
-        padding: 10px 6px;
-        gap: 6px;
-        border-radius: 14px;
+        padding: 7px 4px;
+        gap: 5px;
+        border-radius: 8px;
     }
 
     .mode-icon-bg {
-        width: 34px;
-        height: 34px;
-        font-size: 1.15rem;
+        font-size: 1.05rem;
     }
 
     .mode-btn span {
@@ -919,11 +953,11 @@ h1, h2, h3 { color: var(--text-dark); font-weight: 700; }
 .bottom-nav-bar .nav-item.nav-item-sos .nav-icon-wrapper {
     background: linear-gradient(135deg, #ef4444, #dc2626);
     color: white !important;
-    border-radius: 50%;
-    width: 36px;
-    height: 36px;
-    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.45);
-    margin-top: -6px;
+    border-radius: 12px;
+    width: 38px;
+    height: 30px;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+    margin-top: 0;
 }
 
 .bottom-nav-bar .nav-item.nav-item-sos .nav-label {
@@ -932,8 +966,8 @@ h1, h2, h3 { color: var(--text-dark); font-weight: 700; }
 }
 
 .bottom-nav-bar .nav-item.nav-item-sos.active .nav-icon-wrapper {
-    transform: translateY(-4px) scale(1.06);
-    box-shadow: 0 6px 16px rgba(239, 68, 68, 0.6);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 14px rgba(239, 68, 68, 0.6);
 }
 
 /* Badge for Notifications / Alerts */
@@ -2692,21 +2726,23 @@ input:checked + .switch-slider:before {
 }
 
 @media (max-width: 360px) {
+    .card.mode-selection {
+        padding: 10px 10px;
+    }
     .mode-options {
-        gap: 6px;
+        gap: 3px;
+        padding: 2px;
     }
     .mode-btn {
-        padding: 8px 4px;
-        gap: 4px;
-        border-radius: 12px;
+        padding: 6px 2px;
+        gap: 3px;
+        border-radius: 6px;
     }
     .mode-icon-bg {
-        width: 30px;
-        height: 30px;
-        font-size: 1.05rem;
+        font-size: 0.95rem;
     }
     .mode-btn span {
-        font-size: 0.75rem;
+        font-size: 0.74rem;
     }
     .home-hotlines-section {
         padding: 16px 12px;
@@ -3153,7 +3189,7 @@ input:checked + .switch-slider:before {
 /* ===================================================
    LOCATION & CONTACTS QUICK SHEETS
    =================================================== */
-.location-sheet-modal, .contacts-sheet-modal {
+.location-sheet-modal, .contacts-sheet-modal, .instructions-sheet-modal, .services-sheet-modal {
     max-width: 440px;
     width: 92%;
     background: white;
