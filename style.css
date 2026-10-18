@@ -197,16 +197,23 @@ h1, h2, h3 { color: var(--text-dark); font-weight: 700; }
 
 /* Mode Selection */
 .card.mode-selection {
-    padding: 14px 16px;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    padding: 0 2px;
+    margin-bottom: -6px;
 }
 
 .mode-selection .section-title {
-    font-size: 0.82rem;
+    font-size: 0.8rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.6px;
     color: var(--text-medium);
-    margin-bottom: 10px;
+    margin-bottom: 8px;
+    padding-left: 2px;
 }
 
 .mode-options {
@@ -273,12 +280,15 @@ h1, h2, h3 { color: var(--text-dark); font-weight: 700; }
 
 @media (max-width: 480px) {
     .card.mode-selection {
-        padding: 12px 14px;
+        padding: 0 2px;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
     }
 
     .mode-selection .section-title {
-        font-size: 0.78rem;
-        margin-bottom: 8px;
+        font-size: 0.76rem;
+        margin-bottom: 6px;
     }
 
     .mode-options {
@@ -299,13 +309,43 @@ h1, h2, h3 { color: var(--text-dark); font-weight: 700; }
     .mode-btn span {
         font-size: 0.8rem;
     }
+
+    .location-input-section {
+        padding: 10px 12px;
+        gap: 8px;
+    }
+
+    .location-timeline {
+        padding-top: 10px;
+        padding-bottom: 10px;
+        width: 12px;
+    }
+
+    .input-group {
+        height: 40px;
+        padding: 2px 8px;
+    }
+
+    .location-input {
+        font-size: 0.84rem;
+    }
+
+    .input-icon-wrapper {
+        font-size: 1rem;
+        margin-right: 6px;
+    }
+
+    .use-current-location {
+        padding: 2px;
+        font-size: 1.05rem;
+    }
 }
 
 /* Location Inputs */
 .location-input-section { 
-    padding: 20px; 
+    padding: 14px 16px; 
     display: flex; 
-    gap: 16px; 
+    gap: 12px; 
     position: relative; 
     z-index: 50; 
 }
@@ -314,14 +354,15 @@ h1, h2, h3 { color: var(--text-dark); font-weight: 700; }
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding-top: 18px;
-    padding-bottom: 18px;
-    width: 24px;
+    padding-top: 12px;
+    padding-bottom: 12px;
+    width: 16px;
+    flex-shrink: 0;
 }
 
 .timeline-dot {
-    width: 12px;
-    height: 12px;
+    width: 10px;
+    height: 10px;
     border-radius: 50%;
     z-index: 2;
 }
@@ -334,14 +375,15 @@ h1, h2, h3 { color: var(--text-dark); font-weight: 700; }
     width: 2px;
     background-image: linear-gradient(to bottom, var(--text-light) 50%, transparent 50%);
     background-size: 100% 8px;
-    margin: 4px 0;
+    margin: 3px 0;
 }
 
 .inputs-wrapper {
     flex-grow: 1;
+    min-width: 0;
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 10px;
 }
 
 .input-group {
@@ -349,40 +391,49 @@ h1, h2, h3 { color: var(--text-dark); font-weight: 700; }
     align-items: center;
     background: white;
     border-radius: var(--radius-sm);
-    padding: 4px 16px;
+    padding: 3px 12px;
     border: 1px solid #e2e8f0;
     transition: var(--transition);
-    height: 52px;
+    height: 44px;
+    min-width: 0;
 }
 
 .input-group:focus-within { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1); }
 
-.input-icon-wrapper { font-size: 1.25rem; margin-right: 12px; }
+.input-icon-wrapper { 
+    font-size: 1.15rem; 
+    margin-right: 8px; 
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
 .text-blue { color: var(--primary); }
 .text-purple { color: var(--secondary); }
 
 .location-input {
     flex-grow: 1;
+    min-width: 0;
     border: none;
     outline: none;
-    font-size: 0.95rem;
+    font-size: 0.88rem;
     color: var(--text-dark);
     font-weight: 500;
     background: transparent;
-    width: 100%;
+    text-overflow: ellipsis;
 }
-.location-input::placeholder { color: var(--text-light); font-weight: 400; }
+.location-input::placeholder { color: var(--text-light); font-weight: 400; font-size: 0.86rem; }
 
 .use-current-location {
     background: transparent;
     border: none;
     color: var(--primary);
-    font-size: 1.25rem;
+    font-size: 1.15rem;
     cursor: pointer;
-    padding: 8px;
+    padding: 4px 6px;
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
 }
 
 /* Map Preview */

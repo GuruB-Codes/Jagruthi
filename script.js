@@ -80,7 +80,7 @@ document.addEventListener('DOMContentLoaded', () => {
         userMarker.bindPopup("Your Current Location (Live GPS)").openPopup();
         userMap.setView(startLoc, 16);
 
-        if (sourceInput) sourceInput.value = "Current Location (Live GPS)";
+        if (sourceInput) sourceInput.value = "Current Location";
         updateCoordsDisplays(startLoc);
 
         // If emergency is currently counting down or active, propagate live coordinates immediately
@@ -132,7 +132,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        if (sourceInput && !startLoc) sourceInput.value = "Acquiring live GPS...";
+        if (sourceInput && !startLoc) sourceInput.value = "Acquiring GPS...";
 
         // 1. Immediate fast cached/network fix (< 800ms)
         navigator.geolocation.getCurrentPosition(
