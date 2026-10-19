@@ -24,7 +24,7 @@
     <!-- Icons -->
     <link rel="stylesheet"
         href="https://maxst.icons8.com/vue-static/landings/line-awesome/line-awesome/1.3.0/css/line-awesome.min.css">
-    <link rel="stylesheet" href="./style.css?v=22">
+    <link rel="stylesheet" href="./style.css?v=25">
 
     <!-- Leaflet Map -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -253,87 +253,100 @@
 
             </div>
 
-            <!-- ================= TAB 3: SOS ================= -->
-            <div class="tab-view" id="tab-sos">
+            <!-- ================= TAB 3: SAFETY (MY LOCATION & NEARBY SAFE PLACES) ================= -->
+            <div class="tab-view" id="tab-safety">
                 
-                <!-- SOS Hero Trigger Card -->
-                <section class="card" style="background: linear-gradient(135deg, #450a0a, #881337); color: white; text-align: center; padding: 28px 20px; border-radius: var(--radius-md); box-shadow: 0 12px 32px rgba(225, 29, 72, 0.25);">
-                    <div style="width: 80px; height: 80px; background: rgba(255, 255, 255, 0.15); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; border: 2px dashed rgba(255, 255, 255, 0.5);">
-                        <i class="las la-broadcast-tower" style="font-size: 2.5rem; color: #fecdd3;"></i>
-                    </div>
-                    <h2 style="color: white; font-size: 1.4rem; font-weight: 700; margin-bottom: 6px;">Emergency SOS Hub</h2>
-                    <p style="color: #fecdd3; font-size: 0.88rem; margin-bottom: 20px;">Pressing SOS instantly broadcasts live GPS coords, audio evidence, and notifies emergency contacts & police units.</p>
-                    
-                    <button id="directSosTriggerBtn" style="background: #ef4444; color: white; border: none; padding: 16px 32px; border-radius: var(--radius-round); font-size: 1.15rem; font-weight: 700; letter-spacing: 1px; cursor: pointer; box-shadow: 0 8px 25px rgba(239, 68, 68, 0.6); display: inline-flex; align-items: center; gap: 10px; transition: transform 0.2s;">
-                        <i class="las la-exclamation-triangle" style="font-size: 1.4rem;"></i> ACTIVATE SOS NOW
+                <!-- Page Top Header -->
+                <div class="safety-tab-header">
+                    <button type="button" class="safety-tab-back-btn" id="btnSafetyBackToHome" aria-label="Back to Home">
+                        <i class="las la-arrow-left"></i>
                     </button>
-                </section>
+                    <h2 class="safety-tab-title">My Location</h2>
+                    <div style="width: 36px;" aria-hidden="true"></div>
+                </div>
 
-                <!-- Live Evidence Security Card (STATE 1, 2, 3, 4) -->
-                <section class="card evidence-card" id="womenEvidenceCard">
-                    <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
-                        <h2 class="section-title" style="font-size: 1.1rem; margin: 0;"><i class="las la-shield-alt text-purple"></i> Evidence Status</h2>
-                        <span class="badge" id="evidenceOverallBadge" style="background: #e0e7ff; color: var(--primary); font-size: 0.75rem; padding: 4px 10px; border-radius: 12px; font-weight: 700;">Standby</span>
-                    </div>
-                    
-                    <div class="evidence-status-banner" id="evidenceStatusBanner" style="padding: 12px 14px; border-radius: var(--radius-sm); margin-bottom: 14px; font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 8px; background: #f8fafc; border: 1px solid #e2e8f0; color: #64748b;">
-                        <i class="las la-info-circle"></i>
-                        <span id="evidenceBannerText">Press SOS to trigger automatic encrypted video and audio evidence capture.</span>
+                <!-- Hero Card: Your Exact Location -->
+                <div class="safety-hero-location-card">
+                    <div class="safety-loc-icon-circle">
+                        <i class="las la-crosshairs"></i>
                     </div>
 
-                    <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;">
-                            <div style="display: flex; align-items: center; gap: 8px;">
-                                <i class="las la-video" style="font-size: 1.2rem; color: #6366f1;"></i>
-                                <span style="font-size: 0.88rem; font-weight: 600;">Video:</span>
+                    <h3 class="safety-loc-hero-title">Your Exact Location</h3>
+
+                    <!-- Live GPS Address / Status with Animated Spinner -->
+                    <div class="safety-loc-status-wrap">
+                        <div class="safety-loc-spinner" id="safetyLocSpinner"></div>
+                        <p class="safety-loc-address" id="safetyLocAddressText">Acquiring GPS Signal...</p>
+                        <span class="safety-loc-coords" id="safetyLocCoordsText">Lat: --, Lng: --</span>
+                    </div>
+
+                    <!-- View on Map Button -->
+                    <button type="button" class="btn-safety-view-map" id="btnSafetyViewMap">
+                        <i class="las la-map"></i> VIEW ON MAP
+                    </button>
+                </div>
+
+                <!-- Nearby Safe Places Section -->
+                <div class="nearby-safe-places-section">
+                    <h3 class="nearby-safe-places-heading">Nearby Safe Places</h3>
+
+                    <div class="safe-places-list">
+                        <!-- 1. Nearby Police Stations -->
+                        <div class="safe-place-item-card" id="cardSafePolice" role="button" tabindex="0">
+                            <div class="safe-place-card-left">
+                                <div class="safe-place-icon-badge">
+                                    <i class="las la-shield-alt"></i>
+                                </div>
+                                <span class="safe-place-name">Nearby Police Stations</span>
                             </div>
-                            <span id="videoStatusVal" class="badge" style="background: #f1f5f9; color: #64748b; font-size: 0.8rem; padding: 4px 8px; border-radius: 6px; font-weight: 600;">Standby</span>
+                            <i class="las la-angle-right safe-place-chevron"></i>
                         </div>
 
-                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;">
-                            <div style="display: flex; align-items: center; gap: 8px;">
-                                <i class="las la-microphone" style="font-size: 1.2rem; color: #a855f7;"></i>
-                                <span style="font-size: 0.88rem; font-weight: 600;">Audio:</span>
+                        <!-- 2. Nearby Hospitals -->
+                        <div class="safe-place-item-card" id="cardSafeHospitals" role="button" tabindex="0">
+                            <div class="safe-place-card-left">
+                                <div class="safe-place-icon-badge">
+                                    <i class="las la-plus-square"></i>
+                                </div>
+                                <span class="safe-place-name">Nearby Hospitals</span>
                             </div>
-                            <span id="audioStatusVal" class="badge" style="background: #f1f5f9; color: #64748b; font-size: 0.8rem; padding: 4px 8px; border-radius: 6px; font-weight: 600;">Standby</span>
+                            <i class="las la-angle-right safe-place-chevron"></i>
                         </div>
 
-                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 4px;">
-                            <span style="font-size: 0.78rem; color: #64748b;">Capture Time:</span>
-                            <span id="evidenceCaptureTimeVal" style="font-size: 0.8rem; font-weight: 600; color: var(--text-dark);">--</span>
+                        <!-- 3. Emergency Services -->
+                        <div class="safe-place-item-card" id="cardSafeServices" role="button" tabindex="0">
+                            <div class="safe-place-card-left">
+                                <div class="safe-place-icon-badge">
+                                    <i class="las la-asterisk"></i>
+                                </div>
+                                <span class="safe-place-name">Emergency Services</span>
+                            </div>
+                            <i class="las la-angle-right safe-place-chevron"></i>
+                        </div>
+
+                        <!-- 4. Fire & Rescue -->
+                        <div class="safe-place-item-card" id="cardSafeFire" role="button" tabindex="0">
+                            <div class="safe-place-card-left">
+                                <div class="safe-place-icon-badge">
+                                    <i class="las la-truck"></i>
+                                </div>
+                                <span class="safe-place-name">Fire &amp; Rescue</span>
+                            </div>
+                            <i class="las la-angle-right safe-place-chevron"></i>
+                        </div>
+
+                        <!-- 5. Pharmacies -->
+                        <div class="safe-place-item-card" id="cardSafePharmacies" role="button" tabindex="0">
+                            <div class="safe-place-card-left">
+                                <div class="safe-place-icon-badge">
+                                    <i class="las la-first-aid"></i>
+                                </div>
+                                <span class="safe-place-name">Pharmacies</span>
+                            </div>
+                            <i class="las la-angle-right safe-place-chevron"></i>
                         </div>
                     </div>
-
-                    <div style="display: flex; gap: 8px; flex-wrap: wrap;" id="evidenceActionButtons">
-                        <button id="btnUserViewVideo" class="hidden" style="flex: 1; min-width: 120px; padding: 10px; background: #4f46e5; color: white; border: none; border-radius: 10px; font-size: 0.85rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
-                            <i class="las la-play-circle"></i> View Video
-                        </button>
-                        <button id="btnUserPlayAudio" class="hidden" style="flex: 1; min-width: 120px; padding: 10px; background: #7c3aed; color: white; border: none; border-radius: 10px; font-size: 0.85rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
-                            <i class="las la-volume-up"></i> Play Audio
-                        </button>
-                        <button id="btnUserRetryUpload" class="hidden" style="width: 100%; padding: 12px; background: #ef4444; color: white; border: none; border-radius: 10px; font-size: 0.9rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
-                            <i class="las la-sync-alt"></i> Retry Upload
-                        </button>
-                    </div>
-                </section>
-
-                <!-- Current Location Sharing Card -->
-                <section class="card">
-                    <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                        <h2 class="section-title" style="font-size: 1.1rem; margin: 0;"><i class="las la-map-pin text-danger"></i> Location Sharing</h2>
-                        <span class="badge" style="background: var(--success-light); color: var(--success-dark); font-size: 0.75rem; padding: 4px 8px; border-radius: 12px; font-weight: 600;">Broadcasting</span>
-                    </div>
-                    <div style="background: #f8fafc; border-radius: var(--radius-sm); padding: 12px 14px; border: 1px solid #e2e8f0; margin-bottom: 10px;">
-                        <span style="font-size: 0.75rem; color: var(--text-light); display: block;">Live GPS Coordinates</span>
-                        <strong style="font-size: 0.95rem; color: var(--text-dark);" id="sosCoordsDisplay">Acquiring GPS...</strong>
-                        <p style="font-size: 0.8rem; color: var(--text-medium); margin-top: 4px;" id="sosAddressDisplay">Waiting for location fix</p>
-                    </div>
-                    <div style="display: flex; gap: 8px;">
-                        <button onclick="navigator.clipboard.writeText(document.getElementById('sosCoordsDisplay').innerText); alert('Location coordinates copied to clipboard!');" style="flex: 1; padding: 10px; background: white; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 0.85rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
-                            <i class="las la-copy"></i> Copy Coordinates
-                        </button>
-                    </div>
-                </section>
+                </div>
 
             </div>
 
@@ -465,9 +478,9 @@
                 <div class="nav-icon-wrapper"><i class="las la-map-marked-alt"></i></div>
                 <span class="nav-label">Journey</span>
             </button>
-            <button class="nav-item nav-item-sos" data-tab="tab-sos" id="navTabSos" aria-label="Emergency SOS">
-                <div class="nav-icon-wrapper"><i class="las la-exclamation-triangle"></i></div>
-                <span class="nav-label">SOS</span>
+            <button class="nav-item" data-tab="tab-safety" id="navTabSafety" aria-label="Safety">
+                <div class="nav-icon-wrapper"><i class="las la-shield-alt"></i></div>
+                <span class="nav-label">Safety</span>
             </button>
             <button class="nav-item" data-tab="tab-profile" id="navTabProfile" aria-label="Profile">
                 <div class="nav-icon-wrapper"><i class="las la-user-circle"></i></div>
@@ -1132,7 +1145,63 @@
         </div>
     </div>
 
-    <!-- ================= EDIT EMERGENCY CONTACTS MODAL ================= -->
+    <!-- ================= NEARBY SAFE PLACES FULL PAGE & PINNED MAP ================= -->
+    <div class="quick-guide-page police-stations-full-page" id="nearbyPoliceStationsModal" role="region" aria-label="Nearby Safe Places">
+        <!-- Sticky Header with Back, Title and Refresh -->
+        <div class="quick-guide-header">
+            <button type="button" class="quick-guide-back-btn" id="closePoliceStationsBtn" aria-label="Back">
+                <i class="las la-arrow-left"></i>
+            </button>
+            <h3 class="quick-guide-head-title" id="safePlacesMapHeadTitle">Nearby Safe Places</h3>
+            <button type="button" class="quick-guide-back-btn" id="btnRefreshPoliceStations" aria-label="Locate me" title="Refresh Live GPS" style="color: #e11d48;">
+                <i class="las la-crosshairs"></i>
+            </button>
+        </div>
+
+        <div class="quick-guide-body police-stations-body">
+            <!-- Category Filter Tabs (Police, Hospitals, Fire & Rescue, Pharmacies) -->
+            <div class="safe-places-category-bar" id="safePlacesCategoryBar">
+                <button type="button" class="safe-category-tab active" data-cat="police" id="tabCatPolice">
+                    <i class="las la-shield-alt"></i> Police
+                </button>
+                <button type="button" class="safe-category-tab" data-cat="hospitals" id="tabCatHospitals">
+                    <i class="las la-plus-square"></i> Hospitals
+                </button>
+                <button type="button" class="safe-category-tab" data-cat="fire" id="tabCatFire">
+                    <i class="las la-truck"></i> Fire &amp; Rescue
+                </button>
+                <button type="button" class="safe-category-tab" data-cat="pharmacies" id="tabCatPharmacies">
+                    <i class="las la-first-aid"></i> Pharmacies
+                </button>
+            </div>
+
+            <!-- Map Container with Pinned Stations -->
+            <div class="police-map-wrap">
+                <div id="nearbyPoliceMap" class="nearby-police-map"></div>
+                
+                <!-- Floating GPS accuracy / stations count pill over the map -->
+                <div class="police-map-floating-pill">
+                    <span id="policeMapStatusPill"><i class="las la-shield-alt"></i> Finding verified locations...</span>
+                </div>
+            </div>
+
+            <!-- List of Nearby Facilities below map -->
+            <div class="police-stations-list-container">
+                <div class="police-stations-list-header">
+                    <h4 class="police-list-title" id="safePlacesListTitle">Verified Police Stations</h4>
+                    <span class="police-list-count-badge" id="policeStationsCountBadge">Searching...</span>
+                </div>
+                
+                <!-- Dynamic cards inserted by JS -->
+                <div class="police-cards-list" id="policeCardsList">
+                    <div style="text-align: center; padding: 24px; color: #94a3b8; font-size: 0.88rem;">
+                        <i class="las la-spinner la-spin" style="font-size: 1.6rem; color: #e11d48; display: block; margin-bottom: 8px;"></i>
+                        Finding nearest safe places...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
     <div class="overlay" id="editContactsOverlay"></div>
     <div class="modal edit-contacts-modal" id="editContactsModal" role="dialog" aria-modal="true" aria-labelledby="editContactsTitle">
         <div class="evd-modal-header">
@@ -1294,7 +1363,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./supabaseClient.js?v=14"></script>
     <script src="./mediaService.js?v=14"></script>
-    <script src="./script.js?v=17"></script>
+    <script src="./script.js?v=21"></script>
     <script src="./pwaManager.js?v=14"></script>
 </body>
 

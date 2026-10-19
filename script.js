@@ -1484,6 +1484,9 @@ document.addEventListener('DOMContentLoaded', () => {
             homeGps.innerText = `GPS Active (${coords[0].toFixed(2)}, ${coords[1].toFixed(2)})`;
             homeGps.style.color = "var(--primary)";
         }
+        if (typeof updateSafetyLocationUI === 'function') {
+            updateSafetyLocationUI();
+        }
     }
 
     /* =========================================
@@ -1527,6 +1530,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     demoTrigger.style.display = 'none';
                 }
+            }
+
+            // Refresh Safety tab location when selected
+            if (targetTab === 'tab-safety' && typeof updateSafetyLocationUI === 'function') {
+                updateSafetyLocationUI();
             }
 
             // Invalidate Leaflet Map Size so map redraws correctly
@@ -2926,59 +2934,769 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ---------------------------------------------
-    // CARD 2: My Location Quick Sheet
+    // CARD 2 / TAB 3: Safety (My Location & Nearby Safe Places)
     // ---------------------------------------------
-    const btnGridLocation = document.getElementById('btnGridLocation');
-    const locationSheetOverlay = document.getElementById('locationSheetOverlay');
-    const myLocationSheetModal = document.getElementById('myLocationSheetModal');
-    const closeLocSheetBtn = document.getElementById('closeLocSheetBtn');
-    const locSheetAddress = document.getElementById('locSheetAddress');
-    const locSheetCoords = document.getElementById('locSheetCoords');
-    const btnCopyCoords = document.getElementById('btnCopyCoords');
-    const btnOpenJourneyFromLoc = document.getElementById('btnOpenJourneyFromLoc');
+    const navTabSafety = document.getElementById('navTabSafety');
+    const safetyLocSpinner = document.getElementById('safetyLocSpinner');
+    const safetyLocAddressText = document.getElementById('safetyLocAddressText');
+    const safetyLocCoordsText = document.getElementById('safetyLocCoordsText');
+    const btnSafetyViewMap = document.getElementById('btnSafetyViewMap');
+    const btnSafetyBackToHome = document.getElementById('btnSafetyBackToHome');
+    const cardSafePolice = document.getElementById('cardSafePolice');
+    const cardSafeHospitals = document.getElementById('cardSafeHospitals');
+    const cardSafeServices = document.getElementById('cardSafeServices');
+    const cardSafeFire = document.getElementById('cardSafeFire');
+    const cardSafePharmacies = document.getElementById('cardSafePharmacies');
 
-    function openLocationSheet() {
-        if (locSheetAddress) {
-            locSheetAddress.innerText = (homeCurrentLocText && homeCurrentLocText.innerText && homeCurrentLocText.innerText !== "Detecting location...")
-                ? homeCurrentLocText.innerText
-                : "Acquiring GPS fix...";
+    window.updateSafetyLocationUI = function() {
+        const addrText = (homeCurrentLocText && homeCurrentLocText.innerText && homeCurrentLocText.innerText !== "Detecting location...")
+            ? homeCurrentLocText.innerText
+            : (startLoc ? `Live GPS (${Number(startLoc[0]).toFixed(4)}, ${Number(startLoc[1]).toFixed(4)})` : null);
+
+        if (startLoc || addrText) {
+            if (safetyLocSpinner) safetyLocSpinner.classList.add('hidden');
+            if (safetyLocAddressText) safetyLocAddressText.innerText = addrText || "Exact GPS Location Detected";
+            if (safetyLocCoordsText && startLoc) {
+                safetyLocCoordsText.innerText = `Lat: ${Number(startLoc[0]).toFixed(5)}, Lng: ${Number(startLoc[1]).toFixed(5)}`;
+            }
+        } else {
+            if (safetyLocSpinner) safetyLocSpinner.classList.remove('hidden');
+            if (safetyLocAddressText) safetyLocAddressText.innerText = "Acquiring GPS Signal...";
+            if (safetyLocCoordsText) safetyLocCoordsText.innerText = "Waiting for GPS satellites...";
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(pos => {
+                    const lat = pos.coords.latitude;
+                    const lng = pos.coords.longitude;
+                    startLoc = [lat, lng];
+                    if (typeof applyUserGpsPosition === 'function') {
+                        applyUserGpsPosition(lat, lng);
+                    }
+                    if (typeof updateSafetyLocationUI === 'function') {
+                        updateSafetyLocationUI();
+                    }
+                }, () => {}, { enableHighAccuracy: true, timeout: 8000 });
+            }
         }
-        if (locSheetCoords) {
-            locSheetCoords.innerText = startLoc
-                ? `Coordinates: Lat ${Number(startLoc[0]).toFixed(5)}, Lng ${Number(startLoc[1]).toFixed(5)}`
-                : "Waiting for GPS satellites...";
-        }
-        if (locationSheetOverlay) locationSheetOverlay.classList.add('show');
-        if (myLocationSheetModal) myLocationSheetModal.classList.add('show');
-    }
+    };
 
-    function closeLocationSheet() {
-        if (locationSheetOverlay) locationSheetOverlay.classList.remove('show');
-        if (myLocationSheetModal) myLocationSheetModal.classList.remove('show');
-    }
-
-    if (btnGridLocation) btnGridLocation.addEventListener('click', openLocationSheet);
-    if (closeLocSheetBtn) closeLocSheetBtn.addEventListener('click', closeLocationSheet);
-    if (locationSheetOverlay) locationSheetOverlay.addEventListener('click', closeLocationSheet);
-
-    if (btnCopyCoords) {
-        btnCopyCoords.addEventListener('click', () => {
-            const textToCopy = startLoc
-                ? `Lat: ${startLoc[0]}, Lng: ${startLoc[1]} (https://maps.google.com/?q=${startLoc[0]},${startLoc[1]})`
-                : (locSheetAddress?.innerText || "GPS location unavailable");
-            navigator.clipboard.writeText(textToCopy);
-            btnCopyCoords.innerHTML = '<i class="las la-check"></i> Copied!';
-            setTimeout(() => {
-                btnCopyCoords.innerHTML = '<i class="las la-copy"></i> Copy Coordinates';
-            }, 2000);
+    // When clicking "My Location" on the Home grid, go directly to Safety tab
+    if (btnGridLocation) {
+        btnGridLocation.addEventListener('click', () => {
+            if (navTabSafety) navTabSafety.click();
+            window.updateSafetyLocationUI();
         });
     }
 
-    if (btnOpenJourneyFromLoc) {
-        btnOpenJourneyFromLoc.addEventListener('click', () => {
-            closeLocationSheet();
-            const navTabJourney = document.getElementById('navTabJourney');
-            if (navTabJourney) navTabJourney.click();
+    // Back to Home from Safety tab header
+    if (btnSafetyBackToHome) {
+        btnSafetyBackToHome.addEventListener('click', () => {
+            const navTabHome = document.getElementById('navTabHome');
+            if (navTabHome) navTabHome.click();
+        });
+    }
+
+    // VIEW ON MAP button: opens user's exact live location directly on Google Maps
+    if (btnSafetyViewMap) {
+        btnSafetyViewMap.addEventListener('click', () => {
+            if (startLoc) {
+                const lat = Number(startLoc[0]).toFixed(6);
+                const lng = Number(startLoc[1]).toFixed(6);
+                window.open(`https://www.google.com/maps?q=${lat},${lng}`, '_blank');
+            } else if (navigator.geolocation) {
+                btnSafetyViewMap.innerHTML = '<i class="las la-spinner la-spin"></i> Locating...';
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                        const lat = pos.coords.latitude.toFixed(6);
+                        const lng = pos.coords.longitude.toFixed(6);
+                        startLoc = [pos.coords.latitude, pos.coords.longitude];
+                        btnSafetyViewMap.innerHTML = '<i class="las la-map"></i> VIEW ON MAP';
+                        window.open(`https://www.google.com/maps?q=${lat},${lng}`, '_blank');
+                    },
+                    () => {
+                        btnSafetyViewMap.innerHTML = '<i class="las la-map"></i> VIEW ON MAP';
+                        window.open('https://www.google.com/maps', '_blank');
+                    },
+                    { enableHighAccuracy: true, timeout: 6000 }
+                );
+            } else {
+                window.open('https://www.google.com/maps', '_blank');
+            }
+        });
+    }
+
+    // ==============================================================
+    // NEARBY SAFE PLACES: MULTI-CATEGORY PINNED MAP & CARDS
+    // (Police Stations, Hospitals, Fire & Rescue, Pharmacies)
+    // ==============================================================
+    const nearbyPoliceStationsModal = document.getElementById('nearbyPoliceStationsModal');
+    const closePoliceStationsBtn = document.getElementById('closePoliceStationsBtn');
+    const btnRefreshPoliceStations = document.getElementById('btnRefreshPoliceStations');
+    const policeMapStatusPill = document.getElementById('policeMapStatusPill');
+    const policeStationsCountBadge = document.getElementById('policeStationsCountBadge');
+    const policeCardsList = document.getElementById('policeCardsList');
+    const safePlacesMapHeadTitle = document.getElementById('safePlacesMapHeadTitle');
+    const safePlacesListTitle = document.getElementById('safePlacesListTitle');
+    const safePlacesCategoryTabs = document.querySelectorAll('.safe-category-tab');
+
+    let currentSafePlaceCategory = 'police';
+    let nearbySafePlacesMapInstance = null;
+    let safePlacesMarkersGroup = null;
+    let safePlacesUserMarker = null;
+    let safePlacesMarkerLookup = {};
+
+    function calcDistanceKm(lat1, lon1, lat2, lon2) {
+        const R = 6371; // Earth radius in km
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                  Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                  Math.sin(dLon/2) * Math.sin(dLon/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        return R * c;
+    }
+
+    const safePlacesCategoryConfig = {
+        police: {
+            title: 'Nearby Police Stations',
+            listTitle: 'Verified Police Stations',
+            badgeText: 'POLICE STATION',
+            iconClass: 'las la-shield-alt',
+            singular: 'Police Station',
+            defaultPlaces: [
+                {
+                    id: 'ps_rajanukunte',
+                    name: 'Rajanukunte Police Station',
+                    shortName: 'Rajanukunte PS',
+                    lat: 13.1785,
+                    lng: 77.5501,
+                    address: 'SH 9, Rajanukunte, Bengaluru 560064',
+                    phone: '080-28468300'
+                },
+                {
+                    id: 'ps_yelahanka_new',
+                    name: 'Yelahanka New Town Police Station',
+                    shortName: 'Yelahanka New PS',
+                    lat: 13.0988,
+                    lng: 77.5756,
+                    address: '4th Phase, Yelahanka New Town, Bengaluru 560064',
+                    phone: '080-22942548'
+                },
+                {
+                    id: 'ps_yelahanka_old',
+                    name: 'Yelahanka Old Town Police Station',
+                    shortName: 'Yelahanka Town PS',
+                    lat: 13.1009,
+                    lng: 77.5962,
+                    address: 'BB Road, Yelahanka, Bengaluru 560064',
+                    phone: '080-22942547'
+                },
+                {
+                    id: 'ps_vidyaranyapura',
+                    name: 'Vidyaranyapura Police Station',
+                    shortName: 'Vidyaranyapura PS',
+                    lat: 13.0818,
+                    lng: 77.5558,
+                    address: '3rd Block, Vidyaranyapura, Bengaluru 560097',
+                    phone: '080-22942551'
+                },
+                {
+                    id: 'ps_chikkajala',
+                    name: 'Chikkajala Police Station',
+                    shortName: 'Chikkajala PS',
+                    lat: 13.1678,
+                    lng: 77.6254,
+                    address: 'International Airport Road, Chikkajala, Bengaluru 562157',
+                    phone: '080-28467222'
+                },
+                {
+                    id: 'ps_kodigehalli',
+                    name: 'Kodigehalli Police Station',
+                    shortName: 'Kodigehalli PS',
+                    lat: 13.0583,
+                    lng: 77.5858,
+                    address: 'Kodigehalli Main Road, Sahakara Nagar, Bengaluru 560092',
+                    phone: '080-22942550'
+                }
+            ],
+            getLocalPlaces: (uLat, uLng) => [
+                {
+                    id: 'ps_local_1',
+                    name: 'Central Police Station',
+                    shortName: 'Central PS',
+                    lat: uLat + 0.012,
+                    lng: uLng + 0.010,
+                    address: 'Main Station Road (24/7 Patrol)',
+                    phone: '112'
+                },
+                {
+                    id: 'ps_local_2',
+                    name: 'Town Police Division',
+                    shortName: 'Town PS',
+                    lat: uLat - 0.015,
+                    lng: uLng + 0.008,
+                    address: 'Civil Lines Road (Direct Response)',
+                    phone: '100'
+                },
+                {
+                    id: 'ps_local_3',
+                    name: 'Highway Police Patrol Unit',
+                    shortName: 'Highway Patrol',
+                    lat: uLat + 0.008,
+                    lng: uLng - 0.018,
+                    address: 'Highway Outpost Checkpoint',
+                    phone: '112'
+                },
+                {
+                    id: 'ps_local_4',
+                    name: 'District Women Police Station',
+                    shortName: 'Women PS',
+                    lat: uLat - 0.011,
+                    lng: uLng - 0.012,
+                    address: 'Women Safety Special Division',
+                    phone: '1091'
+                }
+            ]
+        },
+        hospitals: {
+            title: 'Nearby Hospitals & Emergency Care',
+            listTitle: 'Verified Emergency Hospitals',
+            badgeText: 'HOSPITAL / 24x7 ER',
+            iconClass: 'las la-plus-square',
+            singular: 'Hospital',
+            defaultPlaces: [
+                {
+                    id: 'hosp_yelahanka_gen',
+                    name: 'Yelahanka General Hospital',
+                    shortName: 'Yelahanka Gen Hosp',
+                    lat: 13.1022,
+                    lng: 77.5955,
+                    address: 'BB Road, Yelahanka Old Town, Bengaluru 560064',
+                    phone: '080-28560241'
+                },
+                {
+                    id: 'hosp_manipal_yel',
+                    name: 'Manipal Hospital Yelahanka',
+                    shortName: 'Manipal Hospital',
+                    lat: 13.1082,
+                    lng: 77.5812,
+                    address: '15th Cross, Yelahanka New Town, Bengaluru 560064',
+                    phone: '080-22221111'
+                },
+                {
+                    id: 'hosp_aster_cmi',
+                    name: 'Aster CMI Hospital',
+                    shortName: 'Aster CMI Hosp',
+                    lat: 13.0573,
+                    lng: 77.5928,
+                    address: 'NH 44, Sahakar Nagar, Hebbal, Bengaluru 560092',
+                    phone: '080-43444444'
+                },
+                {
+                    id: 'hosp_cytecare',
+                    name: 'Cytecare Multispeciality Hospital',
+                    shortName: 'Cytecare Hospital',
+                    lat: 13.1552,
+                    lng: 77.6180,
+                    address: 'Venkatala, NH 44, Near Airport Corridor, Bengaluru 560064',
+                    phone: '080-22176767'
+                },
+                {
+                    id: 'hosp_navachethana',
+                    name: 'Navachethana Hospital',
+                    shortName: 'Navachethana Hosp',
+                    lat: 13.1005,
+                    lng: 77.5714,
+                    address: 'A Sector, Yelahanka New Town, Bengaluru 560064',
+                    phone: '080-28461888'
+                },
+                {
+                    id: 'hosp_kk_multi',
+                    name: 'KK Multispeciality Hospital',
+                    shortName: 'KK Hospital',
+                    lat: 13.1120,
+                    lng: 77.5880,
+                    address: 'Kogilu Main Road, Maruthi Nagar, Bengaluru 560064',
+                    phone: '080-28462222'
+                }
+            ],
+            getLocalPlaces: (uLat, uLng) => [
+                {
+                    id: 'hosp_local_1',
+                    name: 'District Government Civil Hospital',
+                    shortName: 'Civil Hospital ER',
+                    lat: uLat + 0.010,
+                    lng: uLng + 0.012,
+                    address: 'Hospital Road (24/7 Trauma Care)',
+                    phone: '108'
+                },
+                {
+                    id: 'hosp_local_2',
+                    name: 'Apex Multispeciality Hospital',
+                    shortName: 'Apex Hospital',
+                    lat: uLat - 0.014,
+                    lng: uLng + 0.009,
+                    address: 'Ring Road Junction (Emergency & ICU)',
+                    phone: '108'
+                },
+                {
+                    id: 'hosp_local_3',
+                    name: 'Lifeline Emergency & Trauma Center',
+                    shortName: 'Lifeline Trauma',
+                    lat: uLat + 0.016,
+                    lng: uLng - 0.011,
+                    address: 'Main Highway Sector (Critical Care)',
+                    phone: '108'
+                },
+                {
+                    id: 'hosp_local_4',
+                    name: 'City Care Emergency Hospital',
+                    shortName: 'City Care Hospital',
+                    lat: uLat - 0.009,
+                    lng: uLng - 0.015,
+                    address: 'Market Central Road (24-Hour ER)',
+                    phone: '108'
+                }
+            ]
+        },
+        fire: {
+            title: 'Nearby Fire & Rescue Stations',
+            listTitle: 'Verified Fire & Rescue Stations',
+            badgeText: 'FIRE & RESCUE',
+            iconClass: 'las la-truck',
+            singular: 'Fire Station',
+            defaultPlaces: [
+                {
+                    id: 'fire_yelahanka',
+                    name: 'Yelahanka Fire & Emergency Station',
+                    shortName: 'Yelahanka Fire Stn',
+                    lat: 13.1042,
+                    lng: 77.5910,
+                    address: 'Railway Parallel Road, Yelahanka, Bengaluru 560064',
+                    phone: '101'
+                },
+                {
+                    id: 'fire_hebbal',
+                    name: 'Hebbal Fire & Rescue Station',
+                    shortName: 'Hebbal Fire Stn',
+                    lat: 13.0360,
+                    lng: 77.5975,
+                    address: 'Bellary Road, Near Hebbal Flyover, Bengaluru 560024',
+                    phone: '080-22971520'
+                },
+                {
+                    id: 'fire_peenya',
+                    name: 'Peenya Industrial Fire Station',
+                    shortName: 'Peenya Fire Stn',
+                    lat: 13.0315,
+                    lng: 77.5255,
+                    address: '2nd Stage, Peenya Industrial Area, Bengaluru 560058',
+                    phone: '080-22971522'
+                },
+                {
+                    id: 'fire_chikkajala',
+                    name: 'Chikkajala Airport Corridor Fire Unit',
+                    shortName: 'Chikkajala Fire',
+                    lat: 13.1710,
+                    lng: 77.6310,
+                    address: 'Airport Toll Road, Chikkajala, Bengaluru 562157',
+                    phone: '101'
+                },
+                {
+                    id: 'fire_hq',
+                    name: 'Karnataka Fire & Emergency Services HQ',
+                    shortName: 'State Fire HQ',
+                    lat: 12.9650,
+                    lng: 77.5980,
+                    address: 'Sheshadri Road, Bengaluru 560001',
+                    phone: '101'
+                }
+            ],
+            getLocalPlaces: (uLat, uLng) => [
+                {
+                    id: 'fire_local_1',
+                    name: 'District Fire & Rescue Station',
+                    shortName: 'District Fire Stn',
+                    lat: uLat + 0.014,
+                    lng: uLng + 0.015,
+                    address: 'Emergency Response Zone (24/7 Dispatch)',
+                    phone: '101'
+                },
+                {
+                    id: 'fire_local_2',
+                    name: 'City Fire Outpost & Rescue Unit',
+                    shortName: 'City Fire Outpost',
+                    lat: uLat - 0.016,
+                    lng: uLng + 0.011,
+                    address: 'Municipal Fire Outpost, Main Road',
+                    phone: '101'
+                },
+                {
+                    id: 'fire_local_3',
+                    name: 'Industrial Disaster Response Fire Unit',
+                    shortName: 'Disaster Fire Unit',
+                    lat: uLat + 0.009,
+                    lng: uLng - 0.019,
+                    address: 'Industrial Corridor Rescue Station',
+                    phone: '101'
+                }
+            ]
+        },
+        pharmacies: {
+            title: 'Nearby 24/7 Pharmacies',
+            listTitle: 'Verified 24/7 Pharmacies',
+            badgeText: '24/7 PHARMACY',
+            iconClass: 'las la-first-aid',
+            singular: 'Pharmacy',
+            defaultPlaces: [
+                {
+                    id: 'pharm_apollo_yel',
+                    name: 'Apollo Pharmacy 24/7 Yelahanka',
+                    shortName: 'Apollo 24/7',
+                    lat: 13.1015,
+                    lng: 77.5768,
+                    address: 'Major Sandeep Unnikrishnan Rd, Yelahanka New Town, Bengaluru 560064',
+                    phone: '1860-500-0101'
+                },
+                {
+                    id: 'pharm_medplus_old',
+                    name: 'MedPlus Pharmacy Yelahanka Old Town',
+                    shortName: 'MedPlus Pharmacy',
+                    lat: 13.1030,
+                    lng: 77.5940,
+                    address: 'BB Road, Near Santhe Circle, Yelahanka, Bengaluru 560064',
+                    phone: '080-67671111'
+                },
+                {
+                    id: 'pharm_wellness_forever',
+                    name: 'Wellness Forever 24x7 Day & Night Chemist',
+                    shortName: 'Wellness 24x7',
+                    lat: 13.0610,
+                    lng: 77.5910,
+                    address: 'Sahakara Nagar Main Road, Bengaluru 560092',
+                    phone: '1800-102-4247'
+                },
+                {
+                    id: 'pharm_fortis_health',
+                    name: 'Fortis HealthWorld 24-Hour Pharmacy',
+                    shortName: 'Fortis Pharmacy',
+                    lat: 13.0560,
+                    lng: 77.5940,
+                    address: 'Bellary Road, Near Hebbal, Bengaluru 560092',
+                    phone: '080-66669999'
+                },
+                {
+                    id: 'pharm_netmeds_yel',
+                    name: 'Netmeds Pharmacy Yelahanka',
+                    shortName: 'Netmeds Pharmacy',
+                    lat: 13.0980,
+                    lng: 77.5820,
+                    address: 'Sector B, Yelahanka New Town, Bengaluru 560064',
+                    phone: '1800-266-2247'
+                }
+            ],
+            getLocalPlaces: (uLat, uLng) => [
+                {
+                    id: 'pharm_local_1',
+                    name: 'MedCare 24/7 Emergency Pharmacy',
+                    shortName: 'MedCare 24/7',
+                    lat: uLat + 0.008,
+                    lng: uLng + 0.007,
+                    address: 'Opposite Civil Hospital Gate (Open All Night)',
+                    phone: '112'
+                },
+                {
+                    id: 'pharm_local_2',
+                    name: 'Apollo 24-Hour Chemist & Druggist',
+                    shortName: 'Apollo 24hr',
+                    lat: uLat - 0.010,
+                    lng: uLng + 0.012,
+                    address: 'Main Commercial Hub Road (24/7 Service)',
+                    phone: '1860-500-0101'
+                },
+                {
+                    id: 'pharm_local_3',
+                    name: 'Lifeline Day & Night Medical Store',
+                    shortName: 'Lifeline Meds',
+                    lat: uLat + 0.013,
+                    lng: uLng - 0.009,
+                    address: 'Trauma Center Road (All Emergency Medicines)',
+                    phone: '108'
+                },
+                {
+                    id: 'pharm_local_4',
+                    name: 'City Care 24/7 Medicals',
+                    shortName: 'City Care Meds',
+                    lat: uLat - 0.007,
+                    lng: uLng - 0.011,
+                    address: 'Station Junction Circle (24/7 Open)',
+                    phone: '112'
+                }
+            ]
+        }
+    };
+
+    async function loadAndDisplayNearbySafePlaces(category = 'police') {
+        currentSafePlaceCategory = safePlacesCategoryConfig[category] ? category : 'police';
+        const config = safePlacesCategoryConfig[currentSafePlaceCategory];
+
+        // Update active class on category tabs
+        if (safePlacesCategoryTabs && safePlacesCategoryTabs.length > 0) {
+            safePlacesCategoryTabs.forEach(tab => {
+                if (tab.getAttribute('data-cat') === currentSafePlaceCategory) {
+                    tab.classList.add('active');
+                } else {
+                    tab.classList.remove('active');
+                }
+            });
+        }
+
+        // Update header title and list title
+        if (safePlacesMapHeadTitle) safePlacesMapHeadTitle.innerText = config.title;
+        if (safePlacesListTitle) safePlacesListTitle.innerText = config.listTitle;
+
+        const uLat = startLoc ? startLoc[0] : 13.14921;
+        const uLng = startLoc ? startLoc[1] : 77.53395;
+
+        // Ensure Leaflet map is initialized
+        if (!nearbySafePlacesMapInstance) {
+            nearbySafePlacesMapInstance = L.map('nearbyPoliceMap', {
+                zoomControl: true,
+                attributionControl: false
+            }).setView([uLat, uLng], 13);
+
+            L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+                maxZoom: 20,
+                subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
+            }).addTo(nearbySafePlacesMapInstance);
+
+            safePlacesMarkersGroup = L.featureGroup().addTo(nearbySafePlacesMapInstance);
+        }
+
+        setTimeout(() => {
+            if (nearbySafePlacesMapInstance) nearbySafePlacesMapInstance.invalidateSize();
+        }, 200);
+
+        // Clear existing markers
+        if (safePlacesMarkersGroup) safePlacesMarkersGroup.clearLayers();
+        safePlacesMarkerLookup = {};
+
+        // Drop user live location marker
+        const userLivePinIcon = L.divIcon({
+            className: 'user-live-pin-custom',
+            html: '<div class="user-live-pin-pulse" title="Your Live Location"></div>',
+            iconSize: [20, 20],
+            iconAnchor: [10, 10]
+        });
+
+        safePlacesUserMarker = L.marker([uLat, uLng], { icon: userLivePinIcon })
+            .bindPopup(`<strong style="font-family:'Outfit',sans-serif; color:#1e293b;">📍 Your Live Location</strong>`)
+            .addTo(safePlacesMarkersGroup);
+
+        if (policeMapStatusPill) {
+            policeMapStatusPill.innerHTML = `<i class="las la-spinner la-spin"></i> Locating verified ${config.singular.toLowerCase()}s...`;
+        }
+
+        // Determine places around user coordinates
+        const distFromBlr = calcDistanceKm(uLat, uLng, 13.14921, 77.53395);
+        let places = (distFromBlr > 40 && typeof config.getLocalPlaces === 'function')
+            ? config.getLocalPlaces(uLat, uLng)
+            : JSON.parse(JSON.stringify(config.defaultPlaces));
+
+        // Compute distance and sort ascending
+        places.forEach(item => {
+            item.distanceKm = calcDistanceKm(uLat, uLng, item.lat, item.lng);
+        });
+        places.sort((a, b) => a.distanceKm - b.distanceKm);
+
+        // Render markers on map
+        places.forEach(item => {
+            const pinIcon = L.divIcon({
+                className: 'police-marker-custom',
+                html: `
+                    <div class="police-pin-bubble">
+                        <i class="${config.iconClass}"></i>
+                        <span>${item.shortName}</span>
+                    </div>
+                `,
+                iconSize: [110, 36],
+                iconAnchor: [55, 36]
+            });
+
+            const marker = L.marker([item.lat, item.lng], { icon: pinIcon }).addTo(safePlacesMarkersGroup);
+
+            const popupHtml = `
+                <div class="police-popup-content">
+                    <div class="police-popup-badge"><i class="${config.iconClass}"></i> ${config.badgeText}</div>
+                    <h4 class="police-popup-title">${item.name}</h4>
+                    <p class="police-popup-distance"><i class="las la-map-marker-alt"></i> ${item.distanceKm.toFixed(1)} km away • ${item.address}</p>
+                    <div class="police-popup-actions">
+                        <a href="tel:${item.phone || '112'}" class="police-popup-btn police-popup-call"><i class="las la-phone"></i> Call</a>
+                        <a href="https://www.google.com/maps/dir/?api=1&destination=${item.lat},${item.lng}" target="_blank" class="police-popup-btn police-popup-nav"><i class="las la-directions"></i> Navigate</a>
+                    </div>
+                </div>
+            `;
+            marker.bindPopup(popupHtml, { maxWidth: 280 });
+
+            safePlacesMarkerLookup[item.id] = marker;
+        });
+
+        // Fit map bounds to encompass user and nearby places
+        if (safePlacesMarkersGroup && safePlacesMarkersGroup.getLayers().length > 0) {
+            nearbySafePlacesMapInstance.fitBounds(safePlacesMarkersGroup.getBounds().pad(0.12));
+        }
+
+        // Update Header & Badge counts
+        if (policeMapStatusPill) {
+            policeMapStatusPill.innerHTML = `<i class="${config.iconClass}"></i> ${places.length} ${config.singular}s Pinned`;
+        }
+        if (policeStationsCountBadge) {
+            policeStationsCountBadge.innerText = `${places.length} Found`;
+        }
+
+        // Render Cards List below the map
+        if (policeCardsList) {
+            policeCardsList.innerHTML = '';
+            places.forEach((st) => {
+                const card = document.createElement('div');
+                card.className = 'police-station-card';
+                card.innerHTML = `
+                    <div class="police-card-main" data-id="${st.id}">
+                        <div class="police-card-info-wrap">
+                            <div class="police-card-icon-badge">
+                                <i class="${config.iconClass}"></i>
+                            </div>
+                            <div class="police-card-details">
+                                <strong class="police-card-name">${st.name}</strong>
+                                <span class="police-card-sub">${st.address}</span>
+                            </div>
+                        </div>
+                        <span class="police-card-dist-pill">${st.distanceKm.toFixed(1)} km</span>
+                    </div>
+                    <div class="police-card-actions">
+                        <button type="button" class="btn-card-action btn-card-focus" data-id="${st.id}">
+                            <i class="las la-crosshairs"></i> Show Pin
+                        </button>
+                        <a href="tel:${st.phone || '112'}" class="btn-card-action btn-card-call">
+                            <i class="las la-phone"></i> Call
+                        </a>
+                        <a href="https://www.google.com/maps/dir/?api=1&destination=${st.lat},${st.lng}" target="_blank" class="btn-card-action btn-card-nav">
+                            <i class="las la-directions"></i> Navigate
+                        </a>
+                    </div>
+                `;
+
+                // Tapping card header or "Show Pin" zooms to pin on map
+                const focusBtn = card.querySelector('.btn-card-focus');
+                const mainArea = card.querySelector('.police-card-main');
+                const triggerFocus = () => {
+                    const marker = safePlacesMarkerLookup[st.id];
+                    if (marker && nearbySafePlacesMapInstance) {
+                        nearbySafePlacesMapInstance.setView([st.lat, st.lng], 15, { animate: true });
+                        marker.openPopup();
+                        const mapWrap = document.querySelector('.police-map-wrap');
+                        if (mapWrap) mapWrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    }
+                };
+
+                if (focusBtn) focusBtn.addEventListener('click', triggerFocus);
+                if (mainArea) mainArea.addEventListener('click', triggerFocus);
+
+                policeCardsList.appendChild(card);
+            });
+        }
+    }
+
+    // Expose helpers globally
+    window.loadAndDisplayNearbyPoliceStations = () => loadAndDisplayNearbySafePlaces('police');
+    window.loadAndDisplayNearbySafePlaces = loadAndDisplayNearbySafePlaces;
+
+    // Category Tabs in Map Modal
+    if (safePlacesCategoryTabs && safePlacesCategoryTabs.length > 0) {
+        safePlacesCategoryTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const cat = tab.getAttribute('data-cat');
+                loadAndDisplayNearbySafePlaces(cat);
+            });
+        });
+    }
+
+    // Safe Places cards on Safety Tab
+    // 1. Nearby Police Stations
+    if (cardSafePolice) {
+        cardSafePolice.addEventListener('click', () => {
+            if (nearbyPoliceStationsModal) {
+                nearbyPoliceStationsModal.classList.add('show');
+                loadAndDisplayNearbySafePlaces('police');
+            }
+        });
+    }
+
+    // 2. Nearby Hospitals
+    if (cardSafeHospitals) {
+        cardSafeHospitals.addEventListener('click', () => {
+            if (nearbyPoliceStationsModal) {
+                nearbyPoliceStationsModal.classList.add('show');
+                loadAndDisplayNearbySafePlaces('hospitals');
+            }
+        });
+    }
+
+    // 3. Emergency Services (opens full page Emergency Services modal)
+    if (cardSafeServices) {
+        cardSafeServices.addEventListener('click', () => {
+            const servicesSheetModal = document.getElementById('servicesSheetModal');
+            if (servicesSheetModal) servicesSheetModal.classList.add('show');
+        });
+    }
+
+    // 4. Fire & Rescue
+    if (cardSafeFire) {
+        cardSafeFire.addEventListener('click', () => {
+            if (nearbyPoliceStationsModal) {
+                nearbyPoliceStationsModal.classList.add('show');
+                loadAndDisplayNearbySafePlaces('fire');
+            }
+        });
+    }
+
+    // 5. Pharmacies
+    if (cardSafePharmacies) {
+        cardSafePharmacies.addEventListener('click', () => {
+            if (nearbyPoliceStationsModal) {
+                nearbyPoliceStationsModal.classList.add('show');
+                loadAndDisplayNearbySafePlaces('pharmacies');
+            }
+        });
+    }
+
+    // Modal Close button
+    if (closePoliceStationsBtn) {
+        closePoliceStationsBtn.addEventListener('click', () => {
+            if (nearbyPoliceStationsModal) nearbyPoliceStationsModal.classList.remove('show');
+        });
+    }
+
+    // Refresh GPS location button
+    if (btnRefreshPoliceStations) {
+        btnRefreshPoliceStations.addEventListener('click', () => {
+            if (navigator.geolocation) {
+                btnRefreshPoliceStations.innerHTML = '<i class="las la-spinner la-spin"></i>';
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                        startLoc = [pos.coords.latitude, pos.coords.longitude];
+                        btnRefreshPoliceStations.innerHTML = '<i class="las la-crosshairs"></i>';
+                        loadAndDisplayNearbySafePlaces(currentSafePlaceCategory);
+                    },
+                    () => {
+                        btnRefreshPoliceStations.innerHTML = '<i class="las la-crosshairs"></i>';
+                        loadAndDisplayNearbySafePlaces(currentSafePlaceCategory);
+                    },
+                    { enableHighAccuracy: true, timeout: 5000 }
+                );
+            } else {
+                loadAndDisplayNearbySafePlaces(currentSafePlaceCategory);
+            }
         });
     }
 

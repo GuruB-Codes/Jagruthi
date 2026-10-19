@@ -4688,6 +4688,613 @@ input:checked + .switch-slider:before {
     background: #be123c;
 }
 
+/* ===================================================
+   SAFETY TAB (MY LOCATION & NEARBY SAFE PLACES)
+   =================================================== */
+.safety-tab-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 4px 14px;
+}
+
+.safety-tab-back-btn {
+    background: transparent;
+    border: none;
+    color: #e11d48;
+    font-size: 1.35rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    transition: background 0.2s;
+}
+
+.safety-tab-back-btn:hover {
+    background: #ffe4e6;
+}
+
+.safety-tab-title {
+    font-size: 1.18rem;
+    font-weight: 700;
+    color: #e11d48;
+    margin: 0;
+    text-align: center;
+}
+
+/* Hero Location Card */
+.safety-hero-location-card {
+    background: linear-gradient(145deg, #e11d48 0%, #be123c 60%, #9f1239 100%);
+    color: #ffffff;
+    border-radius: 22px;
+    padding: 24px 20px 20px;
+    text-align: center;
+    box-shadow: 0 10px 25px rgba(225, 29, 72, 0.25);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.safety-loc-icon-circle {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.55);
+    background: rgba(255, 255, 255, 0.12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    color: #ffffff;
+    margin-bottom: 12px;
+}
+
+.safety-loc-hero-title {
+    color: #ffffff;
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin: 0 0 10px;
+    letter-spacing: -0.2px;
+}
+
+.safety-loc-status-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 18px;
+    min-height: 48px;
+}
+
+.safety-loc-spinner {
+    width: 28px;
+    height: 28px;
+    border: 3px solid rgba(255, 255, 255, 0.25);
+    border-top-color: #ffffff;
+    border-radius: 50%;
+    animation: safetySpin 0.9s linear infinite;
+    margin-bottom: 4px;
+}
+
+@keyframes safetySpin {
+    to { transform: rotate(360deg); }
+}
+
+.safety-loc-spinner.hidden {
+    display: none;
+}
+
+.safety-loc-address {
+    font-size: 0.92rem;
+    color: rgba(255, 255, 255, 0.95);
+    font-weight: 500;
+    margin: 0;
+    max-width: 90%;
+    line-height: 1.35;
+}
+
+.safety-loc-coords {
+    font-size: 0.76rem;
+    color: rgba(255, 255, 255, 0.72);
+    font-weight: 500;
+    letter-spacing: 0.3px;
+}
+
+.btn-safety-view-map {
+    width: 100%;
+    background: #ffffff;
+    color: #1e293b;
+    border: none;
+    border-radius: 12px;
+    padding: 13px 20px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-safety-view-map:hover {
+    background: #fff5f7;
+    color: #e11d48;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.16);
+}
+
+.btn-safety-view-map:active {
+    transform: scale(0.98);
+}
+
+/* Nearby Safe Places Section */
+.nearby-safe-places-section {
+    margin-top: 10px;
+}
+
+.nearby-safe-places-heading {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #e11d48;
+    margin: 10px 0 12px;
+}
+
+.safe-places-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.safe-place-item-card {
+    background: #ffffff;
+    border: 1px solid #ffe4e6;
+    border-radius: 14px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(225, 29, 72, 0.04);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    -webkit-tap-highlight-color: transparent;
+}
+
+.safe-place-item-card:hover {
+    background: #fff5f7;
+    border-color: #fecdd3;
+    transform: translateX(3px);
+    box-shadow: 0 4px 12px rgba(225, 29, 72, 0.08);
+}
+
+.safe-place-item-card:active {
+    transform: scale(0.99);
+}
+
+.safe-place-card-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.safe-place-icon-badge {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    background: #fff1f2;
+    border: 1px solid #ffe4e6;
+    color: #e11d48;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+
+.safe-place-name {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.safe-place-chevron {
+    color: #94a3b8;
+    font-size: 1.15rem;
+    flex-shrink: 0;
+}
+
+/* ===================================================
+   NEARBY POLICE STATIONS FULL PAGE & MAP PINNING
+   =================================================== */
+.police-stations-full-page {
+    background: #fff8f8 !important;
+}
+
+.police-stations-body {
+    padding: 12px 16px 36px !important;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* Category Filter Tabs Bar */
+.safe-places-category-bar {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+.safe-places-category-bar::-webkit-scrollbar {
+    display: none;
+}
+
+.safe-category-tab {
+    flex: 1;
+    min-width: 82px;
+    background: #ffffff;
+    border: 1px solid #ffe4e6;
+    color: #64748b;
+    border-radius: 20px;
+    padding: 7px 10px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+.safe-category-tab:hover {
+    background: #fff5f7;
+    color: #e11d48;
+}
+
+.safe-category-tab.active {
+    background: #e11d48;
+    color: #ffffff;
+    border-color: #e11d48;
+    box-shadow: 0 3px 10px rgba(225, 29, 72, 0.25);
+}
+
+.police-map-wrap {
+    position: relative;
+    width: 100%;
+    height: 310px;
+    border-radius: 18px;
+    overflow: hidden;
+    border: 1.5px solid rgba(225, 29, 72, 0.18);
+    box-shadow: 0 6px 20px rgba(225, 29, 72, 0.08);
+    background: #e2e8f0;
+}
+
+.nearby-police-map {
+    width: 100%;
+    height: 100%;
+    background: #f1f5f9;
+}
+
+.police-map-floating-pill {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 500;
+    pointer-events: none;
+}
+
+.police-map-floating-pill span {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: #e11d48;
+    font-size: 0.76rem;
+    font-weight: 700;
+    padding: 6px 12px;
+    border-radius: 20px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    border: 1px solid rgba(225, 29, 72, 0.15);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* Custom Police Pin Marker on Leaflet */
+.police-marker-custom {
+    background: transparent;
+    border: none;
+}
+
+.police-pin-bubble {
+    background: #ffffff;
+    border: 2px solid #e11d48;
+    color: #e11d48;
+    border-radius: 12px;
+    padding: 4px 8px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    box-shadow: 0 4px 12px rgba(225, 29, 72, 0.28);
+    white-space: nowrap;
+    position: relative;
+    transform: translate(-50%, -100%);
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.police-pin-bubble:hover {
+    transform: translate(-50%, -105%) scale(1.08);
+}
+
+.police-pin-bubble::after {
+    content: '';
+    position: absolute;
+    bottom: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 6px solid #e11d48;
+}
+
+.police-pin-bubble i {
+    font-size: 0.95rem;
+    color: #e11d48;
+}
+
+/* User Location Pin Pulsing Marker */
+.user-live-pin-custom {
+    background: transparent;
+    border: none;
+}
+
+.user-live-pin-pulse {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #2563eb;
+    border: 3px solid #ffffff;
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.35);
+    animation: userPinPulse 1.8s infinite;
+    transform: translate(-50%, -50%);
+}
+
+@keyframes userPinPulse {
+    0% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.6); }
+    70% { box-shadow: 0 0 0 14px rgba(37, 99, 235, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); }
+}
+
+/* Leaflet Popup Styling */
+.police-popup-content {
+    font-family: 'Outfit', sans-serif;
+    padding: 2px;
+}
+
+.police-popup-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: #e11d48;
+    font-size: 0.72rem;
+    font-weight: 700;
+    background: #fff1f2;
+    padding: 3px 8px;
+    border-radius: 6px;
+    margin-bottom: 6px;
+}
+
+.police-popup-title {
+    font-size: 0.96rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0 0 4px;
+    line-height: 1.25;
+}
+
+.police-popup-distance {
+    font-size: 0.78rem;
+    color: #64748b;
+    margin: 0 0 10px;
+    font-weight: 500;
+}
+
+.police-popup-actions {
+    display: flex;
+    gap: 6px;
+}
+
+.police-popup-btn {
+    flex: 1;
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-size: 0.76rem;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+
+.police-popup-call {
+    background: #e11d48;
+    color: #ffffff !important;
+}
+
+.police-popup-nav {
+    background: #f1f5f9;
+    color: #1e293b !important;
+    border: 1px solid #cbd5e1;
+}
+
+/* Police Cards List below map */
+.police-stations-list-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.police-stations-list-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 2px;
+}
+
+.police-list-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+
+.police-list-count-badge {
+    background: #fff1f2;
+    color: #e11d48;
+    font-size: 0.74rem;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 10px;
+    border: 1px solid #fecdd3;
+}
+
+.police-cards-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.police-station-card {
+    background: #ffffff;
+    border: 1px solid #ffe4e6;
+    border-radius: 14px;
+    padding: 13px 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    box-shadow: 0 2px 8px rgba(225, 29, 72, 0.04);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.police-station-card:hover {
+    border-color: #fecdd3;
+    box-shadow: 0 4px 14px rgba(225, 29, 72, 0.08);
+}
+
+.police-card-main {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+}
+
+.police-card-info-wrap {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.police-card-icon-badge {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    background: #fff1f2;
+    border: 1px solid #ffe4e6;
+    color: #e11d48;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    flex-shrink: 0;
+}
+
+.police-card-details {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.police-card-name {
+    font-size: 0.94rem;
+    font-weight: 700;
+    color: #1e293b;
+    line-height: 1.25;
+}
+
+.police-card-sub {
+    font-size: 0.78rem;
+    color: #64748b;
+}
+
+.police-card-dist-pill {
+    background: #ecfdf5;
+    color: #059669;
+    border: 1px solid #a7f3d0;
+    font-size: 0.74rem;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 8px;
+    white-space: nowrap;
+}
+
+.police-card-actions {
+    display: flex;
+    gap: 8px;
+    padding-top: 6px;
+    border-top: 1px solid #f8fafc;
+}
+
+.btn-card-action {
+    flex: 1;
+    padding: 7px 10px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    text-decoration: none;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s;
+}
+
+.btn-card-focus {
+    background: #fff1f2;
+    color: #e11d48;
+    border: 1px solid #ffe4e6;
+}
+
+.btn-card-call {
+    background: #e11d48;
+    color: #ffffff !important;
+}
+
+.btn-card-nav {
+    background: #ffffff;
+    color: #1e293b !important;
+    border: 1px solid #cbd5e1;
+}
+
+
+
 
 
 
