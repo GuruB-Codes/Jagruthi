@@ -24,7 +24,7 @@
     <!-- Icons -->
     <link rel="stylesheet"
         href="https://maxst.icons8.com/vue-static/landings/line-awesome/line-awesome/1.3.0/css/line-awesome.min.css">
-    <link rel="stylesheet" href="./style.css?v=20">
+    <link rel="stylesheet" href="./style.css?v=21">
 
     <!-- Leaflet Map -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -667,7 +667,7 @@
         </div>
 
         <div class="quick-guide-body evidence-full-page-body">
-            <!-- Live Camera Viewport -->
+            <!-- Fullscreen Live Camera Viewport -->
             <div class="evd-camera-viewport-wrap">
                 <video id="evidenceLiveVideo" autoplay playsinline muted></video>
                 <canvas id="evidenceSnapshotCanvas" style="display:none;"></canvas>
@@ -690,48 +690,36 @@
                 </button>
             </div>
 
-            <!-- Capture Mode Selector -->
-            <div class="evd-mode-tabs">
-                <button type="button" class="evd-mode-btn active" id="btnModePhoto" data-mode="photo">
-                    <i class="las la-camera"></i> Take Photo
-                </button>
-                <button type="button" class="evd-mode-btn" id="btnModeVideo" data-mode="video">
-                    <i class="las la-video"></i> Record Video
-                </button>
-            </div>
-
-            <!-- Main Shutter / Action Controls -->
-            <div class="evd-actions-row">
-                <!-- Gallery File Upload Button -->
-                <label class="evd-btn-gallery" title="Choose photo/video from device">
-                    <i class="las la-image"></i>
-                    <input type="file" id="evidenceFileInput" accept="image/*,video/*" capture="environment" style="display:none;">
-                </label>
-
-                <!-- Main Capture Button -->
-                <button type="button" class="evd-btn-shutter" id="btnExecuteCapture" aria-label="Capture Photo">
-                    <div class="shutter-inner" id="shutterInner"></div>
-                </button>
-
-                <!-- View Stored Evidence Button -->
-                <button type="button" class="evd-btn-vault" id="btnOpenStoredEvidence" title="View Evidence Vault">
-                    <i class="las la-folder-open"></i>
-                </button>
-            </div>
-
-            <!-- Feedback / Status Banner -->
-            <div class="evd-status-feedback hidden" id="evdStatusFeedback">
-                <i class="las la-check-circle" id="evdFeedbackIcon"></i>
-                <span id="evdFeedbackText">Evidence captured &amp; encrypted</span>
-            </div>
-
-            <!-- Vault Security Guarantee Card -->
-            <div class="evd-security-info-box">
-                <div class="evd-info-header">
-                    <i class="las la-shield-alt"></i>
-                    <strong>Tamper-Proof Cloud Storage</strong>
+            <!-- Bottom Controls Bar -->
+            <div class="evd-bottom-controls">
+                <!-- Capture Mode Selector -->
+                <div class="evd-mode-tabs">
+                    <button type="button" class="evd-mode-btn active" id="btnModePhoto" data-mode="photo">
+                        <i class="las la-camera"></i> Take Photo
+                    </button>
+                    <button type="button" class="evd-mode-btn" id="btnModeVideo" data-mode="video">
+                        <i class="las la-video"></i> Record Video
+                    </button>
                 </div>
-                <p>Captures are automatically geotagged with your exact GPS coordinates and time, encrypted, and uploaded directly to the private Jagruthi Vault without leaving thumbnails in the device gallery.</p>
+
+                <!-- Main Shutter / Action Controls -->
+                <div class="evd-actions-row">
+                    <!-- Gallery File Upload Button -->
+                    <label class="evd-btn-gallery" title="Choose photo/video from device">
+                        <i class="las la-image"></i>
+                        <input type="file" id="evidenceFileInput" accept="image/*,video/*" capture="environment" style="display:none;">
+                    </label>
+
+                    <!-- Main Capture Button -->
+                    <button type="button" class="evd-btn-shutter" id="btnExecuteCapture" aria-label="Capture Photo">
+                        <div class="shutter-inner" id="shutterInner"></div>
+                    </button>
+
+                    <!-- View Stored Evidence Button -->
+                    <button type="button" class="evd-btn-vault" id="btnOpenStoredEvidence" title="View Evidence Vault">
+                        <i class="las la-folder-open"></i>
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -1305,7 +1293,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./supabaseClient.js?v=14"></script>
     <script src="./mediaService.js?v=14"></script>
-    <script src="./script.js?v=15"></script>
+    <script src="./script.js?v=16"></script>
     <script src="./pwaManager.js?v=14"></script>
 </body>
 

@@ -3081,15 +3081,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function showEvidenceFeedback(msg, isError = false) {
+        console.log(`[Incident Evidence] ${msg}`);
         if (!evdStatusFeedback || !evdFeedbackText) return;
         evdFeedbackText.innerText = msg;
-        evdStatusFeedback.style.background = isError ? 'rgba(239, 68, 68, 0.25)' : 'rgba(16, 185, 129, 0.25)';
-        evdStatusFeedback.style.borderColor = isError ? '#ef4444' : '#10b981';
-        evdStatusFeedback.style.color = isError ? '#fca5a5' : '#6ee7b7';
         evdStatusFeedback.classList.remove('hidden');
         setTimeout(() => {
             if (evdStatusFeedback) evdStatusFeedback.classList.add('hidden');
-        }, 5000);
+        }, 3000);
     }
 
     function openEvidenceModal() {
@@ -3292,8 +3290,12 @@ document.addEventListener('DOMContentLoaded', () => {
     async function capturePhotoSnapshot() {
         if (!evidenceLiveVideo || !evidenceSnapshotCanvas) return;
         
-        // Haptic feedback
+        // Haptic feedback & shutter flash animation
         if ('vibrate' in navigator) navigator.vibrate(60);
+        if (evidenceLiveVideo) {
+            evidenceLiveVideo.style.opacity = '0.2';
+            setTimeout(() => { if (evidenceLiveVideo) evidenceLiveVideo.style.opacity = '1'; }, 100);
+        }
 
         const video = evidenceLiveVideo;
         const canvas = evidenceSnapshotCanvas;
