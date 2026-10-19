@@ -832,25 +832,33 @@ h1, h2, h3 { color: var(--text-dark); font-weight: 700; }
 .btn-yes { background: var(--success); color: white; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3); }
 .btn-yes:active { transform: scale(0.95); }
 
-/* Demo trigger styling - Small & Responsive */
+/* Demo trigger styling - Only shown in Journey option */
 .demo-trigger {
     position: fixed;
     top: 75px; /* Below top nav */
     right: 12px;
     z-index: 1000;
-    background: rgba(15, 23, 42, 0.8);
-    backdrop-filter: blur(4px);
-    color: white;
-    border: none;
-    padding: 6px 10px;
-    border-radius: var(--radius-sm);
+    background: rgba(225, 29, 72, 0.92);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    padding: 7px 14px;
+    border-radius: 20px;
     cursor: pointer;
-    display: flex;
+    display: none; /* Only shown in Journey tab */
     gap: 6px;
     align-items: center;
-    font-size: 0.75rem;
-    box-shadow: var(--shadow-sm);
+    font-size: 0.78rem;
+    font-weight: 600;
+    box-shadow: 0 4px 14px rgba(225, 29, 72, 0.28);
     transition: var(--transition);
+}
+
+.demo-trigger:hover {
+    background: #e11d48;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(225, 29, 72, 0.35);
 }
 
 .demo-trigger:active {
@@ -862,8 +870,8 @@ h1, h2, h3 { color: var(--text-dark); font-weight: 700; }
     .demo-trigger {
         top: 20px;
         right: 20px;
-        padding: 10px 16px;
-        font-size: 0.9rem;
+        padding: 8px 16px;
+        font-size: 0.86rem;
     }
 }
 

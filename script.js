@@ -1416,9 +1416,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
-    // Deviation Triggers
+    // Deviation Triggers (Only active in Journey option)
     const demoTrigger = document.getElementById('demoTrigger');
     if (demoTrigger) {
+        demoTrigger.style.display = 'none'; // Initially hidden on Home tab
         demoTrigger.addEventListener('click', (e) => {
             e.preventDefault();
             showDeviationAlert();
@@ -1516,6 +1517,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     journeyActionBar.classList.remove('hidden');
                 } else {
                     journeyActionBar.classList.add('hidden');
+                }
+            }
+
+            // Toggle Test Alert button (Only show in Journey option)
+            if (demoTrigger) {
+                if (targetTab === 'tab-journey') {
+                    demoTrigger.style.display = 'flex';
+                } else {
+                    demoTrigger.style.display = 'none';
                 }
             }
 

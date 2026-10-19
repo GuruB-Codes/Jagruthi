@@ -24,7 +24,7 @@
     <!-- Icons -->
     <link rel="stylesheet"
         href="https://maxst.icons8.com/vue-static/landings/line-awesome/line-awesome/1.3.0/css/line-awesome.min.css">
-    <link rel="stylesheet" href="./style.css?v=21">
+    <link rel="stylesheet" href="./style.css?v=22">
 
     <!-- Leaflet Map -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -150,6 +150,11 @@
 
             <!-- ================= TAB 2: JOURNEY ================= -->
             <div class="tab-view" id="tab-journey">
+
+                <!-- Test Alert Button (Only shown in Journey option) -->
+                <button class="demo-trigger" id="demoTrigger" title="Test Deviation Alert" style="display: none;">
+                    <i class="las la-vial"></i> Test Alert
+                </button>
 
                 <!-- Travel Mode Selection Section -->
                 <section class="card mode-selection">
@@ -1286,14 +1291,10 @@
         </div>
     </div>
 
-    <!-- For demo purpose: trigger modal -->
-    <button class="demo-trigger" id="demoTrigger" title="Test Deviation Alert"><i class="las la-vial"></i> Test
-        Alert</button>
-
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./supabaseClient.js?v=14"></script>
     <script src="./mediaService.js?v=14"></script>
-    <script src="./script.js?v=16"></script>
+    <script src="./script.js?v=17"></script>
     <script src="./pwaManager.js?v=14"></script>
 </body>
 
