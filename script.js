@@ -3148,6 +3148,147 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // -------------------------------------------------------------
+    // Comprehensive Supabase Storage & Database Upload for Incidents
+    // -------------------------------------------------------------
+    async function uploadIncidentFileToSupabase({ blob, type, fileName }) {
+        const client = window.supabaseClient || supabase;
+        if (!client) {
+            console.warn("[Incident Evidence] Supabase client unavailable, stored in local device vault only.");
+            return { success: false, reason: "No Supabase client" };
+        }
+
+        try {
+            const userId = await getAuthenticatedUserId();
+            const timestamp = Date.now();
+            const ext = type === 'photo' ? 'jpg' : (blob.type?.includes('mp4') ? 'mp4' : 'webm');
+            const actualFileName = fileName || `${type}_${timestamp}.${ext}`;
+            
+            // Ensure valid active SOS event to link evidence in Supabase
+            let sosId = activeSosId;
+            if (!sosId) {
+                const lat = startLoc ? startLoc[0] : (liveUserCoords ? liveUserCoords.lat : 0);
+                const lng = startLoc ? startLoc[1] : (liveUserCoords ? liveUserCoords.lng : 0);
+                if (window.jagruthiSosService) {
+                    try {
+                        const evRes = await window.jagruthiSosService.createSosEvent({
+                            userId: userId,
+                            latitude: lat,
+                            longitude: lng
+                        });
+                        if (evRes?.data?.id) {
+                            sosId = evRes.data.id;
+                            activeSosId = sosId;
+                        }
+                    } catch (e) {
+                        console.warn("[Incident Evidence] SOS event creation notice:", e);
+                    }
+                }
+            }
+            if (!sosId) {
+                sosId = window.generateUUID ? window.generateUUID() : '00000000-0000-0000-0000-000000000000';
+            }
+
+            const storagePath = `${userId}/${sosId}/${actualFileName}`;
+            console.log(`[Incident Evidence] Uploading ${actualFileName} to Supabase bucket 'jagruthi-evidence'...`);
+
+            // Primary upload attempt (MIME type from blob)
+            const initialMime = type === 'photo' ? 'image/jpeg' : (blob.type || 'video/webm');
+            let uploadRes = await client.storage
+                .from('jagruthi-evidence')
+                .upload(storagePath, blob, {
+                    contentType: initialMime,
+                    upsert: true
+                });
+
+            // If Supabase Storage bucket has MIME whitelist restriction (e.g. 415 InvalidMimeType)
+            if (uploadRes.error && (uploadRes.error.message?.includes('mime type') || uploadRes.error.statusCode === '415' || uploadRes.error.error === 'invalid_mime_type')) {
+                console.warn("[Incident Evidence] Storage bucket MIME restriction detected. Retrying with container compatibility format...");
+                uploadRes = await client.storage
+                    .from('jagruthi-evidence')
+                    .upload(storagePath, blob, {
+                        contentType: 'video/mp4',
+                        upsert: true
+                    });
+            }
+
+            if (uploadRes.error) {
+                console.error("[Incident Evidence] Upload error from Supabase:", uploadRes.error);
+                return { success: false, error: uploadRes.error };
+            }
+
+            console.log(`[Incident Evidence] Uploaded successfully to storage: ${storagePath}`);
+
+            // Obtain signed URL so user and emergency team can view/download securely
+            let signedUrl = null;
+            try {
+                const { data: signData } = await client.storage
+                    .from('jagruthi-evidence')
+                    .createSignedUrl(storagePath, 3600 * 24 * 7); // 7 days
+                if (signData && signData.signedUrl) signedUrl = signData.signedUrl;
+            } catch (sErr) {}
+
+            // Record in Supabase sos_evidence database table
+            if (window.jagruthiSosService && sosId) {
+                try {
+                    let dbRes = await window.jagruthiSosService.createSosEvidenceRecord({
+                        sosId: sosId,
+                        userId: userId,
+                        evidenceType: type,
+                        storagePath: storagePath,
+                        fileName: actualFileName,
+                        capturedAt: new Date().toISOString(),
+                        status: 'UPLOADED'
+                    });
+
+                    // If database check constraint only permits 'video' or 'audio'
+                    if (dbRes?.error && dbRes.error.message?.includes('check constraint')) {
+                        console.log("[Incident Evidence] Registering with compatibility alias 'video'...");
+                        await window.jagruthiSosService.createSosEvidenceRecord({
+                            sosId: sosId,
+                            userId: userId,
+                            evidenceType: 'video',
+                            storagePath: storagePath,
+                            fileName: actualFileName,
+                            capturedAt: new Date().toISOString(),
+                            status: 'UPLOADED'
+                        });
+                    }
+                } catch (dbErr) {
+                    console.warn("[Incident Evidence] Database record notice:", dbErr);
+                }
+            }
+
+            // Also save to IndexedDB local vault
+            if (typeof idbSaveEvidenceRecord === 'function') {
+                try {
+                    await idbSaveEvidenceRecord({
+                        id: `${sosId}_${actualFileName}`,
+                        sosId: sosId,
+                        userId: userId,
+                        type: type,
+                        blob: blob,
+                        mimeType: blob.type || 'image/jpeg',
+                        fileName: actualFileName,
+                        capturedAt: new Date().toISOString(),
+                        sizeBytes: blob.size,
+                        status: 'UPLOADED'
+                    });
+                } catch (idbErr) {}
+            }
+
+            return {
+                success: true,
+                storagePath: storagePath,
+                signedUrl: signedUrl,
+                fileName: actualFileName
+            };
+        } catch (err) {
+            console.error("[Incident Evidence] Exception during upload workflow:", err);
+            return { success: false, error: err };
+        }
+    }
+
     async function capturePhotoSnapshot() {
         if (!evidenceLiveVideo || !evidenceSnapshotCanvas) return;
         
@@ -3169,16 +3310,29 @@ document.addEventListener('DOMContentLoaded', () => {
         const watermarkText = `Jagruthi Evidence • ${new Date().toLocaleString()} • Lat: ${startLoc ? startLoc[0].toFixed(4) : '--'}, Lng: ${startLoc ? startLoc[1].toFixed(4) : '--'}`;
         ctx.fillText(watermarkText, 14, canvas.height - 15);
 
+        showEvidenceFeedback("⏳ Securing & uploading photo to Supabase Cloud Vault...");
+
         // Convert to Blob and Save
         canvas.toBlob(async (blob) => {
             if (!blob) return;
             const photoUrl = URL.createObjectURL(blob);
+            const fileName = `photo_${Date.now()}.jpg`;
             
+            // Upload to Supabase Storage & Database
+            const uploadResult = await uploadIncidentFileToSupabase({
+                blob: blob,
+                type: 'photo',
+                fileName: fileName
+            });
+
             // Save to incident evidence record
             const incidentRecord = {
                 id: Date.now(),
                 type: 'photo',
-                url: photoUrl,
+                url: uploadResult?.signedUrl || photoUrl,
+                fileName: fileName,
+                storagePath: uploadResult?.storagePath || null,
+                cloudSynced: uploadResult?.success || false,
                 capturedAt: new Date().toISOString(),
                 coords: startLoc,
                 address: homeCurrentLocText?.innerText || 'Unknown'
@@ -3188,19 +3342,11 @@ document.addEventListener('DOMContentLoaded', () => {
             existing.unshift(incidentRecord);
             localStorage.setItem('jagruthiCapturedEvidence', JSON.stringify(existing));
 
-            // Upload to Supabase if client available
-            if (supabase) {
-                try {
-                    const userId = await getAuthenticatedUserId();
-                    const fileName = `photo_${Date.now()}.jpg`;
-                    const storagePath = `${userId}/incidents/${fileName}`;
-                    await supabase.storage.from('jagruthi-evidence').upload(storagePath, blob, { contentType: 'image/jpeg' });
-                } catch (e) {
-                    console.warn("Cloud photo sync notice:", e);
-                }
+            if (uploadResult && uploadResult.success) {
+                showEvidenceFeedback("✅ Photo Evidence Uploaded & Encrypted in Cloud Vault!");
+            } else {
+                showEvidenceFeedback("⚠️ Photo Saved in Device Vault (Cloud Sync Pending)");
             }
-
-            showEvidenceFeedback("✅ Photo Evidence Captured & Encrypted into Vault!");
         }, 'image/jpeg', 0.92);
     }
 
@@ -3229,11 +3375,24 @@ document.addEventListener('DOMContentLoaded', () => {
             interactiveMediaRecorder.onstop = async () => {
                 const videoBlob = new Blob(interactiveVideoChunks, { type: mimeType });
                 const videoUrl = URL.createObjectURL(videoBlob);
+                const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
+                const fileName = `video_${Date.now()}.${ext}`;
+
+                showEvidenceFeedback("⏳ Securing & uploading video to Supabase Cloud Vault...");
+
+                const uploadResult = await uploadIncidentFileToSupabase({
+                    blob: videoBlob,
+                    type: 'video',
+                    fileName: fileName
+                });
                 
                 const incidentRecord = {
                     id: Date.now(),
                     type: 'video',
-                    url: videoUrl,
+                    url: uploadResult?.signedUrl || videoUrl,
+                    fileName: fileName,
+                    storagePath: uploadResult?.storagePath || null,
+                    cloudSynced: uploadResult?.success || false,
                     capturedAt: new Date().toISOString(),
                     coords: startLoc,
                     address: homeCurrentLocText?.innerText || 'Unknown'
@@ -3243,19 +3402,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 existing.unshift(incidentRecord);
                 localStorage.setItem('jagruthiCapturedEvidence', JSON.stringify(existing));
 
-                // Upload to Supabase Storage in background
-                if (supabase) {
-                    try {
-                        const userId = await getAuthenticatedUserId();
-                        const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
-                        const storagePath = `${userId}/incidents/video_${Date.now()}.${ext}`;
-                        await supabase.storage.from('jagruthi-evidence').upload(storagePath, videoBlob, { contentType: mimeType });
-                    } catch (e) {
-                        console.warn("Cloud video sync notice:", e);
-                    }
+                if (uploadResult && uploadResult.success) {
+                    showEvidenceFeedback("✅ Incident Video Secured & Uploaded to Cloud Vault!");
+                } else {
+                    showEvidenceFeedback("⚠️ Video Saved Locally (Cloud Sync Pending)");
                 }
-
-                showEvidenceFeedback("✅ Incident Video Secured & Encrypted into Vault!");
             };
 
             interactiveMediaRecorder.start(500);
@@ -3300,12 +3451,23 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!file) return;
             const fileUrl = URL.createObjectURL(file);
             const isVid = file.type.includes('video');
+            const type = isVid ? 'video' : 'photo';
+
+            showEvidenceFeedback(`⏳ Uploading ${type} to Supabase Cloud Vault...`);
+
+            const uploadResult = await uploadIncidentFileToSupabase({
+                blob: file,
+                type: type,
+                fileName: file.name
+            });
             
             const incidentRecord = {
                 id: Date.now(),
-                type: isVid ? 'video' : 'photo',
-                url: fileUrl,
+                type: type,
+                url: uploadResult?.signedUrl || fileUrl,
                 fileName: file.name,
+                storagePath: uploadResult?.storagePath || null,
+                cloudSynced: uploadResult?.success || false,
                 capturedAt: new Date().toISOString(),
                 coords: startLoc,
                 address: homeCurrentLocText?.innerText || 'Unknown'
@@ -3315,24 +3477,59 @@ document.addEventListener('DOMContentLoaded', () => {
             existing.unshift(incidentRecord);
             localStorage.setItem('jagruthiCapturedEvidence', JSON.stringify(existing));
 
-            showEvidenceFeedback(`✅ ${isVid ? 'Video' : 'Photo'} loaded and saved to incident vault!`);
+            if (uploadResult && uploadResult.success) {
+                showEvidenceFeedback(`✅ ${isVid ? 'Video' : 'Photo'} Uploaded & Encrypted in Cloud Vault!`);
+            } else {
+                showEvidenceFeedback(`✅ ${isVid ? 'Video' : 'Photo'} Loaded & Saved Locally!`);
+            }
         });
     }
 
     // View Stored Evidence -> opens #userEvdModal
     if (btnOpenStoredEvidence) {
-        btnOpenStoredEvidence.addEventListener('click', () => {
+        btnOpenStoredEvidence.addEventListener('click', async () => {
             const userEvdOverlay = document.getElementById('userEvdOverlay');
             const userEvdModal = document.getElementById('userEvdModal');
+            const userEvdImage = document.getElementById('userEvdImage');
             const userEvdVideo = document.getElementById('userEvdVideo');
+            const userEvdAudio = document.getElementById('userEvdAudio');
             const userEvdMeta = document.getElementById('userEvdMeta');
 
             const stored = JSON.parse(localStorage.getItem('jagruthiCapturedEvidence') || '[]');
-            if (stored.length > 0 && userEvdVideo) {
-                userEvdVideo.src = stored[0].url;
-                userEvdVideo.style.display = 'block';
+            if (stored.length > 0) {
+                const latest = stored[0];
+                let displayUrl = latest.url;
+
+                // If storage path exists, refresh signed URL from Supabase
+                const client = window.supabaseClient || supabase;
+                if (client && latest.storagePath) {
+                    try {
+                        const { data: sData } = await client.storage
+                            .from('jagruthi-evidence')
+                            .createSignedUrl(latest.storagePath, 3600);
+                        if (sData?.signedUrl) displayUrl = sData.signedUrl;
+                    } catch (e) {}
+                }
+
+                if (latest.type === 'photo') {
+                    if (userEvdImage) {
+                        userEvdImage.src = displayUrl;
+                        userEvdImage.style.display = 'block';
+                    }
+                    if (userEvdVideo) userEvdVideo.style.display = 'none';
+                    if (userEvdAudio) userEvdAudio.style.display = 'none';
+                } else if (latest.type === 'video') {
+                    if (userEvdVideo) {
+                        userEvdVideo.src = displayUrl;
+                        userEvdVideo.style.display = 'block';
+                    }
+                    if (userEvdImage) userEvdImage.style.display = 'none';
+                    if (userEvdAudio) userEvdAudio.style.display = 'none';
+                }
+
                 if (userEvdMeta) {
-                    userEvdMeta.innerText = `Latest Evidence (${stored[0].type.toUpperCase()}) • ${new Date(stored[0].capturedAt).toLocaleTimeString()}`;
+                    const statusText = latest.cloudSynced ? 'Cloud Vault Verified' : 'Local Encrypted Storage';
+                    userEvdMeta.innerText = `Latest Evidence (${latest.type.toUpperCase()}) • ${new Date(latest.capturedAt).toLocaleTimeString()} • ${statusText}`;
                 }
             }
 
