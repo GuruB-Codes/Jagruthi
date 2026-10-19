@@ -3109,12 +3109,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (captureEvidenceOverlay) captureEvidenceOverlay.addEventListener('click', closeEvidenceModal);
 
     // Camera Flip (Front / Back)
-    if (btnFlipCamera) {
-        btnFlipCamera.addEventListener('click', () => {
-            cameraFacingMode = cameraFacingMode === 'user' ? 'environment' : 'user';
-            startInteractiveCamera();
-        });
+    const btnFlipCameraHeader = document.getElementById('btnFlipCameraHeader');
+    function toggleCameraFlip() {
+        cameraFacingMode = cameraFacingMode === 'user' ? 'environment' : 'user';
+        startInteractiveCamera();
     }
+    if (btnFlipCamera) btnFlipCamera.addEventListener('click', toggleCameraFlip);
+    if (btnFlipCameraHeader) btnFlipCameraHeader.addEventListener('click', toggleCameraFlip);
 
     // Switch Photo / Video Modes
     if (btnModePhoto) {
@@ -3773,10 +3774,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (btnQuickSafetyGuide) btnQuickSafetyGuide.addEventListener('click', openQuickGuide);
-    if (btnGridInstructions) btnGridInstructions.addEventListener('click', openQuickGuide);
     if (quickGuideBackBtn) quickGuideBackBtn.addEventListener('click', goBackQuickGuide);
     if (quickGuideGoBackBtn) quickGuideGoBackBtn.addEventListener('click', goBackQuickGuide);
-    if (quickGuideLangBtn) quickGuideLangBtn.addEventListener('click', toggleQuickGuideLanguage);
 
     // Home Tab Test Alert Button
     const homeTestAlertBtn = document.getElementById('homeTestAlertBtn');

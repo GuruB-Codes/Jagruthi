@@ -1,12 +1,12 @@
 :root {
-    /* Color Palette */
-    --primary: #6366f1;
-    --primary-light: #818cf8;
-    --primary-dark: #4f46e5;
-    --secondary: #a855f7;
+    /* Color Palette — Harmonious Light Red & Light White Theme */
+    --primary: #e11d48;
+    --primary-light: #ffe4e6;
+    --primary-dark: #be123c;
+    --secondary: #fb7185;
     
-    --bg-main: #f8fafc;
-    --card-bg: rgba(255, 255, 255, 0.85);
+    --bg-main: #fff8f8;
+    --card-bg: rgba(255, 255, 255, 0.95);
     
     --text-dark: #0f172a;
     --text-medium: #475569;
@@ -16,9 +16,9 @@
     --success-light: #d1fae5;
     --success-dark: #059669;
     
-    --danger: #ef4444;
+    --danger: #e11d48;
     --danger-light: #fee2e2;
-    --danger-dark: #b91c1c;
+    --danger-dark: #be123c;
     
     --warning: #f59e0b;
     --warning-light: #fef3c7;
@@ -31,10 +31,10 @@
     --radius-lg: 28px;
     --radius-round: 9999px;
     
-    --shadow-sm: 0 4px 16px rgba(0, 0, 0, 0.08); /* Stronger shadow */
-    --shadow-md: 0 12px 32px rgba(99, 102, 241, 0.15);
+    --shadow-sm: 0 4px 16px rgba(225, 29, 72, 0.05);
+    --shadow-md: 0 12px 32px rgba(225, 29, 72, 0.12);
     --shadow-lg: 0 24px 48px rgba(15, 23, 42, 0.12);
-    --shadow-danger: 0 12px 32px rgba(239, 68, 68, 0.4);
+    --shadow-danger: 0 12px 32px rgba(225, 29, 72, 0.38);
     
     --backdrop-blur: blur(16px);
     --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -50,7 +50,7 @@
 }
 
 body {
-    background-color: #e2e8f0;
+    background-color: #fce7e7;
     color: var(--text-dark);
     min-height: 100vh;
     display: flex;
@@ -76,8 +76,8 @@ body {
     width: 100%;
     max-width: 480px; /* Mobile width constraint */
     background: var(--bg-main);
-    background-image: radial-gradient(circle at top right, #e0e7ff 0%, transparent 40%),
-                      radial-gradient(circle at bottom left, #f3e8ff 0%, transparent 40%);
+    background-image: radial-gradient(circle at top right, #ffe4e6 0%, transparent 40%),
+                      radial-gradient(circle at bottom left, #fff1f2 0%, transparent 40%);
     min-height: 100vh;
     position: relative;
     box-shadow: var(--shadow-lg);
@@ -2561,7 +2561,7 @@ input:checked + .switch-slider:before {
 
 .safety-grid-card {
     background: #ffffff;
-    border: 1px solid #f1f5f9;
+    border: 1px solid #fee2e2;
     border-radius: 18px;
     padding: 24px 14px;
     display: flex;
@@ -2571,7 +2571,7 @@ input:checked + .switch-slider:before {
     text-align: center;
     gap: 10px;
     cursor: pointer;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+    box-shadow: 0 4px 16px rgba(225, 29, 72, 0.04);
     transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
     outline: none;
     user-select: none;
@@ -2580,8 +2580,9 @@ input:checked + .switch-slider:before {
 
 .safety-grid-card:hover {
     transform: translateY(-3px);
-    border-color: #cbd5e1;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    border-color: #fca5a5;
+    background: #fff5f7;
+    box-shadow: 0 8px 24px rgba(225, 29, 72, 0.08);
 }
 
 .safety-grid-card:active {
@@ -2590,17 +2591,17 @@ input:checked + .switch-slider:before {
 
 .safety-grid-card.is-pressing {
     transform: scale(0.94) !important;
-    border-color: #6366f1 !important;
-    background: #f5f3ff !important;
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.35), 0 8px 24px rgba(99, 102, 241, 0.25) !important;
+    border-color: #e11d48 !important;
+    background: #fff1f2 !important;
+    box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.25), 0 8px 24px rgba(225, 29, 72, 0.15) !important;
     transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease !important;
 }
 
 .safety-card-hold-hint {
     font-size: 0.68rem;
     font-weight: 600;
-    color: #6366f1;
-    background: #eef2ff;
+    color: #be123c;
+    background: #fee2e2;
     padding: 2px 7px;
     border-radius: 10px;
     display: inline-flex;
@@ -4153,6 +4154,341 @@ input:checked + .switch-slider:before {
     background: #f1f5f9;
     color: #1e293b;
     border-color: #94a3b8;
+}
+
+/* ===================================================
+   EMERGENCY SERVICES FULL PAGE (EXACT USER IMAGE STYLE)
+   =================================================== */
+.services-full-page {
+    background: #fff8f8; /* Soft light red & light white tint */
+}
+
+.services-full-page .quick-guide-header {
+    background: #ffffff;
+    border-bottom: 1px solid #fee2e2;
+}
+
+.services-full-page .quick-guide-head-title {
+    color: #be123c;
+    font-size: 1.15rem;
+    font-weight: 800;
+}
+
+.services-full-page .quick-guide-back-btn {
+    color: #be123c;
+}
+
+.services-full-page-body {
+    padding: 14px 18px 40px;
+    background: #fff8f8;
+}
+
+.services-list-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.service-call-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px 18px;
+    background: #ffffff;
+    border: 1px solid #fee2e2;
+    border-radius: 18px;
+    box-shadow: 0 2px 8px rgba(225, 29, 72, 0.03);
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    -webkit-tap-highlight-color: transparent;
+}
+
+.service-call-card:hover {
+    background: #fff5f7;
+    border-color: #fca5a5;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(225, 29, 72, 0.08);
+}
+
+.service-call-card:active {
+    transform: scale(0.99);
+}
+
+.service-card-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.service-card-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.35rem;
+    flex-shrink: 0;
+}
+
+.service-card-icon.icon-red {
+    background: #fee2e2;
+    color: #e11d48;
+}
+
+.service-card-icon.icon-blue {
+    background: #eff6ff;
+    color: #2563eb;
+}
+
+.service-card-icon.icon-orange {
+    background: #fff7ed;
+    color: #ea580c;
+}
+
+.service-card-icon.icon-pink {
+    background: #fdf2f8;
+    color: #db2777;
+}
+
+.service-card-icon.icon-purple {
+    background: #f5f3ff;
+    color: #7c3aed;
+}
+
+.service-card-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.service-card-title {
+    font-size: 0.98rem;
+    font-weight: 700;
+    color: #1e293b;
+    line-height: 1.25;
+}
+
+.service-card-number {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #64748b;
+    margin-top: 3px;
+}
+
+.service-card-phone-btn {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.35rem;
+    color: #16a34a; /* Distinct green telephone receiver icon */
+    transition: transform 0.2s;
+}
+
+.service-call-card:hover .service-card-phone-btn {
+    transform: scale(1.18);
+}
+
+/* ===================================================
+   SAFETY INSTRUCTIONS FULL PAGE
+   =================================================== */
+.instructions-full-page {
+    background: #fffafa;
+}
+
+.instructions-full-page .quick-guide-header {
+    background: #ffffff;
+    border-bottom: 1px solid #fee2e2;
+}
+
+.instructions-full-page .quick-guide-head-title {
+    color: #be123c;
+    font-size: 1.15rem;
+    font-weight: 800;
+}
+
+.instructions-full-page .quick-guide-back-btn {
+    color: #be123c;
+}
+
+.instructions-full-page-body {
+    padding: 16px 20px 40px;
+}
+
+.inst-alert-banner {
+    background: #fff1f2;
+    border: 1px solid #fecdd3;
+    border-radius: 18px;
+    padding: 16px 18px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 14px rgba(225, 29, 72, 0.05);
+}
+
+.inst-alert-top {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.inst-alert-icon {
+    color: #e11d48;
+    font-size: 1.6rem;
+    flex-shrink: 0;
+    margin-top: 1px;
+}
+
+.inst-alert-title {
+    color: #9f1239;
+    font-size: 0.98rem;
+    font-weight: 800;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.inst-alert-sub {
+    color: #881337;
+    font-size: 0.83rem;
+    line-height: 1.45;
+    margin: 0;
+}
+
+.inst-btn-call112 {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 12px 18px;
+    border-radius: 24px;
+    background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%);
+    color: #ffffff;
+    text-decoration: none;
+    font-weight: 800;
+    font-size: 0.88rem;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    box-shadow: 0 4px 14px rgba(225, 29, 72, 0.28);
+    transition: all 0.2s;
+}
+
+.inst-btn-call112:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(225, 29, 72, 0.38);
+}
+
+.instructions-steps-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.instruction-step-card {
+    background: #ffffff;
+    border: 1px solid #fee2e2;
+    border-radius: 16px;
+    padding: 14px 16px;
+    box-shadow: 0 2px 8px rgba(225, 29, 72, 0.02);
+}
+
+.inst-step-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.inst-step-badge {
+    background: #fee2e2;
+    color: #be123c;
+    width: 24px;
+    height: 24px;
+    min-width: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.78rem;
+    font-weight: 800;
+}
+
+.inst-step-title {
+    font-size: 0.94rem;
+    color: #0f172a;
+    font-weight: 700;
+}
+
+.inst-step-bullets {
+    padding-left: 32px;
+    margin: 0;
+    font-size: 0.82rem;
+    color: #475569;
+    line-height: 1.55;
+}
+
+.inst-step-bullets li {
+    margin-bottom: 4px;
+}
+
+/* ===================================================
+   INCIDENT EVIDENCE FULL PAGE
+   =================================================== */
+.evidence-full-page {
+    background: #090d16;
+    color: #ffffff;
+}
+
+.evidence-full-page .quick-guide-header {
+    background: #0f172a;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.evidence-full-page .quick-guide-head-title {
+    color: #ffffff;
+    font-size: 1.12rem;
+}
+
+.evidence-full-page .quick-guide-back-btn {
+    color: #fda4af;
+}
+
+.evidence-full-page-body {
+    padding: 16px 20px 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    background: #090d16;
+}
+
+.evidence-full-page .evd-camera-viewport-wrap {
+    height: 320px;
+}
+
+.evd-security-info-box {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 14px;
+    padding: 14px 16px;
+    color: #94a3b8;
+    font-size: 0.8rem;
+    line-height: 1.45;
+    margin-top: 4px;
+}
+
+.evd-security-info-box .evd-info-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #34d399;
+    font-weight: 700;
+    font-size: 0.86rem;
+    margin-bottom: 6px;
+}
+
+.evd-security-info-box p {
+    margin: 0;
 }
 
 
