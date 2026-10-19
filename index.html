@@ -133,6 +133,17 @@
                             </button>
                         </div>
                     </div>
+
+                    <!-- Quick Safety Guide Banner (Bottom of Home Page) -->
+                    <div class="quick-guide-banner" id="btnQuickSafetyGuide" role="button" tabindex="0" aria-label="Quick Safety Guide">
+                        <div class="quick-guide-icon-wrap">
+                            <i class="las la-book-open"></i>
+                        </div>
+                        <div class="quick-guide-text">
+                            <h3 class="quick-guide-title">Quick Safety Guide</h3>
+                            <p class="quick-guide-sub">Get immediate offline safety advice</p>
+                        </div>
+                    </div>
                 </div>
 
             </div>
@@ -874,6 +885,61 @@
                         <li>Use <strong>Capture Evidence</strong> to record encrypted photos/audio without leaving traces on device storage.</li>
                         <li>Keep emergency contacts updated with at least 2 family members or trusted friends.</li>
                     </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= QUICK SAFETY GUIDE FULL PAGE ================= -->
+    <div class="quick-guide-page" id="quickGuidePage" role="region" aria-label="Quick Safety Guide">
+        
+        <!-- Sticky Header with Back and Title -->
+        <div class="quick-guide-header">
+            <button type="button" class="quick-guide-back-btn" id="quickGuideBackBtn" aria-label="Back">
+                <i class="las la-arrow-left"></i>
+            </button>
+            <h3 class="quick-guide-head-title" id="quickGuideHeadTitle">Quick Safety Guide</h3>
+            <div style="width: 36px;" aria-hidden="true"></div>
+        </div>
+
+        <div class="quick-guide-body">
+            <!-- VIEW 1: Questions List -->
+            <div id="quickGuideListView">
+                <div class="quick-guide-intro">
+                    <h2 class="quick-guide-heading" id="quickGuideHeading">Select what you are experiencing</h2>
+                    <p class="quick-guide-subheading" id="quickGuideSubheading">Choose your situation to get immediate safety guidance</p>
+                </div>
+                
+                <div class="quick-guide-items" id="quickGuideItemsContainer">
+                    <!-- Dynamic question cards rendered by JS -->
+                </div>
+            </div>
+
+            <!-- VIEW 2: Detail / Answer View -->
+            <div id="quickGuideDetailView" class="hidden">
+                <!-- Selected Situation Pill -->
+                <div class="quick-guide-selected-pill" id="quickGuideSelectedPill">
+                    <div class="qg-pill-icon" id="qgPillIcon"><i class="las la-plus-square"></i></div>
+                    <span class="qg-pill-text" id="qgPillText">I need to find a nearby hospital</span>
+                </div>
+
+                <!-- Safety Advice Section -->
+                <div class="quick-guide-section-label" id="qgAdviceLabel">SAFETY ADVICE</div>
+                <div class="quick-guide-advice-box" id="qgAdviceBox">
+                    Select 'Nearby Hospital' to see all hospitals near you on the map. This will help you get medical assistance as quickly as possible.
+                </div>
+
+                <!-- Recommended Actions Section -->
+                <div class="quick-guide-section-label" id="qgActionsLabel">RECOMMENDED ACTIONS</div>
+                <div class="quick-guide-actions-list" id="qgActionsList">
+                    <!-- Action buttons injected dynamically -->
+                </div>
+
+                <!-- Go Back Button -->
+                <div style="text-align: center; margin-top: 10px; margin-bottom: 24px;">
+                    <button type="button" class="quick-guide-goback-btn" id="quickGuideGoBackBtn">
+                        GO BACK
+                    </button>
                 </div>
             </div>
         </div>
