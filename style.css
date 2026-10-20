@@ -1459,8 +1459,8 @@ input:checked + .switch-slider:before {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -64%);
-    width: clamp(230px, 66vw, 290px);
-    height: clamp(230px, 66vw, 290px);
+    width: clamp(190px, 54vw, 240px);
+    height: clamp(190px, 54vw, 240px);
     border-radius: 50%;
     background: radial-gradient(circle, rgba(239, 68, 68, 0.18) 0%, rgba(239, 68, 68, 0.05) 55%, transparent 72%);
     z-index: 0;
@@ -1476,14 +1476,14 @@ input:checked + .switch-slider:before {
 .main-central-sos-btn {
     position: relative;
     z-index: 2;
-    width: clamp(210px, 58vw, 260px);
-    height: clamp(210px, 58vw, 260px);
+    width: clamp(170px, 48vw, 212px);
+    height: clamp(170px, 48vw, 212px);
     border-radius: 50%;
     background: linear-gradient(145deg, #ef4444 0%, #dc2626 50%, #b91c1c 100%);
-    border: 7px solid #fee2e2;
+    border: 6px solid #fee2e2;
     color: white;
     cursor: pointer;
-    box-shadow: 0 16px 36px rgba(220, 38, 38, 0.38), 0 4px 12px rgba(220, 38, 38, 0.2), inset 0 3px 6px rgba(255, 255, 255, 0.35);
+    box-shadow: 0 14px 32px rgba(220, 38, 38, 0.36), 0 4px 12px rgba(220, 38, 38, 0.2), inset 0 3px 6px rgba(255, 255, 255, 0.35);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1511,22 +1511,22 @@ input:checked + .switch-slider:before {
 }
 
 .sos-btn-inner .sos-icon {
-    font-size: 3.4rem;
+    font-size: 2.9rem;
     color: #ffffff;
     filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.25));
 }
 
 .sos-btn-inner .sos-label {
-    font-size: 2.3rem;
+    font-size: 2.1rem;
     font-weight: 800;
-    letter-spacing: 3px;
+    letter-spacing: 2.5px;
     color: #ffffff;
     text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .sos-caption-title {
-    margin-top: 16px;
-    font-size: 1.25rem;
+    margin-top: 14px;
+    font-size: 1.22rem;
     font-weight: 700;
     color: #0f172a;
     letter-spacing: -0.2px;
@@ -1538,27 +1538,10 @@ input:checked + .switch-slider:before {
     margin-top: 4px;
 }
 
-/* SOS + Siren Mode Pill inside Central SOS Button */
-.sos-mode-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 0.72rem;
-    font-weight: 700;
-    letter-spacing: 1.2px;
-    text-transform: uppercase;
-    color: #fee2e2;
-    background: rgba(0, 0, 0, 0.25);
-    border: 1px solid rgba(254, 226, 226, 0.4);
-    padding: 3px 10px;
-    border-radius: 999px;
-    margin-top: 4px;
-}
-
 /* Silent SOS Button Wrapper & Button (Smaller than SOS + Siren Button) */
 .silent-sos-wrapper {
     width: 100%;
-    max-width: 330px;
+    max-width: 250px;
     margin: 14px auto 6px;
     display: flex;
     justify-content: center;
@@ -1569,13 +1552,14 @@ input:checked + .switch-slider:before {
 .silent-sos-btn {
     position: relative;
     width: 100%;
-    min-height: 56px;
+    min-height: 48px;
     background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 60%, #3b0764 100%);
     border: 1.5px solid rgba(239, 68, 68, 0.5);
     border-radius: 999px;
-    padding: 8px 16px 8px 10px;
+    padding: 6px 18px 6px 8px;
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 12px;
     color: #ffffff;
     cursor: pointer;
@@ -1584,7 +1568,6 @@ input:checked + .switch-slider:before {
     user-select: none;
     outline: none;
     overflow: hidden;
-    text-align: left;
 }
 
 .silent-sos-btn:hover {
@@ -1610,64 +1593,30 @@ input:checked + .switch-slider:before {
 }
 
 .silent-sos-icon-wrap {
-    width: 40px;
-    height: 40px;
+    width: 36px;
+    height: 36px;
     border-radius: 50%;
     background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
     color: #ffffff;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.3rem;
+    font-size: 1.25rem;
     flex-shrink: 0;
     box-shadow: 0 2px 8px rgba(239, 68, 68, 0.45);
 }
 
 .silent-sos-content {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    text-align: left;
-    min-width: 0;
-}
-
-.silent-sos-title-row {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 8px;
+    justify-content: center;
 }
 
 .silent-sos-label {
-    font-size: 0.98rem;
+    font-size: 0.96rem;
     font-weight: 800;
-    letter-spacing: 0.8px;
+    letter-spacing: 1px;
     color: #f8fafc;
-}
-
-.silent-sos-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 3px;
-    font-size: 0.65rem;
-    font-weight: 700;
-    color: #fee2e2;
-    background: rgba(239, 68, 68, 0.3);
-    border: 1px solid rgba(239, 68, 68, 0.6);
-    padding: 2px 7px;
-    border-radius: 999px;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-}
-
-.silent-sos-desc {
-    font-size: 0.72rem;
-    color: #cbd5e1;
-    line-height: 1.25;
-    margin-top: 2px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
 }
 
 /* 3. Shake to SOS Card */

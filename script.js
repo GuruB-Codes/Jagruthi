@@ -4536,7 +4536,7 @@ document.addEventListener('DOMContentLoaded', () => {
             advice: "Select 'Nearby Hospital' to see all hospitals near you on the map. This will help you get medical assistance as quickly as possible.",
             adviceTa: "வரைபடத்தில் உங்களுக்கு அருகிலுள்ள அனைத்து மருத்துவமனைகளையும் காண 'அருகிலுள்ள மருத்துவமனை' என்பதை தேர்ந்தெடுக்கவும். இது மிக விரைவாக மருத்துவ உதவி பெற உதவும்.",
             actions: [
-                { icon: 'las la-plus-square', label: 'NEARBY HOSPITAL', labelTa: 'அருகிலுள்ள மருத்துவமனை', type: 'services' },
+                { icon: 'las la-plus-square', label: 'NEARBY HOSPITAL', labelTa: 'அருகிலுள்ள மருத்துவமனை', type: 'hospital_maps' },
                 { icon: 'las la-crosshairs', label: 'MY LOCATION', labelTa: 'என் இருப்பிடம்', type: 'location' },
                 { icon: 'las la-user-friends', label: 'EMERGENCY CONTACTS', labelTa: 'அவசர தொடர்புகள்', type: 'contacts' }
             ]
@@ -4572,10 +4572,10 @@ document.addEventListener('DOMContentLoaded', () => {
             icon: 'las la-bus',
             question: 'I am being harassed on a bus',
             questionTa: 'பேருந்தில் துன்புறுத்தப்படுகிறேன்',
-            advice: "Alert the bus conductor and driver loudly right away. Request the driver to stop at the nearest police station or crowded stop. Share your live journey with your emergency contacts.",
-            adviceTa: "உடனடியாக பேருந்து நடத்துனர் மற்றும் ஓட்டுநரிடம் தெரிவியுங்கள். பயணிகளின் கவனத்தை ஈர்த்து உங்கள் நேரலை இருப்பிடத்தை பகிருங்கள்.",
+            advice: "Alert the bus conductor and driver loudly right away. Request the driver to stop at the nearest police station or crowded stop. Activate SOS to trigger the siren and draw immediate bystander attention.",
+            adviceTa: "உடனடியாக பேருந்து நடத்துனர் மற்றும் ஓட்டுநரிடம் தெரிவியுங்கள். பயணிகளின் கவனத்தை ஈர்க்க SOS சைரனை இயக்கவும்.",
             actions: [
-                { icon: 'las la-crosshairs', label: 'MY LOCATION', labelTa: 'என் இருப்பிடம்', type: 'location' },
+                { icon: 'las la-broadcast-tower', label: 'ACTIVATE SOS', labelTa: 'SOS அனுப்பு', type: 'sos' },
                 { icon: 'las la-user-friends', label: 'EMERGENCY CONTACTS', labelTa: 'அவசர தொடர்புகள்', type: 'contacts' },
                 { icon: 'las la-shield-alt', label: 'POLICE EMERGENCY 112', labelTa: 'காவல் உதவி 112', type: 'call112' }
             ]
@@ -4585,10 +4585,10 @@ document.addEventListener('DOMContentLoaded', () => {
             icon: 'las la-shield-alt',
             question: 'I feel unsafe',
             questionTa: 'நான் பாதுகாப்பற்றதாக உணர்கிறேன்',
-            advice: "Trust your intuition. Keep your phone ready in your hand, broadcast your live GPS to your guardians, and initiate a Fake Call so potential threats know you are in active communication.",
-            adviceTa: "உங்கள் உள்ளுணர்வை நம்புங்கள். போனை கையில் தயாராக வைத்திருங்கள், நேரலை இருப்பிடத்தை குடும்பத்தினருக்கு பகிருங்கள்.",
+            advice: "Trust your intuition. Head directly towards a nearby safe place like a police station or hospital, initiate a Fake Call to look engaged, and alert your emergency contacts.",
+            adviceTa: "உங்கள் உள்ளுணர்வை நம்புங்கள். அருகிலுள்ள பாதுகாப்பான இடத்திற்கு செல்லுங்கள், போலி அழைப்பை இயக்கவும் மற்றும் அவசர தொடர்புகளுக்கு தெரிவிக்கவும்.",
             actions: [
-                { icon: 'las la-crosshairs', label: 'MY LOCATION', labelTa: 'என் இருப்பிடம்', type: 'location' },
+                { icon: 'las la-shield-alt', label: 'NEARBY SAFE PLACES', labelTa: 'அருகிலுள்ள பாதுகாப்பான இடங்கள்', type: 'safeplaces' },
                 { icon: 'las la-phone-volume', label: 'FAKE CALL', labelTa: 'போலி அழைப்பு', type: 'fakecall' },
                 { icon: 'las la-user-friends', label: 'EMERGENCY CONTACTS', labelTa: 'அவசர தொடர்புகள்', type: 'contacts' }
             ]
@@ -4737,21 +4737,64 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    function openNearbyHospitalsInGoogleMaps() {
+        if (startLoc && startLoc.length >= 2) {
+            const lat = Number(startLoc[0]).toFixed(6);
+            const lng = Number(startLoc[1]).toFixed(6);
+            window.open(`https://www.google.com/maps/search/hospitals+near+me/@${lat},${lng},14z`, '_blank');
+        } else if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    const lat = pos.coords.latitude.toFixed(6);
+                    const lng = pos.coords.longitude.toFixed(6);
+                    startLoc = [pos.coords.latitude, pos.coords.longitude];
+                    window.open(`https://www.google.com/maps/search/hospitals+near+me/@${lat},${lng},14z`, '_blank');
+                },
+                () => {
+                    window.open('https://www.google.com/maps/search/hospitals+near+me', '_blank');
+                },
+                { enableHighAccuracy: true, timeout: 5000 }
+            );
+        } else {
+            window.open('https://www.google.com/maps/search/hospitals+near+me', '_blank');
+        }
+    }
+
     function executeQuickGuideAction(type) {
         closeQuickGuide();
-        if (type === 'services') {
+        if (type === 'hospital_maps') {
+            openNearbyHospitalsInGoogleMaps();
+        } else if (type === 'services') {
             openServicesSheet();
         } else if (type === 'location') {
-            const navTabJourney = document.getElementById('navTabJourney');
-            if (navTabJourney) navTabJourney.click();
+            const navTabSafety = document.getElementById('navTabSafety');
+            if (navTabSafety) {
+                navTabSafety.click();
+                if (typeof window.updateSafetyLocationUI === 'function') {
+                    window.updateSafetyLocationUI();
+                }
+            }
         } else if (type === 'contacts') {
             openContactsSheet();
         } else if (type === 'fakecall') {
             const btnGridFakeCall = document.getElementById('btnGridFakeCall');
             if (btnGridFakeCall) btnGridFakeCall.click();
         } else if (type === 'sos') {
-            const navTabSos = document.getElementById('navTabSos');
-            if (navTabSos) navTabSos.click();
+            const navTabHome = document.getElementById('navTabHome');
+            if (navTabHome) navTabHome.click();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            const mainCentralSosBtn = document.getElementById('mainCentralSosBtn');
+            if (mainCentralSosBtn) {
+                mainCentralSosBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        } else if (type === 'safeplaces') {
+            const nearbyPoliceStationsModal = document.getElementById('nearbyPoliceStationsModal');
+            if (nearbyPoliceStationsModal) {
+                nearbyPoliceStationsModal.classList.add('show');
+                if (typeof window.loadAndDisplayNearbySafePlaces === 'function') {
+                    window.loadAndDisplayNearbySafePlaces('police');
+                }
+            }
         } else if (type === 'evidence') {
             const btnGridEvidence = document.getElementById('btnGridEvidence');
             if (btnGridEvidence) btnGridEvidence.click();
