@@ -5021,35 +5021,42 @@ input:checked + .switch-slider:before {
 
 /* Category Filter Tabs Bar */
 .safe-places-category-bar {
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
     gap: 8px;
-    overflow-x: auto;
-    padding-bottom: 2px;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
+    width: 100%;
 }
-.safe-places-category-bar::-webkit-scrollbar {
-    display: none;
+
+@media (min-width: 520px) {
+    .safe-places-category-bar {
+        grid-template-columns: repeat(4, 1fr);
+    }
 }
 
 .safe-category-tab {
-    flex: 1;
-    min-width: 82px;
+    width: 100%;
+    min-height: 38px;
     background: #ffffff;
     border: 1px solid #ffe4e6;
-    color: #64748b;
-    border-radius: 20px;
-    padding: 7px 10px;
-    font-size: 0.78rem;
+    color: #475569;
+    border-radius: 999px;
+    padding: 8px 12px;
+    font-size: 0.82rem;
     font-weight: 600;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 5px;
+    gap: 6px;
     cursor: pointer;
     white-space: nowrap;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+    box-sizing: border-box;
+}
+
+.safe-category-tab i {
+    font-size: 0.95rem;
+    flex-shrink: 0;
 }
 
 .safe-category-tab:hover {

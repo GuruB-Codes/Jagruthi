@@ -77,7 +77,6 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             userMarker.setLatLng(startLoc);
         }
-        userMarker.bindPopup("Your Current Location (Live GPS)").openPopup();
         userMap.setView(startLoc, 16);
 
         if (sourceInput) sourceInput.value = "Current Location";
@@ -4532,154 +4531,130 @@ document.addEventListener('DOMContentLoaded', () => {
             id: 'hospital',
             icon: 'las la-plus-square',
             question: 'I need to find a nearby hospital',
-            questionTa: 'அருகிலுள்ள மருத்துவமனையை கண்டுபிடிக்க வேண்டும்',
             advice: "Select 'Nearby Hospital' to see all hospitals near you on the map. This will help you get medical assistance as quickly as possible.",
-            adviceTa: "வரைபடத்தில் உங்களுக்கு அருகிலுள்ள அனைத்து மருத்துவமனைகளையும் காண 'அருகிலுள்ள மருத்துவமனை' என்பதை தேர்ந்தெடுக்கவும். இது மிக விரைவாக மருத்துவ உதவி பெற உதவும்.",
             actions: [
-                { icon: 'las la-plus-square', label: 'NEARBY HOSPITAL', labelTa: 'அருகிலுள்ள மருத்துவமனை', type: 'hospital_maps' },
-                { icon: 'las la-crosshairs', label: 'MY LOCATION', labelTa: 'என் இருப்பிடம்', type: 'location' },
-                { icon: 'las la-user-friends', label: 'EMERGENCY CONTACTS', labelTa: 'அவசர தொடர்புகள்', type: 'contacts' }
+                { icon: 'las la-plus-square', label: 'NEARBY HOSPITAL', type: 'hospital_maps' },
+                { icon: 'las la-crosshairs', label: 'MY LOCATION', type: 'location' },
+                { icon: 'las la-user-friends', label: 'EMERGENCY CONTACTS', type: 'contacts' }
             ]
         },
         {
             id: 'following',
             icon: 'las la-user-secret',
             question: 'Someone is following me',
-            questionTa: 'யாரோ என்னை பின்தொடர்கிறார்கள்',
             advice: "Head immediately towards a well-lit, crowded area, shop, or police checkpoint. Avoid isolated shortcuts. Call a trusted contact or 112, or trigger a Fake Call to look engaged.",
-            adviceTa: "உடனடியாக வெளிச்சமான கடை அல்லது மக்கள் நடமாட்டம் உள்ள பகுதிக்கு செல்லுங்கள். தனிமையான பாதைகளை தவிர்க்கவும். 112 அல்லது குடும்பத்தினரை அழையுங்கள்.",
             actions: [
-                { icon: 'las la-phone-volume', label: 'FAKE CALL', labelTa: 'போலி அழைப்பு', type: 'fakecall' },
-                { icon: 'las la-crosshairs', label: 'MY LOCATION', labelTa: 'என் இருப்பிடம்', type: 'location' },
-                { icon: 'las la-user-friends', label: 'EMERGENCY CONTACTS', labelTa: 'அவசர தொடர்புகள்', type: 'contacts' }
+                { icon: 'las la-phone-volume', label: 'FAKE CALL', type: 'fakecall' },
+                { icon: 'las la-crosshairs', label: 'MY LOCATION', type: 'location' },
+                { icon: 'las la-user-friends', label: 'EMERGENCY CONTACTS', type: 'contacts' }
             ]
         },
         {
             id: 'harassed',
             icon: 'las la-exclamation-triangle',
             question: 'I am being harassed',
-            questionTa: 'நான் துன்புறுத்தப்படுகிறேன்',
             advice: "Speak firmly and loudly to draw public attention. Move towards nearest shopkeepers or authorities. Use Capture Evidence for discreet recording or activate SOS if danger escalates.",
-            adviceTa: "சத்தமாக பேசி பொதுமக்களின் கவனத்தை ஈர்க்கவும். உடனடியாக பாதுகாப்பு நபர்களிடம் செல்லுங்கள். தேவைப்பட்டால் SOS அல்லது ஆதார பதிவை இயக்கவும்.",
             actions: [
-                { icon: 'las la-camera', label: 'CAPTURE EVIDENCE', labelTa: 'ஆதாரம் பதிவு', type: 'evidence' },
-                { icon: 'las la-broadcast-tower', label: 'ACTIVATE SOS', labelTa: 'SOS அனுப்பு', type: 'sos' },
-                { icon: 'las la-shield-alt', label: 'EMERGENCY SERVICES', labelTa: '112 காவல் உதவி', type: 'services' }
+                { icon: 'las la-camera', label: 'CAPTURE EVIDENCE', type: 'evidence' },
+                { icon: 'las la-broadcast-tower', label: 'ACTIVATE SOS', type: 'sos' },
+                { icon: 'las la-shield-alt', label: 'EMERGENCY SERVICES', type: 'services' }
             ]
         },
         {
             id: 'bus_harass',
             icon: 'las la-bus',
             question: 'I am being harassed on a bus',
-            questionTa: 'பேருந்தில் துன்புறுத்தப்படுகிறேன்',
             advice: "Alert the bus conductor and driver loudly right away. Request the driver to stop at the nearest police station or crowded stop. Activate SOS to trigger the siren and draw immediate bystander attention.",
-            adviceTa: "உடனடியாக பேருந்து நடத்துனர் மற்றும் ஓட்டுநரிடம் தெரிவியுங்கள். பயணிகளின் கவனத்தை ஈர்க்க SOS சைரனை இயக்கவும்.",
             actions: [
-                { icon: 'las la-broadcast-tower', label: 'ACTIVATE SOS', labelTa: 'SOS அனுப்பு', type: 'sos' },
-                { icon: 'las la-user-friends', label: 'EMERGENCY CONTACTS', labelTa: 'அவசர தொடர்புகள்', type: 'contacts' },
-                { icon: 'las la-shield-alt', label: 'POLICE EMERGENCY 112', labelTa: 'காவல் உதவி 112', type: 'call112' }
+                { icon: 'las la-broadcast-tower', label: 'ACTIVATE SOS', type: 'sos' },
+                { icon: 'las la-user-friends', label: 'EMERGENCY CONTACTS', type: 'contacts' },
+                { icon: 'las la-shield-alt', label: 'POLICE EMERGENCY 112', type: 'call112' }
             ]
         },
         {
             id: 'unsafe',
             icon: 'las la-shield-alt',
             question: 'I feel unsafe',
-            questionTa: 'நான் பாதுகாப்பற்றதாக உணர்கிறேன்',
             advice: "Trust your intuition. Head directly towards a nearby safe place like a police station or hospital, initiate a Fake Call to look engaged, and alert your emergency contacts.",
-            adviceTa: "உங்கள் உள்ளுணர்வை நம்புங்கள். அருகிலுள்ள பாதுகாப்பான இடத்திற்கு செல்லுங்கள், போலி அழைப்பை இயக்கவும் மற்றும் அவசர தொடர்புகளுக்கு தெரிவிக்கவும்.",
             actions: [
-                { icon: 'las la-shield-alt', label: 'NEARBY SAFE PLACES', labelTa: 'அருகிலுள்ள பாதுகாப்பான இடங்கள்', type: 'safeplaces' },
-                { icon: 'las la-phone-volume', label: 'FAKE CALL', labelTa: 'போலி அழைப்பு', type: 'fakecall' },
-                { icon: 'las la-user-friends', label: 'EMERGENCY CONTACTS', labelTa: 'அவசர தொடர்புகள்', type: 'contacts' }
+                { icon: 'las la-shield-alt', label: 'NEARBY SAFE PLACES', type: 'safeplaces' },
+                { icon: 'las la-phone-volume', label: 'FAKE CALL', type: 'fakecall' },
+                { icon: 'las la-user-friends', label: 'EMERGENCY CONTACTS', type: 'contacts' }
             ]
         },
         {
             id: 'alone_scared',
             icon: 'las la-eye-slash',
             question: 'I am alone and scared',
-            questionTa: 'நான் தனியாக பயந்து கொண்டிருக்கிறேன்',
             advice: "Stay inside well-lit buildings or busy commercial stores. Keep someone on speakerphone until you arrive safely. Ensure your live location tracking is broadcasting.",
-            adviceTa: "வெளிச்சமான பொது இடத்தில் இருங்கள். குடும்பத்தினர் அல்லது நண்பர்களை அழையுங்கள். நேரலை ஜிபிஎஸ் இருப்பிடத்தை ஆன் செய்து தயாராக இருங்கள்.",
             actions: [
-                { icon: 'las la-user-friends', label: 'EMERGENCY CONTACTS', labelTa: 'அவசர தொடர்புகள்', type: 'contacts' },
-                { icon: 'las la-crosshairs', label: 'MY LOCATION', labelTa: 'என் இருப்பிடம்', type: 'location' },
-                { icon: 'las la-shield-alt', label: 'EMERGENCY SERVICES', labelTa: 'அவசர உதவி', type: 'services' }
+                { icon: 'las la-user-friends', label: 'EMERGENCY CONTACTS', type: 'contacts' },
+                { icon: 'las la-crosshairs', label: 'MY LOCATION', type: 'location' },
+                { icon: 'las la-shield-alt', label: 'EMERGENCY SERVICES', type: 'services' }
             ]
         },
         {
             id: 'surrounding',
             icon: 'las la-users',
             question: 'People are surrounding me',
-            questionTa: 'மக்கள் என்னை சூழ்ந்து கொள்கிறார்கள்',
             advice: "Make loud, continuous noise to attract immediate bystander intervention. Press and hold Activate SOS to dispatch emergency GPS beacons and alert local patrol units instantly.",
-            adviceTa: "சத்தமாக கூச்சலிட்டு கவனத்தை ஈர்க்கவும். உடனடியாக SOS பட்டனை அழுத்தி காவல் துறைக்கு தகவல் மற்றும் இருப்பிடத்தை அனுப்புங்கள்.",
             actions: [
-                { icon: 'las la-broadcast-tower', label: 'ACTIVATE SOS', labelTa: 'SOS அனுப்பு', type: 'sos' },
-                { icon: 'las la-camera', label: 'CAPTURE EVIDENCE', labelTa: 'ஆதாரம் பதிவு', type: 'evidence' },
-                { icon: 'las la-shield-alt', label: 'POLICE CONTROL 112', labelTa: 'காவல் கட்டுப்பாடு 112', type: 'call112' }
+                { icon: 'las la-broadcast-tower', label: 'ACTIVATE SOS', type: 'sos' },
+                { icon: 'las la-camera', label: 'CAPTURE EVIDENCE', type: 'evidence' },
+                { icon: 'las la-shield-alt', label: 'POLICE CONTROL 112', type: 'call112' }
             ]
         },
         {
             id: 'threatening',
             icon: 'las la-gavel',
             question: 'Someone is threatening me',
-            questionTa: 'யாரோ என்னை மிரட்டுகிறார்கள்',
             advice: "Avoid physical escalation. Step back, maintain safe distance, and look for clear exit paths. Trigger evidence recording discreetly and dispatch an SOS alert immediately.",
-            adviceTa: "நேரடி மோதலில் ஈடுபட வேண்டாம். தப்பிக்கும் வழியை பாருங்கள், மறைமுகமாக ஆதாரத்தை பதிவு செய்து உடனடியாக SOS அனுப்புங்கள்.",
             actions: [
-                { icon: 'las la-camera', label: 'CAPTURE EVIDENCE', labelTa: 'ஆதாரம் பதிவு', type: 'evidence' },
-                { icon: 'las la-broadcast-tower', label: 'ACTIVATE SOS', labelTa: 'SOS அனுப்பு', type: 'sos' },
-                { icon: 'las la-shield-alt', label: 'EMERGENCY SERVICES', labelTa: 'அவசர உதவி', type: 'services' }
+                { icon: 'las la-camera', label: 'CAPTURE EVIDENCE', type: 'evidence' },
+                { icon: 'las la-broadcast-tower', label: 'ACTIVATE SOS', type: 'sos' },
+                { icon: 'las la-shield-alt', label: 'EMERGENCY SERVICES', type: 'services' }
             ]
         },
         {
             id: 'silent_sound',
             icon: 'las la-volume-mute',
             question: 'I cannot make a sound',
-            questionTa: 'என்னால் சத்தம் போட முடியாது',
             advice: "Stay quiet and take cover. Trigger silent SOS — it will silently broadcast your live coordinates and distress message to emergency contacts without making any audio alerts.",
-            adviceTa: "அமைதியாக இருங்கள். சத்தமின்றி SOS எச்சரிக்கையை அனுப்பி உங்கள் இருப்பிடத்தை காவல் மற்றும் அவசர தொடர்புகளுக்கு பகிருங்கள்.",
             actions: [
-                { icon: 'las la-broadcast-tower', label: 'SILENT SOS', labelTa: 'அமைதியான SOS', type: 'sos' },
-                { icon: 'las la-crosshairs', label: 'MY LOCATION', labelTa: 'என் இருப்பிடம்', type: 'location' },
-                { icon: 'las la-user-friends', label: 'EMERGENCY CONTACTS', labelTa: 'அவசர தொடர்புகள்', type: 'contacts' }
+                { icon: 'las la-broadcast-tower', label: 'SILENT SOS', type: 'sos' },
+                { icon: 'las la-crosshairs', label: 'MY LOCATION', type: 'location' },
+                { icon: 'las la-user-friends', label: 'EMERGENCY CONTACTS', type: 'contacts' }
             ]
         },
         {
             id: 'silent_help',
             icon: 'las la-bell-slash',
             question: 'I need help silently',
-            questionTa: 'எனக்கு அமைதியாக உதவி வேண்டும்',
             advice: "Use the discreet emergency distress function to send automated SMS alerts and GPS coordinates to your emergency contacts without alerting anyone around you.",
-            adviceTa: "சுற்றியுள்ளவர்களுக்கு தெரியாமல் உங்கள் அவசர தொடர்புகளுக்கு ஜிபிஎஸ் இருப்பிடத்துடன் அமைதியான அவசர எச்சரிக்கையை அனுப்புங்கள்.",
             actions: [
-                { icon: 'las la-broadcast-tower', label: 'SILENT SOS', labelTa: 'அமைதியான SOS', type: 'sos' },
-                { icon: 'las la-crosshairs', label: 'MY LOCATION', labelTa: 'என் இருப்பிடம்', type: 'location' },
-                { icon: 'las la-user-friends', label: 'EMERGENCY CONTACTS', labelTa: 'அவசர தொடர்புகள்', type: 'contacts' }
+                { icon: 'las la-broadcast-tower', label: 'SILENT SOS', type: 'sos' },
+                { icon: 'las la-crosshairs', label: 'MY LOCATION', type: 'location' },
+                { icon: 'las la-user-friends', label: 'EMERGENCY CONTACTS', type: 'contacts' }
             ]
         },
         {
             id: 'police',
             icon: 'las la-shield-alt',
             question: 'I need to find a nearby police station',
-            questionTa: 'அருகிலுள்ள காவல் நிலையத்தை கண்டுபிடிக்க வேண்டும்',
             advice: "Select 'Police Emergency' to dial 112 or view verified emergency police units and patrol assistance closest to your current location.",
-            adviceTa: "112-ஐ அழைக்க அல்லது உங்கள் இருப்பிடத்திற்கு அருகிலுள்ள காவல் நிலையங்களை காண அவசர காவல் சேவையை தேர்ந்தெடுக்கவும்.",
             actions: [
-                { icon: 'las la-shield-alt', label: 'POLICE EMERGENCY 112', labelTa: 'காவல் உதவி 112', type: 'call112' },
-                { icon: 'las la-crosshairs', label: 'MY LOCATION', labelTa: 'என் இருப்பிடம்', type: 'location' },
-                { icon: 'las la-user-friends', label: 'EMERGENCY CONTACTS', labelTa: 'அவசர தொடர்புகள்', type: 'contacts' }
+                { icon: 'las la-shield-alt', label: 'POLICE EMERGENCY 112', type: 'call112' },
+                { icon: 'las la-crosshairs', label: 'MY LOCATION', type: 'location' },
+                { icon: 'las la-user-friends', label: 'EMERGENCY CONTACTS', type: 'contacts' }
             ]
         }
     ];
 
-    let quickGuideLang = 'en';
     let currentQuickGuideItem = null;
 
     const quickGuidePage = document.getElementById('quickGuidePage');
     const btnQuickSafetyGuide = document.getElementById('btnQuickSafetyGuide');
     const quickGuideBackBtn = document.getElementById('quickGuideBackBtn');
-    const quickGuideLangBtn = document.getElementById('quickGuideLangBtn');
     const quickGuideGoBackBtn = document.getElementById('quickGuideGoBackBtn');
     const quickGuideListView = document.getElementById('quickGuideListView');
     const quickGuideDetailView = document.getElementById('quickGuideDetailView');
@@ -4693,10 +4668,9 @@ document.addEventListener('DOMContentLoaded', () => {
             card.className = 'quick-guide-card';
             card.setAttribute('role', 'button');
             card.setAttribute('tabindex', '0');
-            const qText = quickGuideLang === 'ta' ? item.questionTa : item.question;
             card.innerHTML = `
                 <div class="qg-card-icon"><i class="${item.icon}"></i></div>
-                <span class="qg-card-text">${qText}</span>
+                <span class="qg-card-text">${item.question}</span>
                 <i class="las la-angle-right qg-card-arrow"></i>
             `;
             card.addEventListener('click', () => showQuickGuideDetail(item));
@@ -4716,12 +4690,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const adviceBox = document.getElementById('qgAdviceBox');
         const actionsList = document.getElementById('qgActionsList');
 
-        const qText = quickGuideLang === 'ta' ? item.questionTa : item.question;
-        const adviceText = quickGuideLang === 'ta' ? item.adviceTa : item.advice;
-
         if (pillIcon) pillIcon.innerHTML = `<i class="${item.icon}"></i>`;
-        if (pillText) pillText.textContent = qText;
-        if (adviceBox) adviceBox.textContent = adviceText;
+        if (pillText) pillText.textContent = item.question;
+        if (adviceBox) adviceBox.textContent = item.advice;
 
         if (actionsList) {
             actionsList.innerHTML = '';
@@ -4729,8 +4700,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const btn = document.createElement('button');
                 btn.type = 'button';
                 btn.className = 'qg-action-btn';
-                const labelText = quickGuideLang === 'ta' ? action.labelTa : action.label;
-                btn.innerHTML = `<i class="${action.icon}"></i> <span>${labelText}</span>`;
+                btn.innerHTML = `<i class="${action.icon}"></i> <span>${action.label}</span>`;
                 btn.addEventListener('click', () => executeQuickGuideAction(action.type));
                 actionsList.appendChild(btn);
             });
@@ -4800,42 +4770,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (btnGridEvidence) btnGridEvidence.click();
         } else if (type === 'call112') {
             window.location.href = 'tel:112';
-        }
-    }
-
-    function toggleQuickGuideLanguage() {
-        quickGuideLang = quickGuideLang === 'en' ? 'ta' : 'en';
-        if (quickGuideLangBtn) {
-            quickGuideLangBtn.textContent = quickGuideLang === 'en' ? 'தமிழ்' : 'English';
-        }
-
-        const headTitle = document.getElementById('quickGuideHeadTitle');
-        const heading = document.getElementById('quickGuideHeading');
-        const subheading = document.getElementById('quickGuideSubheading');
-        const adviceLabel = document.getElementById('qgAdviceLabel');
-        const actionsLabel = document.getElementById('qgActionsLabel');
-        if (quickGuideGoBackBtn) {
-            quickGuideGoBackBtn.textContent = quickGuideLang === 'en' ? 'GO BACK' : 'பின் செல்ல';
-        }
-
-        if (quickGuideLang === 'ta') {
-            if (headTitle) headTitle.textContent = 'விரைவு பாதுகாப்பு வழிகாட்டி';
-            if (heading) heading.textContent = 'உங்கள் சூழ்நிலையை தேர்ந்தெடுக்கவும்';
-            if (subheading) subheading.textContent = 'உடனடி பாதுகாப்பு வழிகாட்டலை பெற சூழ்நிலையை தேர்ந்தெடுக்கவும்';
-            if (adviceLabel) adviceLabel.textContent = 'பாதுகாப்பு அறிவுரை';
-            if (actionsLabel) actionsLabel.textContent = 'பரிந்துரைக்கப்பட்ட நடவடிக்கைகள்';
-        } else {
-            if (headTitle) headTitle.textContent = 'Quick Safety Guide';
-            if (heading) heading.textContent = 'Select what you are experiencing';
-            if (subheading) subheading.textContent = 'Choose your situation to get immediate safety guidance';
-            if (adviceLabel) adviceLabel.textContent = 'SAFETY ADVICE';
-            if (actionsLabel) actionsLabel.textContent = 'RECOMMENDED ACTIONS';
-        }
-
-        if (currentQuickGuideItem && !quickGuideDetailView.classList.contains('hidden')) {
-            showQuickGuideDetail(currentQuickGuideItem);
-        } else {
-            renderQuickGuideList();
         }
     }
 
