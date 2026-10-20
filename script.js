@@ -743,7 +743,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    async function triggerSOSAction(type = "SOS Triggered", message = "Emergency SOS Activated") {
+    async function triggerSOSAction(type = "SOS Triggered", message = "Emergency SOS Activated", options = {}) {
         const isAutoTrigger = type === "Auto-SOS Activated" || type === "Not Safe Triggered";
         
         // STRICT: Only allow ONE alert to fire per event. 
@@ -898,22 +898,29 @@ document.addEventListener('DOMContentLoaded', () => {
             navTabSos.click();
         }
 
-        // 4. START EVIDENCE CAPTURE & SECURE STORAGE IN PARALLEL
-        console.log("Starting Evidence Media Capture & Storage Upload...");
-        if (window.emergencyMedia) {
-            window.emergencyMedia.captureAndUploadEvidence({
-                sosId: activeSosId,
-                userId: activeUserId,
-                duration: 6000
-            }).then(result => {
-                console.log("Evidence capture & upload completed. Result:", result);
-                if (result.success) {
-                    emergencyData.evidence_status = "captured";
-                    localStorage.setItem('safeRouteEmergency', JSON.stringify(emergencyData));
-                }
-            }).catch(err => {
-                console.error("Evidence capture workflow exception:", err);
-            });
+        // 4. START EVIDENCE CAPTURE & SECURE STORAGE ONLY WHEN SILENT SOS IS TRIGGERED!
+        // As per specification: Automatic video and audio capture occurs ONLY on Silent SOS, NOT on SOS + Siren
+        const shouldCaptureEvidence = options.captureEvidence === true || (type && type.toLowerCase().includes("silent"));
+
+        if (shouldCaptureEvidence) {
+            console.log("🔒 [SILENT SOS] Starting Automatic Video & Audio Evidence Capture & Storage Upload...");
+            if (window.emergencyMedia) {
+                window.emergencyMedia.captureAndUploadEvidence({
+                    sosId: activeSosId,
+                    userId: activeUserId,
+                    duration: 6000
+                }).then(result => {
+                    console.log("Evidence capture & upload completed. Result:", result);
+                    if (result.success) {
+                        emergencyData.evidence_status = "captured";
+                        localStorage.setItem('safeRouteEmergency', JSON.stringify(emergencyData));
+                    }
+                }).catch(err => {
+                    console.error("Evidence capture workflow exception:", err);
+                });
+            }
+        } else {
+            console.log("📢 [SOS + SIREN] Audible alarm active: Automatic video & audio evidence capture bypassed.");
         }
 
         return {
@@ -1983,17 +1990,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let activeSosLat = null;
     let activeSosLng = null;
+    let pendingSosIsSilent = false;
+    let emSmsPopupHandled = false;
+    let emSmsPopupTimer = null;
 
     const CIRCLE_CIRCUMFERENCE = 339.29; // 2 * PI * 54
 
-    function setCountdownDashoffset(secondsLeft) {
+    function setCountdownDashoffset(secondsLeft, totalSeconds = 5) {
         if (!countdownSvgProgress) return;
-        const progressFraction = Math.max(0, Math.min(1, secondsLeft / 5));
+        const progressFraction = Math.max(0, Math.min(1, secondsLeft / totalSeconds));
         const offset = CIRCLE_CIRCUMFERENCE * (1 - progressFraction);
         countdownSvgProgress.style.strokeDashoffset = offset;
     }
 
-    function startEmergencyCountdown(type = "Emergency SOS", message = "Emergency SOS Activated") {
+    function startEmergencyCountdown(type = "Emergency SOS", message = "Emergency SOS Activated", isSilent = false) {
         // Prevent duplicate trigger if already in countdown or emergency is active
         if (isEmergencyCountdownActive || isEmergencyDispatchedActive) {
             console.log("Emergency activation already active. Skipping duplicate trigger.");
@@ -2002,27 +2012,50 @@ document.addEventListener('DOMContentLoaded', () => {
 
         pendingSosType = type;
         pendingSosMessage = message;
+        pendingSosIsSilent = !!isSilent;
         isEmergencyCountdownActive = true;
-        countdownRemaining = 5;
+        const totalDuration = pendingSosIsSilent ? 3 : 5;
+        countdownRemaining = totalDuration;
 
         // Pre-fetch live GPS immediately during countdown so satellites are locked before dispatch
         acquireLiveEmergencyGps();
 
+        // Configure UI for Silent SOS vs SOS + Siren
+        if (emScreenTitle) {
+            emScreenTitle.innerText = pendingSosIsSilent ? "SILENT SOS ACTIVATED" : "EMERGENCY ACTIVATED";
+        }
+        if (emScreenSubtitle) {
+            emScreenSubtitle.innerText = pendingSosIsSilent ? "Discreet Distress Signal • Siren Muted" : "Distress signal initiated";
+        }
+        const countdownInstr = document.querySelector('.countdown-instruction');
+        if (countdownInstr) {
+            countdownInstr.innerHTML = pendingSosIsSilent ?
+                `Discreetly preparing distress broadcast &amp; auto video/audio recording in <strong id="emCountdownSecondsText">${countdownRemaining}</strong> seconds` :
+                `Sending alerts to emergency contacts and police in <strong id="emCountdownSecondsText">${countdownRemaining}</strong> seconds`;
+        }
+
         // Reset UI elements
-        if (emCountdownNum) emCountdownNum.innerText = "5";
-        if (emCountdownSecondsText) emCountdownSecondsText.innerText = "5";
-        setCountdownDashoffset(5);
+        if (emCountdownNum) emCountdownNum.innerText = String(countdownRemaining);
+        const secText = document.getElementById('emCountdownSecondsText');
+        if (secText) secText.innerText = String(countdownRemaining);
+        setCountdownDashoffset(countdownRemaining, totalDuration);
 
         if (emCountdownBlock) emCountdownBlock.classList.remove('hidden');
         if (emDispatchedBlock) emDispatchedBlock.classList.add('hidden');
         if (emergencyOverlay) {
             emergencyOverlay.classList.remove('hidden');
             emergencyOverlay.classList.add('is-counting-down');
+            emergencyOverlay.classList.toggle('is-silent-mode', pendingSosIsSilent);
         }
 
-        // Play initial tick and vibration
-        emergencySiren.playCountdownTick(880);
-        if ('vibrate' in navigator) navigator.vibrate([200, 100, 200]);
+        // Play initial tick and vibration ONLY if NOT in silent mode
+        if (!pendingSosIsSilent) {
+            emergencySiren.playCountdownTick(880);
+            if ('vibrate' in navigator) navigator.vibrate([200, 100, 200]);
+        } else {
+            // Subtle single haptic for discreet silent mode
+            if ('vibrate' in navigator) navigator.vibrate(60);
+        }
 
         if (emergencyCountdownTimer) clearInterval(emergencyCountdownTimer);
 
@@ -2030,38 +2063,56 @@ document.addEventListener('DOMContentLoaded', () => {
             countdownRemaining--;
             
             if (countdownRemaining > 0) {
-                if (emCountdownNum) emCountdownNum.innerText = countdownRemaining;
-                if (emCountdownSecondsText) emCountdownSecondsText.innerText = countdownRemaining;
-                setCountdownDashoffset(countdownRemaining);
-                emergencySiren.playCountdownTick(countdownRemaining === 1 ? 1100 : 880);
-                if ('vibrate' in navigator) navigator.vibrate(150);
+                if (emCountdownNum) emCountdownNum.innerText = String(countdownRemaining);
+                const curSecText = document.getElementById('emCountdownSecondsText');
+                if (curSecText) curSecText.innerText = String(countdownRemaining);
+                setCountdownDashoffset(countdownRemaining, totalDuration);
+                
+                if (!pendingSosIsSilent) {
+                    emergencySiren.playCountdownTick(countdownRemaining === 1 ? 1100 : 880);
+                    if ('vibrate' in navigator) navigator.vibrate(150);
+                }
             } else {
                 // Countdown reached 0 -> Dispatch Emergency Alert!
                 clearInterval(emergencyCountdownTimer);
                 emergencyCountdownTimer = null;
                 isEmergencyCountdownActive = false;
-                setCountdownDashoffset(0);
+                setCountdownDashoffset(0, totalDuration);
                 executeEmergencyActivation();
             }
         }, 1000);
     }
 
     function cancelEmergencyCountdown() {
+        console.log("Cancelling emergency countdown...");
         if (emergencyCountdownTimer) {
             clearInterval(emergencyCountdownTimer);
             emergencyCountdownTimer = null;
         }
+        if (emSmsPopupTimer) {
+            clearTimeout(emSmsPopupTimer);
+            emSmsPopupTimer = null;
+        }
         isEmergencyCountdownActive = false;
+        isEmergencyDispatchedActive = false;
+        pendingSosIsSilent = false;
+        emSmsPopupHandled = false;
+
         if (emergencyOverlay) {
-            emergencyOverlay.classList.remove('is-counting-down');
-            emergencyOverlay.classList.remove('is-dispatched');
+            emergencyOverlay.classList.remove('is-counting-down', 'is-dispatched', 'is-silent-mode');
             emergencyOverlay.classList.add('hidden');
         }
+        if (emCountdownBlock) emCountdownBlock.classList.add('hidden');
+        if (emDispatchedBlock) emDispatchedBlock.classList.add('hidden');
         if (emSmsPopupBackdrop) emSmsPopupBackdrop.classList.add('hidden');
         if (emBottomStatusToast) emBottomStatusToast.classList.add('hidden');
-        emergencySiren.stop();
-        emergencyTorch.stop();
-        if ('vibrate' in navigator) navigator.vibrate(80);
+
+        try { emergencySiren.stop(); } catch (e) {}
+        try { emergencyTorch.stop(); } catch (e) {}
+        if ('vibrate' in navigator) {
+            try { navigator.vibrate(80); } catch (e) {}
+        }
+        showAppToast("Emergency alert cancelled.", "info");
         console.log("Emergency alert activation cancelled by user.");
     }
 
@@ -2161,18 +2212,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (activeSosId && window.jagruthiSosService?.updateSosEventLocation) {
             window.jagruthiSosService.updateSosEventLocation(activeSosId, activeSosLat, activeSosLng);
         }
-
-        // Show SMS Popup automatically
-        if (emSmsPopupBackdrop && isEmergencyDispatchedActive) {
-            setTimeout(() => {
-                if (isEmergencyDispatchedActive && emSmsPopupBackdrop.classList.contains('hidden')) {
-                    emSmsPopupBackdrop.classList.remove('hidden');
-                }
-            }, 300);
-        }
     }
 
     function sendEmergencySmsNow() {
+        emSmsPopupHandled = true;
+        if (emSmsPopupTimer) clearTimeout(emSmsPopupTimer);
+
         const lat = activeSosLat || (liveUserCoords ? liveUserCoords.lat : (startLoc ? Number(startLoc[0]) : null));
         const lng = activeSosLng || (liveUserCoords ? liveUserCoords.lng : (startLoc ? Number(startLoc[1]) : null));
 
@@ -2201,7 +2246,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const numbersStr = recipientNumbers.join(delimiter);
         const smsUri = `sms:${numbersStr}${paramChar}body=${encodeURIComponent(smsMessage)}`;
 
-        // Hide popup
+        // Hide popup permanently for this emergency session
         if (emSmsPopupBackdrop) {
             emSmsPopupBackdrop.classList.add('hidden');
         }
@@ -2240,51 +2285,96 @@ document.addEventListener('DOMContentLoaded', () => {
             onDispatchedLocationSecured(liveUserCoords.lat, liveUserCoords.lng, liveUserCoords.accuracy);
         } else if (startLoc) {
             onDispatchedLocationSecured(startLoc[0], startLoc[1], 15);
-        } else {
-            // Initial Location state: "Locating..."
-            if (emLocationStatusTitle) emLocationStatusTitle.innerHTML = `<i class="las la-spinner la-spin" style="color:#ef4444;"></i> Locating...`;
-            if (emLocationDisplay) emLocationDisplay.innerText = "Securing live GPS location...";
-            if (btnViewOnMap) btnViewOnMap.classList.add('hidden');
         }
 
-        // Re-request high accuracy position
+        // Initial Location state: "Securing Live GPS..."
+        if (emLocationStatusTitle) emLocationStatusTitle.innerHTML = `<i class="las la-spinner la-spin" style="color:#ef4444;"></i> Securing Live GPS...`;
+        if (emLocationDisplay) emLocationDisplay.innerText = "Acquiring high-accuracy current location...";
+        if (btnViewOnMap) btnViewOnMap.classList.add('hidden');
+
+        // Reset SMS popup state for this emergency session
+        emSmsPopupHandled = false;
+        if (emSmsPopupTimer) clearTimeout(emSmsPopupTimer);
+
+        // Fetch high-accuracy position immediately
         acquireLiveEmergencyGps();
 
-        // Start Siren and Flashlight
-        emergencySiren.start();
-        emergencyTorch.start();
+        // Wait 2 seconds for accurate location fix before showing the SMS popup ONCE
+        emSmsPopupTimer = setTimeout(() => {
+            if (isEmergencyDispatchedActive && !emSmsPopupHandled && emSmsPopupBackdrop) {
+                emSmsPopupBackdrop.classList.remove('hidden');
+                emSmsPopupHandled = true; // Mark as handled so it never re-appears automatically
+            }
+        }, 2000);
+
+        // Start Siren ONLY if NOT silent mode (audible alarm only - NO camera access)
+        if (!pendingSosIsSilent) {
+            emergencySiren.start();
+            // DO NOT auto-start torch to avoid activating camera hardware / permissions
+            if ('vibrate' in navigator) navigator.vibrate([400, 200, 400, 200, 600]);
+        } else {
+            // Keep siren muted and torch off in silent mode
+            emergencySiren.stop();
+            emergencyTorch.stop();
+            if ('vibrate' in navigator) navigator.vibrate(80);
+        }
         updateHardwareButtonStyles();
 
-        // Heavy alarm vibration
-        if ('vibrate' in navigator) navigator.vibrate([400, 200, 400, 200, 600]);
-
-        // Dispatch alert to backend / Supabase
+        // Dispatch alert to backend / Supabase with captureEvidence flag
         try {
-            await triggerSOSAction(pendingSosType, pendingSosMessage);
+            await triggerSOSAction(pendingSosType, pendingSosMessage, { captureEvidence: pendingSosIsSilent });
         } catch (err) {
             console.error("Emergency dispatch error:", err);
         }
     }
 
     async function resolveEmergency() {
-        emergencySiren.stop();
-        emergencyTorch.stop();
+        console.log("Cancelling / resolving emergency alert...");
 
-        if (activeSosId && window.jagruthiSosService) {
-            await window.jagruthiSosService.resolveSosEvent(activeSosId);
+        // 1. Immediately stop audio, siren, torch, and timers
+        try { emergencySiren.stop(); } catch (e) {}
+        try { emergencyTorch.stop(); } catch (e) {}
+
+        if (emergencyCountdownTimer) {
+            clearInterval(emergencyCountdownTimer);
+            emergencyCountdownTimer = null;
         }
+        if (emSmsPopupTimer) {
+            clearTimeout(emSmsPopupTimer);
+            emSmsPopupTimer = null;
+        }
+        emSmsPopupHandled = false;
 
+        // 2. Immediately reset flags and close overlays
         isEmergencyDispatchedActive = false;
         isEmergencyCountdownActive = false;
+        pendingSosIsSilent = false;
+
         if (emergencyOverlay) {
-            emergencyOverlay.classList.remove('is-counting-down');
-            emergencyOverlay.classList.remove('is-dispatched');
+            emergencyOverlay.classList.remove('is-counting-down', 'is-dispatched', 'is-silent-mode');
             emergencyOverlay.classList.add('hidden');
         }
+        if (emCountdownBlock) emCountdownBlock.classList.add('hidden');
+        if (emDispatchedBlock) emDispatchedBlock.classList.add('hidden');
         if (emSmsPopupBackdrop) emSmsPopupBackdrop.classList.add('hidden');
         if (emBottomStatusToast) emBottomStatusToast.classList.add('hidden');
 
-        console.log("Emergency resolved by user.");
+        if ('vibrate' in navigator) {
+            try { navigator.vibrate(80); } catch (e) {}
+        }
+        showAppToast("Emergency cancelled.", "info");
+
+        // 3. Resolve record in Supabase asynchronously in background without blocking UI
+        const sosIdToResolve = activeSosId;
+        activeSosId = null;
+        if (sosIdToResolve && window.jagruthiSosService?.resolveSosEvent) {
+            try {
+                await window.jagruthiSosService.resolveSosEvent(sosIdToResolve);
+            } catch (err) {
+                console.warn("Notice: resolveSosEvent background error:", err);
+            }
+        }
+        console.log("Emergency successfully resolved by user.");
     }
 
     function updateHardwareButtonStyles() {
@@ -2317,6 +2407,24 @@ document.addEventListener('DOMContentLoaded', () => {
     if (btnResolveEmergency) {
         btnResolveEmergency.addEventListener('click', resolveEmergency);
     }
+
+    // Delegated click & touch fallback for emergency cancel buttons
+    document.addEventListener('click', (e) => {
+        const resolveBtn = e.target.closest('#btnResolveEmergency, .btn-cancel-dispatched-emergency');
+        if (resolveBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+            resolveEmergency();
+            return;
+        }
+        const cancelBtn = e.target.closest('#btnCancelEmergency, .btn-cancel-emergency');
+        if (cancelBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+            cancelEmergencyCountdown();
+            return;
+        }
+    });
     if (btnViewOnMap) {
         btnViewOnMap.addEventListener('click', () => {
             const lat = activeSosLat || (liveUserCoords ? liveUserCoords.lat : (startLoc ? Number(startLoc[0]) : null));
@@ -2331,6 +2439,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     if (btnDismissSmsPopup) {
         btnDismissSmsPopup.addEventListener('click', () => {
+            emSmsPopupHandled = true;
+            if (emSmsPopupTimer) clearTimeout(emSmsPopupTimer);
             if (emSmsPopupBackdrop) emSmsPopupBackdrop.classList.add('hidden');
         });
     }
@@ -2355,11 +2465,19 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Bind Central SOS Button on Home Tab
+    // Bind Central SOS Button on Home Tab (SOS + Siren - Audible alarm, no automatic capture)
     const mainCentralSosBtn = document.getElementById('mainCentralSosBtn');
     if (mainCentralSosBtn) {
         mainCentralSosBtn.addEventListener('click', () => {
-            startEmergencyCountdown("Emergency SOS", "User tapped central SOS button");
+            startEmergencyCountdown("Emergency SOS", "User tapped central SOS + Siren button", false);
+        });
+    }
+
+    // Bind Silent SOS Button on Home Tab (Silent SOS - Video & Audio Capture, No Siren)
+    const btnSilentSos = document.getElementById('btnSilentSos');
+    if (btnSilentSos) {
+        btnSilentSos.addEventListener('click', () => {
+            startEmergencyCountdown("Silent SOS", "User triggered Silent SOS (Automatic Video & Audio Capture)", true);
         });
     }
 
@@ -2367,7 +2485,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const directSosTriggerBtn = document.getElementById('directSosTriggerBtn');
     if (directSosTriggerBtn) {
         directSosTriggerBtn.addEventListener('click', () => {
-            startEmergencyCountdown("Emergency SOS", "User triggered manual SOS from Emergency Hub");
+            startEmergencyCountdown("Emergency SOS", "User triggered manual SOS from Emergency Hub", false);
         });
     }
 

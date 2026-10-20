@@ -24,7 +24,7 @@
     <!-- Icons -->
     <link rel="stylesheet"
         href="https://maxst.icons8.com/vue-static/landings/line-awesome/line-awesome/1.3.0/css/line-awesome.min.css">
-    <link rel="stylesheet" href="./style.css?v=25">
+    <link rel="stylesheet" href="./style.css?v=27">
 
     <!-- Leaflet Map -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -57,17 +57,35 @@
             <div class="tab-view active" id="tab-home">
                 
                 <div class="home-sos-container">
-                    <!-- Main SOS Button (Center of main content) -->
+                    <!-- Main SOS + Siren Button (Center of main content) -->
                     <div class="sos-centerpiece-wrapper">
                         <div class="sos-glow-ring"></div>
-                        <button id="mainCentralSosBtn" class="main-central-sos-btn" aria-label="Activate Emergency SOS">
+                        <button id="mainCentralSosBtn" class="main-central-sos-btn" aria-label="Activate Emergency SOS with Siren">
                             <div class="sos-btn-inner">
-                                <i class="las la-exclamation-triangle sos-icon"></i>
+                                <i class="las la-bullhorn sos-icon"></i>
                                 <span class="sos-label">SOS</span>
+                                <span class="sos-mode-pill"><i class="las la-volume-up"></i> + SIREN</span>
                             </div>
                         </button>
-                        <h2 class="sos-caption-title">Tap for Emergency Help</h2>
-                        <p class="sos-caption-sub">Instant distress broadcast to emergency contacts &amp; police</p>
+                        <h2 class="sos-caption-title">Emergency SOS + Siren</h2>
+                        <p class="sos-caption-sub">Audible broadcast with loud alarm &amp; police alert</p>
+
+                        <!-- Silent SOS Button (Smaller Discreet Mode with Automatic Video & Audio Capture) -->
+                        <div class="silent-sos-wrapper">
+                            <button id="btnSilentSos" class="silent-sos-btn" aria-label="Activate Silent SOS with Automatic Video and Audio Capture">
+                                <div class="silent-sos-btn-glow"></div>
+                                <div class="silent-sos-icon-wrap">
+                                    <i class="las la-volume-mute"></i>
+                                </div>
+                                <div class="silent-sos-content">
+                                    <div class="silent-sos-title-row">
+                                        <span class="silent-sos-label">SILENT SOS</span>
+                                        <span class="silent-sos-chip"><i class="las la-video"></i> AUTO REC</span>
+                                    </div>
+                                    <span class="silent-sos-desc">No Siren • Automatic Video &amp; Audio Capture</span>
+                                </div>
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Safety Features 2x2 Grid (matching user reference image) -->
@@ -1362,8 +1380,8 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./supabaseClient.js?v=14"></script>
-    <script src="./mediaService.js?v=14"></script>
-    <script src="./script.js?v=21"></script>
+    <script src="./mediaService.js?v=15"></script>
+    <script src="./script.js?v=24"></script>
     <script src="./pwaManager.js?v=14"></script>
 </body>
 

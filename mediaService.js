@@ -180,14 +180,34 @@ class MediaService {
         return { mimeType: 'audio/webm', extension: 'webm' };
     }
 
+    getSupportedVideoMimeType() {
+        const types = [
+            'video/webm;codecs=vp9,opus',
+            'video/webm;codecs=vp8,opus',
+            'video/webm',
+            'video/mp4;codecs=avc1,mp4a.40.2',
+            'video/mp4'
+        ];
+        if (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported) {
+            for (const t of types) {
+                if (MediaRecorder.isTypeSupported(t)) {
+                    let ext = t.includes('mp4') ? 'mp4' : 'webm';
+                    return { mimeType: t, extension: ext };
+                }
+            }
+        }
+        return { mimeType: 'video/webm', extension: 'webm' };
+    }
+
     /**
      * Complete Evidence Capture Workflow
-     * 1. Burst Photos (3 images spaced 800ms)
-     * 2. Audio recording (~7 seconds)
-     * 3. IndexedDB local caching
-     * 4. Supabase Storage upload and DB registration
+     * 1. Burst Photos (with GPS & Timestamp watermark)
+     * 2. Live Video recording with synchronized audio (~6 seconds)
+     * 3. Standalone Audio recording
+     * 4. IndexedDB local caching
+     * 5. Supabase Storage upload and DB registration
      */
-    async captureAndUploadEvidence({ sosId, userId, duration = 7000 }) {
+    async captureAndUploadEvidence({ sosId, userId, duration = 6000 }) {
         this.currentSosId = sosId;
         this.currentUserId = userId;
         this.lastCapturedEvidence = [];
@@ -252,44 +272,47 @@ class MediaService {
         const capturedItems = [];
 
         try {
-            // STATE 2: Capturing 3 Burst Photos (if camera available)
+            // STATE 2: Video Recording (contains live video & synchronized audio)
             if (hasVideo) {
                 this.notifyStatus('RECORDING', {
-                    stage: 'photos',
-                    message: "Capturing 3 burst photos...",
+                    stage: 'video',
+                    message: "Recording video & audio evidence...",
                     timestamp: new Date().toISOString()
                 });
-                this.showIndicator("📷 Capturing emergency burst photos (3)...");
+                this.showIndicator("🎥 Recording emergency video & audio evidence...");
 
-                for (let i = 1; i <= 3; i++) {
-                    this.showIndicator(`📷 Capturing photo ${i} of 3...`);
-                    const photoBlob = await this.snapPhotoFrame(i);
+                // Snap instant photo frame with GPS watermark
+                try {
+                    const photoBlob = await this.snapPhotoFrame(1);
                     if (photoBlob && photoBlob.size > 0) {
                         capturedItems.push({
                             type: 'photo',
-                            index: i,
+                            index: 1,
                             blob: photoBlob,
                             mimeType: 'image/jpeg',
-                            fileName: `evidence_burst_${i}.jpg`,
+                            fileName: `evidence_burst_1.jpg`,
                             capturedAt: new Date().toISOString()
                         });
                     }
-                    if (i < 3) {
-                        await new Promise(r => setTimeout(r, 800)); // 800ms interval
-                    }
+                } catch (e) {}
+
+                // Record actual synchronized video
+                const videoItem = await this.recordVideoStream(duration);
+                if (videoItem && videoItem.blob && videoItem.blob.size > 0) {
+                    capturedItems.push(videoItem);
                 }
             }
 
-            // STATE 3: Recording Audio (~7 seconds) (if microphone available)
+            // STATE 3: Standalone Audio Recording (if microphone available)
             if (hasAudio) {
                 this.notifyStatus('RECORDING', {
                     stage: 'audio',
-                    message: "Recording 7 seconds of audio evidence...",
+                    message: "Securing audio evidence track...",
                     timestamp: new Date().toISOString()
                 });
-                this.showIndicator("🎙️ Recording 7s emergency audio evidence...");
+                this.showIndicator("🎙️ Securing audio evidence track...");
 
-                const audioItem = await this.recordAudioStream(duration);
+                const audioItem = await this.recordAudioStream(Math.min(duration, 5000));
                 if (audioItem && audioItem.blob && audioItem.blob.size > 0) {
                     capturedItems.push(audioItem);
                 }
@@ -335,6 +358,20 @@ class MediaService {
             await idbSaveEvidenceRecord(record);
             this.lastCapturedEvidence.push(record);
         }
+
+        // Cache lastEvidence references for in-app immediate review
+        const videoItem = capturedItems.find(it => it.type === 'video');
+        const audioItem = capturedItems.find(it => it.type === 'audio');
+        const photoItem = capturedItems.find(it => it.type === 'photo');
+
+        this.lastEvidence = {
+            videoLocalUrl: videoItem ? URL.createObjectURL(videoItem.blob) : null,
+            audioLocalUrl: audioItem ? URL.createObjectURL(audioItem.blob) : null,
+            photoLocalUrl: photoItem ? URL.createObjectURL(photoItem.blob) : null,
+            videoInfo: videoItem ? { extension: videoItem.fileName.split('.').pop() } : null,
+            audioInfo: audioItem ? { extension: audioItem.fileName.split('.').pop() } : null,
+            timestamp: new Date().toISOString()
+        };
 
         // STATE 5: Uploading to Supabase Cloud Storage
         this.notifyStatus('UPLOADING', {
@@ -399,6 +436,74 @@ class MediaService {
             canvas.toBlob((blob) => {
                 resolve(blob);
             }, 'image/jpeg', 0.85);
+        });
+    }
+
+    /**
+     * Records video via MediaRecorder with synchronized audio if available
+     */
+    recordVideoStream(duration = 6000) {
+        return new Promise((resolve) => {
+            if (!this.stream || this.stream.getVideoTracks().length === 0) {
+                return resolve(null);
+            }
+
+            const videoInfo = this.getSupportedVideoMimeType();
+            const tracks = [...this.stream.getVideoTracks()];
+            if (this.stream.getAudioTracks().length > 0) {
+                tracks.push(this.stream.getAudioTracks()[0]);
+            }
+            const recordStream = new MediaStream(tracks);
+            const videoChunks = [];
+
+            try {
+                const recorder = new MediaRecorder(recordStream, { mimeType: videoInfo.mimeType });
+                recorder.ondataavailable = (e) => {
+                    if (e.data && e.data.size > 0) videoChunks.push(e.data);
+                };
+                recorder.onstop = () => {
+                    const videoBlob = new Blob(videoChunks, { type: videoInfo.mimeType });
+                    console.log(`[MediaService] Video recorded. Size: ${videoBlob.size} bytes`);
+                    resolve({
+                        type: 'video',
+                        blob: videoBlob,
+                        mimeType: videoInfo.mimeType,
+                        fileName: `evidence_video.${videoInfo.extension}`,
+                        capturedAt: new Date().toISOString()
+                    });
+                };
+                recorder.start(500);
+                setTimeout(() => {
+                    if (recorder.state !== 'inactive') {
+                        recorder.stop();
+                    }
+                }, duration);
+            } catch (err) {
+                console.warn("[MediaService] Video MediaRecorder init error, trying default fallback:", err);
+                try {
+                    const fallbackRecorder = new MediaRecorder(recordStream);
+                    fallbackRecorder.ondataavailable = (e) => {
+                        if (e.data && e.data.size > 0) videoChunks.push(e.data);
+                    };
+                    fallbackRecorder.onstop = () => {
+                        const fallbackBlob = new Blob(videoChunks, { type: 'video/webm' });
+                        resolve({
+                            type: 'video',
+                            blob: fallbackBlob,
+                            mimeType: 'video/webm',
+                            fileName: `evidence_video.webm`,
+                            capturedAt: new Date().toISOString()
+                        });
+                    };
+                    fallbackRecorder.start(500);
+                    setTimeout(() => {
+                        if (fallbackRecorder.state !== 'inactive') fallbackRecorder.stop();
+                    }, duration);
+                } catch (fallbackErr) {
+                    console.warn("[MediaService] Video fallback recorder error:", fallbackErr);
+                    resolve(null);
+                }
+            }
         });
     }
 
