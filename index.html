@@ -24,7 +24,7 @@
     <!-- Icons -->
     <link rel="stylesheet"
         href="https://maxst.icons8.com/vue-static/landings/line-awesome/line-awesome/1.3.0/css/line-awesome.min.css">
-    <link rel="stylesheet" href="./style.css?v=28">
+    <link rel="stylesheet" href="./style.css?v=29">
 
     <!-- Leaflet Map -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -269,6 +269,15 @@
                     </div>
                 </section>
 
+                <!-- Start Journey Button Bar (Scrollable with Journey tab content) -->
+                <div class="bottom-action-bar" id="journeyActionBar">
+                    <button class="btn-start-journey" id="startJourneyBtn">
+                        <i class="las la-play"></i>
+                        <span>Start Journey</span>
+                        <i class="las la-arrow-right arrow-icon"></i>
+                    </button>
+                </div>
+
             </div>
 
             <!-- ================= TAB 3: SAFETY (MY LOCATION & NEARBY SAFE PLACES) ================= -->
@@ -476,15 +485,6 @@
             <!-- Bottom spacing for fixed navigation bar -->
             <div style="height: 40px;"></div>
         </main>
-
-        <!-- Start Journey Button Bar (Only shown on Journey tab) -->
-        <div class="bottom-action-bar hidden" id="journeyActionBar">
-            <button class="btn-start-journey" id="startJourneyBtn">
-                <i class="las la-play"></i>
-                <span>Start Journey</span>
-                <i class="las la-arrow-right arrow-icon"></i>
-            </button>
-        </div>
 
         <!-- Fixed Role-Based Bottom Navigation Bar -->
         <nav class="bottom-nav-bar" id="womenBottomNav" aria-label="Main Navigation">

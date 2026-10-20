@@ -655,22 +655,19 @@ h1, h2, h3 { color: var(--text-dark); font-weight: 700; }
 .active-indicator { background: var(--success); animation: blink 2s infinite; }
 .idle-indicator { background: var(--warning); }
 
-/* Bottom Action Bar (Fixed docked on bottom) */
+/* Bottom Action Bar (Scrollable inside Journey tab) */
 .bottom-action-bar {
-    position: fixed;
-    bottom: 68px;
-    left: 50%;
-    transform: translateX(-50%);
+    position: static;
     width: 100%;
-    max-width: 480px;
-    padding: 10px 16px;
-    background: #ffffff;
-    border-top: 1px solid rgba(226, 232, 240, 0.9);
-    box-shadow: 0 -4px 16px rgba(15, 23, 42, 0.06);
-    z-index: 45;
+    margin-top: 18px;
+    margin-bottom: 24px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    z-index: auto;
     pointer-events: auto;
     box-sizing: border-box;
-    transition: var(--transition);
 }
 
 .btn-start-journey {
@@ -679,15 +676,15 @@ h1, h2, h3 { color: var(--text-dark); font-weight: 700; }
     background: var(--success);
     color: white;
     border: none;
-    border-radius: 14px;
-    padding: 14px 20px;
-    font-size: 1.05rem;
+    border-radius: var(--radius-round);
+    padding: 16px 20px;
+    font-size: 1.1rem;
     font-weight: 600;
     display: flex;
     justify-content: center;
     align-items: center;
     gap: 12px;
-    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+    box-shadow: 0 8px 20px rgba(16, 185, 129, 0.35);
     cursor: pointer;
     transition: var(--transition);
 }
@@ -695,10 +692,6 @@ h1, h2, h3 { color: var(--text-dark); font-weight: 700; }
 .btn-start-journey:active { transform: scale(0.98); }
 .btn-start-journey i { font-size: 1.3rem; }
 .btn-start-journey .arrow-icon { margin-left: auto; background: rgba(255,255,255,0.2); padding: 4px; border-radius: 50%; }
-
-#tab-journey {
-    padding-bottom: 160px;
-}
 
 /* Floating SOS Button */
 .sos-btn {
