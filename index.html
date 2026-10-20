@@ -24,7 +24,7 @@
     <!-- Icons -->
     <link rel="stylesheet"
         href="https://maxst.icons8.com/vue-static/landings/line-awesome/line-awesome/1.3.0/css/line-awesome.min.css">
-    <link rel="stylesheet" href="./style.css?v=29">
+    <link rel="stylesheet" href="./style.css?v=30">
 
     <!-- Leaflet Map -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -402,8 +402,8 @@
             <div class="tab-view" id="tab-profile">
                 
                 <!-- Profile Hero Card -->
-                <div class="profile-hero-card" style="margin-bottom: 0;">
-                    <img id="profileTabAvatar" src="https://ui-avatars.com/api/?name=User&background=ffffff&color=4f46e5&rounded=true" alt="Profile Avatar" class="profile-hero-avatar">
+                <div class="profile-hero-card" style="margin-bottom: 16px;">
+                    <img id="profileTabAvatar" src="https://ui-avatars.com/api/?name=User&background=e11d48&color=ffffff&rounded=true" alt="Profile Avatar" class="profile-hero-avatar">
                     <div class="profile-hero-info">
                         <h3 id="profileTabName">User</h3>
                         <p id="profileTabPhone">--</p>
@@ -411,74 +411,88 @@
                     </div>
                 </div>
 
-                <!-- Emergency Contacts Section -->
-                <section class="card">
-                    <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                        <h2 class="section-title" style="font-size: 1.1rem; margin: 0;"><i class="las la-address-book text-purple"></i> Emergency Contacts</h2>
-                        <span class="badge" id="userContactCountBadge" style="font-size: 0.72rem; padding: 3px 8px; border-radius: 8px; font-weight: 600;">0 Connected</span>
-                    </div>
+                <!-- Consolidated Profile Options Card (Matching screenshot in Light Red & White Palette) -->
+                <div class="profile-menu-card">
                     
-                    <div style="display: flex; flex-direction: column; gap: 8px;" id="userEmergencyContactsList">
-                        <div style="padding: 12px; text-align: center; color: #94a3b8; font-size: 0.85rem;">Loading contacts...</div>
+                    <!-- 1. Personal Information -->
+                    <div class="profile-menu-item" id="menuItemPersonalInfo" role="button" tabindex="0">
+                        <div class="profile-menu-icon icon-personal">
+                            <i class="las la-user"></i>
+                        </div>
+                        <div class="profile-menu-text">
+                            <h4 class="profile-menu-title">Personal Information</h4>
+                            <p class="profile-menu-sub">Name, phone, email, address</p>
+                        </div>
+                        <i class="las la-angle-right profile-menu-arrow"></i>
                     </div>
-                </section>
 
-                <!-- Safety Preferences -->
-                <section class="card" style="margin-bottom: 16px;">
-                    <h2 class="section-title" style="font-size: 1.1rem; margin-bottom: 12px;"><i class="las la-sliders-h text-blue"></i> Safety Preferences</h2>
-                    
-                    <div class="settings-list-group">
-                        <div class="settings-item-row">
-                            <div class="settings-item-left">
-                                <div class="settings-item-icon bg-indigo-light text-indigo"><i class="las la-route"></i></div>
-                                <div class="settings-item-text">
-                                    <h4>Auto SOS on Deviation</h4>
-                                    <p>Trigger alert after 45s unresponsive</p>
-                                </div>
-                            </div>
-                            <label class="switch-toggle">
-                                <input type="checkbox" checked>
-                                <span class="switch-slider"></span>
-                            </label>
+                    <!-- 2. Emergency Contacts -->
+                    <div class="profile-menu-item" id="menuItemEmergencyContacts" role="button" tabindex="0">
+                        <div class="profile-menu-icon icon-contacts">
+                            <i class="las la-address-book"></i>
                         </div>
-
-                        <div class="settings-item-row">
-                            <div class="settings-item-left">
-                                <div class="settings-item-icon bg-purple-light text-purple"><i class="las la-camera"></i></div>
-                                <div class="settings-item-text">
-                                    <h4>Auto Media Evidence</h4>
-                                    <p>Capture photo & audio in emergency</p>
-                                </div>
-                            </div>
-                            <label class="switch-toggle">
-                                <input type="checkbox" checked>
-                                <span class="switch-slider"></span>
-                            </label>
+                        <div class="profile-menu-text">
+                            <h4 class="profile-menu-title">Emergency Contacts</h4>
+                            <p class="profile-menu-sub">Manage trusted contacts</p>
                         </div>
-
-                        <div class="settings-item-row">
-                            <div class="settings-item-left">
-                                <div class="settings-item-icon bg-blue-light text-blue"><i class="las la-broadcast-tower"></i></div>
-                                <div class="settings-item-text">
-                                    <h4>High-Precision Geofencing</h4>
-                                    <p>50-meter active corridor alert</p>
-                                </div>
-                            </div>
-                            <label class="switch-toggle">
-                                <input type="checkbox" checked>
-                                <span class="switch-slider"></span>
-                            </label>
-                        </div>
+                        <i class="las la-angle-right profile-menu-arrow"></i>
                     </div>
-                </section>
 
-                <!-- Account & Logout -->
-                <section class="card">
-                    <h2 class="section-title" style="font-size: 1.1rem; margin-bottom: 12px;"><i class="las la-cog text-gray"></i> Account Settings</h2>
-                    <button onclick="localStorage.clear(); window.location.href='login.html';" style="width: 100%; background: #fee2e2; color: #ef4444; border: 1px solid #fca5a5; padding: 14px; border-radius: var(--radius-sm); font-weight: 700; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: var(--transition);">
-                        <i class="las la-sign-out-alt" style="font-size: 1.3rem;"></i> Logout Account
-                    </button>
-                </section>
+                    <!-- 3. Safety Preferences -->
+                    <div class="profile-menu-item" id="menuItemSafetyPreferences" role="button" tabindex="0">
+                        <div class="profile-menu-icon icon-safety">
+                            <i class="las la-shield-alt"></i>
+                        </div>
+                        <div class="profile-menu-text">
+                            <h4 class="profile-menu-title">Safety Preferences</h4>
+                            <p class="profile-menu-sub">Shake SOS, alarm, journey monitoring</p>
+                        </div>
+                        <i class="las la-angle-right profile-menu-arrow"></i>
+                    </div>
+
+                    <!-- 4. Location & Permissions -->
+                    <div class="profile-menu-item" id="menuItemLocationPermissions" role="button" tabindex="0">
+                        <div class="profile-menu-icon icon-location">
+                            <i class="las la-map-marker-alt"></i>
+                        </div>
+                        <div class="profile-menu-text">
+                            <h4 class="profile-menu-title">Location & Permissions</h4>
+                            <p class="profile-menu-sub">GPS, camera, microphone, sharing</p>
+                        </div>
+                        <i class="las la-angle-right profile-menu-arrow"></i>
+                    </div>
+
+                    <!-- 5. My Safety History -->
+                    <div class="profile-menu-item" id="menuItemSafetyHistory" role="button" tabindex="0">
+                        <div class="profile-menu-icon icon-history">
+                            <i class="las la-history"></i>
+                        </div>
+                        <div class="profile-menu-text">
+                            <h4 class="profile-menu-title">My Safety History</h4>
+                            <p class="profile-menu-sub">Previous SOS alerts and incidents</p>
+                        </div>
+                        <i class="las la-angle-right profile-menu-arrow"></i>
+                    </div>
+
+                    <!-- 6. App Settings & Help -->
+                    <div class="profile-menu-item" id="menuItemAppSettings" role="button" tabindex="0">
+                        <div class="profile-menu-icon icon-settings">
+                            <i class="las la-cog"></i>
+                        </div>
+                        <div class="profile-menu-text">
+                            <h4 class="profile-menu-title">App Settings & Help</h4>
+                            <p class="profile-menu-sub">Notifications, support, about</p>
+                        </div>
+                        <i class="las la-angle-right profile-menu-arrow"></i>
+                    </div>
+
+                </div>
+
+                <!-- Prominent Light-Red Logout Button -->
+                <button class="profile-logout-btn" id="btnProfileLogout" onclick="localStorage.clear(); window.location.href='login.html';">
+                    <i class="las la-sign-out-alt" style="font-size: 1.25rem;"></i>
+                    <span>Logout Account</span>
+                </button>
 
             </div>
 
@@ -503,8 +517,258 @@
             <button class="nav-item" data-tab="tab-profile" id="navTabProfile" aria-label="Profile">
                 <div class="nav-icon-wrapper"><i class="las la-user-circle"></i></div>
                 <span class="nav-label">Profile</span>
-            </button>
         </nav>
+
+        <!-- ================= PROFILE OPTION MODALS (LIGHT RED & WHITE THEME) ================= -->
+
+        <!-- 1. Personal Information Modal -->
+        <div class="profile-modal-overlay" id="modalPersonalInfo">
+            <div class="profile-modal-container">
+                <div class="profile-modal-header">
+                    <div class="profile-modal-title">
+                        <div class="profile-menu-icon icon-personal" style="width: 34px; height: 34px; font-size: 1.15rem;"><i class="las la-user"></i></div>
+                        Personal Information
+                    </div>
+                    <button type="button" class="profile-modal-close" data-close-modal="modalPersonalInfo">&times;</button>
+                </div>
+                <form id="formPersonalInfo" onsubmit="event.preventDefault();">
+                    <div class="profile-modal-field">
+                        <label class="profile-modal-label">Full Name</label>
+                        <input type="text" class="profile-modal-input" id="profileInputName" placeholder="Enter your full name">
+                    </div>
+                    <div class="profile-modal-field">
+                        <label class="profile-modal-label">Phone Number</label>
+                        <input type="tel" class="profile-modal-input" id="profileInputPhone" placeholder="Enter phone number">
+                    </div>
+                    <div class="profile-modal-field">
+                        <label class="profile-modal-label">Email Address</label>
+                        <input type="email" class="profile-modal-input" id="profileInputEmail" placeholder="Enter email address">
+                    </div>
+                    <div class="profile-modal-field">
+                        <label class="profile-modal-label">Home Address</label>
+                        <input type="text" class="profile-modal-input" id="profileInputAddress" placeholder="Enter residential address">
+                    </div>
+                    <div class="profile-modal-field">
+                        <label class="profile-modal-label">Blood Group / Medical Notes</label>
+                        <input type="text" class="profile-modal-input" id="profileInputMedical" placeholder="e.g. O+ / Asthma inhaler">
+                    </div>
+                    <button type="button" class="profile-modal-btn" id="btnSavePersonalInfo">Save Changes</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- 2. Emergency Contacts Modal -->
+        <div class="profile-modal-overlay" id="modalEmergencyContacts">
+            <div class="profile-modal-container">
+                <div class="profile-modal-header">
+                    <div class="profile-modal-title">
+                        <div class="profile-menu-icon icon-contacts" style="width: 34px; height: 34px; font-size: 1.15rem;"><i class="las la-address-book"></i></div>
+                        Emergency Contacts
+                        <span class="badge" id="userContactCountBadge" style="font-size: 0.72rem; padding: 3px 8px; border-radius: 8px; font-weight: 600; margin-left: 6px; background: #fee2e2; color: #be123c;">0 Connected</span>
+                    </div>
+                    <button type="button" class="profile-modal-close" data-close-modal="modalEmergencyContacts">&times;</button>
+                </div>
+                
+                <!-- Quick Add Contact Form -->
+                <div style="background: #fff8f8; border: 1px solid #ffe4e6; border-radius: 14px; padding: 12px; margin-bottom: 16px;">
+                    <h4 style="font-size: 0.88rem; font-weight: 700; color: #be123c; margin-bottom: 8px;"><i class="las la-plus-circle"></i> Add Trusted Contact</h4>
+                    <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                        <input type="text" id="newContactNameInput" placeholder="Contact Name" class="profile-modal-input" style="flex: 1; padding: 9px 12px; font-size: 0.88rem;">
+                        <input type="tel" id="newContactPhoneInput" placeholder="10-digit Phone" class="profile-modal-input" style="flex: 1.2; padding: 9px 12px; font-size: 0.88rem;">
+                    </div>
+                    <button type="button" id="btnAddNewContact" style="width: 100%; background: #e11d48; color: white; border: none; padding: 9px; border-radius: 10px; font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: var(--transition);">
+                        Add to Emergency Network
+                    </button>
+                </div>
+
+                <!-- Emergency Contacts List (Dynamically populated by script.js) -->
+                <div style="display: flex; flex-direction: column; gap: 8px;" id="userEmergencyContactsList">
+                    <div style="padding: 12px; text-align: center; color: #94a3b8; font-size: 0.85rem;">Loading contacts...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Safety Preferences Modal -->
+        <div class="profile-modal-overlay" id="modalSafetyPreferences">
+            <div class="profile-modal-container">
+                <div class="profile-modal-header">
+                    <div class="profile-modal-title">
+                        <div class="profile-menu-icon icon-safety" style="width: 34px; height: 34px; font-size: 1.15rem;"><i class="las la-shield-alt"></i></div>
+                        Safety Preferences
+                    </div>
+                    <button type="button" class="profile-modal-close" data-close-modal="modalSafetyPreferences">&times;</button>
+                </div>
+                <div class="settings-list-group">
+                    <div class="settings-item-row" style="padding: 12px 0; border-bottom: 1px solid #f1f5f9;">
+                        <div class="settings-item-left">
+                            <div class="settings-item-icon bg-indigo-light text-indigo"><i class="las la-route"></i></div>
+                            <div class="settings-item-text">
+                                <h4>Auto SOS on Deviation</h4>
+                                <p>Trigger alert after 45s unresponsive</p>
+                            </div>
+                        </div>
+                        <label class="switch-toggle"><input type="checkbox" id="prefAutoSos" checked><span class="switch-slider"></span></label>
+                    </div>
+                    <div class="settings-item-row" style="padding: 12px 0; border-bottom: 1px solid #f1f5f9;">
+                        <div class="settings-item-left">
+                            <div class="settings-item-icon bg-purple-light text-purple"><i class="las la-camera"></i></div>
+                            <div class="settings-item-text">
+                                <h4>Auto Media Evidence</h4>
+                                <p>Capture photo & audio in emergency</p>
+                            </div>
+                        </div>
+                        <label class="switch-toggle"><input type="checkbox" id="prefAutoMedia" checked><span class="switch-slider"></span></label>
+                    </div>
+                    <div class="settings-item-row" style="padding: 12px 0; border-bottom: 1px solid #f1f5f9;">
+                        <div class="settings-item-left">
+                            <div class="settings-item-icon bg-blue-light text-blue"><i class="las la-broadcast-tower"></i></div>
+                            <div class="settings-item-text">
+                                <h4>Corridor Geofencing</h4>
+                                <p>50-meter active corridor alert</p>
+                            </div>
+                        </div>
+                        <label class="switch-toggle"><input type="checkbox" id="prefGeofencing" checked><span class="switch-slider"></span></label>
+                    </div>
+                    <div class="settings-item-row" style="padding: 12px 0;">
+                        <div class="settings-item-left">
+                            <div class="settings-item-icon bg-orange-light text-orange"><i class="las la-bell"></i></div>
+                            <div class="settings-item-text">
+                                <h4>Loud Siren on SOS</h4>
+                                <p>Play 105dB alarm on emergency activation</p>
+                            </div>
+                        </div>
+                        <label class="switch-toggle"><input type="checkbox" id="prefSiren" checked><span class="switch-slider"></span></label>
+                    </div>
+                </div>
+                <button type="button" class="profile-modal-btn" data-close-modal="modalSafetyPreferences" style="margin-top: 16px;">Save Preferences</button>
+            </div>
+        </div>
+
+        <!-- 4. Location & Permissions Modal -->
+        <div class="profile-modal-overlay" id="modalLocationPermissions">
+            <div class="profile-modal-container">
+                <div class="profile-modal-header">
+                    <div class="profile-modal-title">
+                        <div class="profile-menu-icon icon-location" style="width: 34px; height: 34px; font-size: 1.15rem;"><i class="las la-map-marker-alt"></i></div>
+                        Location & Permissions
+                    </div>
+                    <button type="button" class="profile-modal-close" data-close-modal="modalLocationPermissions">&times;</button>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <i class="las la-crosshairs" style="font-size: 1.4rem; color: #059669;"></i>
+                            <div>
+                                <h4 style="font-size: 0.9rem; margin: 0;">GPS Location</h4>
+                                <span id="permGpsStatus" style="font-size: 0.78rem; color: #059669; font-weight: 600;">Active & Precise</span>
+                            </div>
+                        </div>
+                        <span class="badge" style="background: #d1fae5; color: #059669; font-size: 0.72rem; padding: 4px 8px; border-radius: 8px;">Granted</span>
+                    </div>
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <i class="las la-camera" style="font-size: 1.4rem; color: #7c3aed;"></i>
+                            <div>
+                                <h4 style="font-size: 0.9rem; margin: 0;">Camera</h4>
+                                <span style="font-size: 0.78rem; color: #64748b;">Emergency evidence photos</span>
+                            </div>
+                        </div>
+                        <span class="badge" style="background: #d1fae5; color: #059669; font-size: 0.72rem; padding: 4px 8px; border-radius: 8px;">Enabled</span>
+                    </div>
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <i class="las la-microphone" style="font-size: 1.4rem; color: #e11d48;"></i>
+                            <div>
+                                <h4 style="font-size: 0.9rem; margin: 0;">Microphone</h4>
+                                <span style="font-size: 0.78rem; color: #64748b;">Background audio recording</span>
+                            </div>
+                        </div>
+                        <span class="badge" style="background: #d1fae5; color: #059669; font-size: 0.72rem; padding: 4px 8px; border-radius: 8px;">Enabled</span>
+                    </div>
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <i class="las la-sms" style="font-size: 1.4rem; color: #2563eb;"></i>
+                            <div>
+                                <h4 style="font-size: 0.9rem; margin: 0;">SMS Gateway</h4>
+                                <span style="font-size: 0.78rem; color: #64748b;">Direct SOS dispatcher</span>
+                            </div>
+                        </div>
+                        <span class="badge" style="background: #d1fae5; color: #059669; font-size: 0.72rem; padding: 4px 8px; border-radius: 8px;">Ready</span>
+                    </div>
+                </div>
+                <button type="button" class="profile-modal-btn" id="btnTestGpsAccuracy">Test Live GPS Accuracy</button>
+            </div>
+        </div>
+
+        <!-- 5. My Safety History Modal -->
+        <div class="profile-modal-overlay" id="modalSafetyHistory">
+            <div class="profile-modal-container">
+                <div class="profile-modal-header">
+                    <div class="profile-modal-title">
+                        <div class="profile-menu-icon icon-history" style="width: 34px; height: 34px; font-size: 1.15rem;"><i class="las la-history"></i></div>
+                        My Safety History
+                    </div>
+                    <button type="button" class="profile-modal-close" data-close-modal="modalSafetyHistory">&times;</button>
+                </div>
+                <div id="safetyHistoryList" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px;">
+                    <div style="padding: 12px 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; display: flex; align-items: center; justify-content: space-between;">
+                        <div>
+                            <h4 style="font-size: 0.88rem; margin: 0; color: #0f172a;"><i class="las la-shield-alt" style="color:#059669;"></i> Routine System Check</h4>
+                            <span style="font-size: 0.75rem; color: #94a3b8;">Today, Verified Safe</span>
+                        </div>
+                        <span style="font-size: 0.75rem; color: #059669; font-weight: 600; background: #d1fae5; padding: 3px 8px; border-radius: 8px;">Normal</span>
+                    </div>
+                    <div style="padding: 12px 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; display: flex; align-items: center; justify-content: space-between;">
+                        <div>
+                            <h4 style="font-size: 0.88rem; margin: 0; color: #0f172a;"><i class="las la-map-pin" style="color:#2563eb;"></i> Safe Corridor Journey</h4>
+                            <span style="font-size: 0.75rem; color: #94a3b8;">Completed without incidents</span>
+                        </div>
+                        <span style="font-size: 0.75rem; color: #2563eb; font-weight: 600; background: #dbeafe; padding: 3px 8px; border-radius: 8px;">Completed</span>
+                    </div>
+                </div>
+                <button type="button" class="profile-modal-btn" id="btnGoToAlertsFeed" style="background: #475569;">View Full Alert Feed</button>
+            </div>
+        </div>
+
+        <!-- 6. App Settings & Help Modal -->
+        <div class="profile-modal-overlay" id="modalAppSettings">
+            <div class="profile-modal-container">
+                <div class="profile-modal-header">
+                    <div class="profile-modal-title">
+                        <div class="profile-menu-icon icon-settings" style="width: 34px; height: 34px; font-size: 1.15rem;"><i class="las la-cog"></i></div>
+                        App Settings & Help
+                    </div>
+                    <button type="button" class="profile-modal-close" data-close-modal="modalAppSettings">&times;</button>
+                </div>
+                
+                <div style="background: #fff8f8; border: 1px solid #ffe4e6; border-radius: 14px; padding: 14px; margin-bottom: 14px; text-align: center;">
+                    <h4 style="font-size: 1rem; color: #be123c; font-weight: 700; margin-bottom: 4px;">Jagruthi Safety v2.4.0</h4>
+                    <p style="font-size: 0.8rem; color: #64748b; margin: 0;">Automated Safe Route & Women Emergency Protection</p>
+                </div>
+
+                <div style="margin-bottom: 14px;">
+                    <h5 style="font-size: 0.85rem; color: #475569; margin-bottom: 8px; font-weight: 700;">24x7 Emergency Helplines</h5>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <a href="tel:1091" style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: #fee2e2; border-radius: 10px; color: #be123c; text-decoration: none; font-weight: 600; font-size: 0.9rem;">
+                            <span><i class="las la-female"></i> Women Helpline</span>
+                            <span>1091 <i class="las la-phone"></i></span>
+                        </a>
+                        <a href="tel:112" style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: #fef3c7; border-radius: 10px; color: #b45309; text-decoration: none; font-weight: 600; font-size: 0.9rem;">
+                            <span><i class="las la-shield-alt"></i> National Emergency</span>
+                            <span>112 <i class="las la-phone"></i></span>
+                        </a>
+                        <a href="tel:100" style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: #e0e7ff; border-radius: 10px; color: #3730a3; text-decoration: none; font-weight: 600; font-size: 0.9rem;">
+                            <span><i class="las la-user-shield"></i> Police Control</span>
+                            <span>100 <i class="las la-phone"></i></span>
+                        </a>
+                    </div>
+                </div>
+
+                <button type="button" class="profile-modal-btn" onclick="localStorage.clear(); window.location.href='login.html';" style="background: #fee2e2; color: #e11d48; border: 1px solid #fca5a5;">
+                    <i class="las la-sign-out-alt"></i> Logout Account
+                </button>
+            </div>
+        </div>
 
         <!-- Route Deviation Alert Popup -->
         <div class="overlay" id="deviationOverlay"></div>
@@ -1381,7 +1645,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./supabaseClient.js?v=14"></script>
     <script src="./mediaService.js?v=15"></script>
-    <script src="./script.js?v=24"></script>
+    <script src="./script.js?v=25"></script>
     <script src="./pwaManager.js?v=14"></script>
 </body>
 

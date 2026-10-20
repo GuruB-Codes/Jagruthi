@@ -1565,7 +1565,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (profileTabName) profileTabName.innerText = curUserName;
     if (profileTabPhone) profileTabPhone.innerText = curUserPhone || 'No phone registered';
     if (profileTabAvatar) {
-        profileTabAvatar.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(curUserName)}&background=4f46e5&color=fff&rounded=true`;
+        profileTabAvatar.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(curUserName)}&background=e11d48&color=ffffff&rounded=true`;
     }
 
     // Default Emergency Contacts
@@ -4832,6 +4832,198 @@ document.addEventListener('DOMContentLoaded', () => {
             setTimeout(() => {
                 showDeviationAlert();
             }, 300);
+        });
+    }
+
+    // ==========================================
+    // PROFILE MENU OPTIONS MODALS & HANDLERS
+    // ==========================================
+    function openProfileModal(modalId) {
+        const modal = document.getElementById(modalId);
+        if (modal) modal.classList.add('active');
+    }
+
+    function closeProfileModal(modalId) {
+        const modal = document.getElementById(modalId);
+        if (modal) modal.classList.remove('active');
+    }
+
+    // Modal Close buttons
+    document.querySelectorAll('[data-close-modal]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const modalId = btn.getAttribute('data-close-modal');
+            closeProfileModal(modalId);
+        });
+    });
+
+    // Close on backdrop click
+    document.querySelectorAll('.profile-modal-overlay').forEach(overlay => {
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) {
+                overlay.classList.remove('active');
+            }
+        });
+    });
+
+    // 1. Personal Information Option
+    const menuItemPersonalInfo = document.getElementById('menuItemPersonalInfo');
+    const profileInputName = document.getElementById('profileInputName');
+    const profileInputPhone = document.getElementById('profileInputPhone');
+    const profileInputEmail = document.getElementById('profileInputEmail');
+    const profileInputAddress = document.getElementById('profileInputAddress');
+    const profileInputMedical = document.getElementById('profileInputMedical');
+    const btnSavePersonalInfo = document.getElementById('btnSavePersonalInfo');
+
+    if (menuItemPersonalInfo) {
+        menuItemPersonalInfo.addEventListener('click', () => {
+            if (profileInputName) profileInputName.value = localStorage.getItem('fullName') || localStorage.getItem('userName') || '';
+            if (profileInputPhone) profileInputPhone.value = localStorage.getItem('userPhone') || '';
+            if (profileInputEmail) profileInputEmail.value = localStorage.getItem('userEmail') || '';
+            if (profileInputAddress) profileInputAddress.value = localStorage.getItem('userAddress') || '';
+            if (profileInputMedical) profileInputMedical.value = localStorage.getItem('userMedical') || '';
+            openProfileModal('modalPersonalInfo');
+        });
+    }
+
+    if (btnSavePersonalInfo) {
+        btnSavePersonalInfo.addEventListener('click', () => {
+            const newName = (profileInputName?.value || '').trim();
+            const newPhone = (profileInputPhone?.value || '').trim();
+            const newEmail = (profileInputEmail?.value || '').trim();
+            const newAddress = (profileInputAddress?.value || '').trim();
+            const newMedical = (profileInputMedical?.value || '').trim();
+
+            if (newName) {
+                localStorage.setItem('userName', newName);
+                localStorage.setItem('fullName', newName);
+                if (profileTabName) profileTabName.innerText = newName;
+                if (profileTabAvatar) {
+                    profileTabAvatar.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(newName)}&background=e11d48&color=ffffff&rounded=true`;
+                }
+            }
+            if (newPhone) {
+                localStorage.setItem('userPhone', newPhone);
+                if (profileTabPhone) profileTabPhone.innerText = newPhone;
+            }
+            if (newEmail) localStorage.setItem('userEmail', newEmail);
+            if (newAddress) localStorage.setItem('userAddress', newAddress);
+            if (newMedical) localStorage.setItem('userMedical', newMedical);
+
+            closeProfileModal('modalPersonalInfo');
+            showAppToast('Personal information updated successfully!', 'success');
+        });
+    }
+
+    // 2. Emergency Contacts Option
+    const menuItemEmergencyContacts = document.getElementById('menuItemEmergencyContacts');
+    const btnAddNewContact = document.getElementById('btnAddNewContact');
+    const newContactNameInput = document.getElementById('newContactNameInput');
+    const newContactPhoneInput = document.getElementById('newContactPhoneInput');
+
+    if (menuItemEmergencyContacts) {
+        menuItemEmergencyContacts.addEventListener('click', () => {
+            loadUserEmergencyContacts();
+            openProfileModal('modalEmergencyContacts');
+        });
+    }
+
+    if (btnAddNewContact) {
+        btnAddNewContact.addEventListener('click', () => {
+            const name = (newContactNameInput?.value || '').trim();
+            const phone = (newContactPhoneInput?.value || '').replace(/\D/g, '');
+
+            if (!name || phone.length < 10) {
+                showAppToast('Please enter a valid contact name and 10-digit phone', 'warning');
+                return;
+            }
+
+            const current = getSavedEmergencyContacts();
+            current.push({ name, phone });
+            localStorage.setItem('userEmergencyContacts', JSON.stringify(current));
+
+            if (newContactNameInput) newContactNameInput.value = '';
+            if (newContactPhoneInput) newContactPhoneInput.value = '';
+
+            loadUserEmergencyContacts();
+            showAppToast(`Added ${name} to your trusted emergency network`, 'success');
+        });
+    }
+
+    // 3. Safety Preferences Option
+    const menuItemSafetyPreferences = document.getElementById('menuItemSafetyPreferences');
+    if (menuItemSafetyPreferences) {
+        menuItemSafetyPreferences.addEventListener('click', () => {
+            openProfileModal('modalSafetyPreferences');
+        });
+    }
+
+    // 4. Location & Permissions Option
+    const menuItemLocationPermissions = document.getElementById('menuItemLocationPermissions');
+    const btnTestGpsAccuracy = document.getElementById('btnTestGpsAccuracy');
+    const permGpsStatus = document.getElementById('permGpsStatus');
+
+    if (menuItemLocationPermissions) {
+        menuItemLocationPermissions.addEventListener('click', () => {
+            openProfileModal('modalLocationPermissions');
+        });
+    }
+
+    if (btnTestGpsAccuracy) {
+        btnTestGpsAccuracy.addEventListener('click', () => {
+            if (permGpsStatus) permGpsStatus.innerText = 'Acquiring GPS fix...';
+            btnTestGpsAccuracy.innerText = 'Querying Satellites...';
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                        const acc = Math.round(pos.coords.accuracy);
+                        const lat = pos.coords.latitude.toFixed(4);
+                        const lng = pos.coords.longitude.toFixed(4);
+                        if (permGpsStatus) {
+                            permGpsStatus.innerText = `Active: ${lat}, ${lng} (±${acc}m)`;
+                            permGpsStatus.style.color = '#059669';
+                        }
+                        btnTestGpsAccuracy.innerText = 'Test Live GPS Accuracy';
+                        showAppToast(`GPS Locked! Accuracy ±${acc}m`, 'success');
+                    },
+                    (err) => {
+                        if (permGpsStatus) {
+                            permGpsStatus.innerText = 'Location permission blocked';
+                            permGpsStatus.style.color = '#dc2626';
+                        }
+                        btnTestGpsAccuracy.innerText = 'Retry GPS Check';
+                        showAppToast('Could not fetch precise GPS: ' + err.message, 'warning');
+                    },
+                    { enableHighAccuracy: true, timeout: 6000 }
+                );
+            }
+        });
+    }
+
+    // 5. My Safety History Option
+    const menuItemSafetyHistory = document.getElementById('menuItemSafetyHistory');
+    const btnGoToAlertsFeed = document.getElementById('btnGoToAlertsFeed');
+
+    if (menuItemSafetyHistory) {
+        menuItemSafetyHistory.addEventListener('click', () => {
+            openProfileModal('modalSafetyHistory');
+        });
+    }
+
+    if (btnGoToAlertsFeed) {
+        btnGoToAlertsFeed.addEventListener('click', () => {
+            closeProfileModal('modalSafetyHistory');
+            const navTabSafety = document.getElementById('navTabSafety');
+            if (navTabSafety) navTabSafety.click();
+        });
+    }
+
+    // 6. App Settings & Help Option
+    const menuItemAppSettings = document.getElementById('menuItemAppSettings');
+    if (menuItemAppSettings) {
+        menuItemAppSettings.addEventListener('click', () => {
+            openProfileModal('modalAppSettings');
         });
     }
 });
