@@ -162,9 +162,20 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    function parseUtcDate(input) {
+        if (!input) return new Date();
+        if (input instanceof Date) return input;
+        let str = String(input).trim();
+        if (!str) return new Date();
+        const hasTimezone = /Z$/i.test(str) || /[+-]\d{2}(:?\d{2})?$/.test(str);
+        if (!hasTimezone) str = str.replace(' ', 'T') + 'Z';
+        const d = new Date(str);
+        return isNaN(d.getTime()) ? new Date(input) : d;
+    }
+
     function formatRelativeTime(dateString) {
         if (!dateString) return "—";
-        const date = new Date(dateString);
+        const date = parseUtcDate(dateString);
         const now = new Date();
         const diffSec = Math.floor((now - date) / 1000);
 
@@ -666,10 +677,48 @@ document.addEventListener('DOMContentLoaded', () => {
         const mapStatusText = document.getElementById('mapStatusText');
         const mapBounds = [];
 
-        // 1. Plot SOS Alert Markers
+        // 1. Fetch Latest Telemetry from live_locations table first
+        const latestUserLoc = new Map();
+        try {
+            const { data: locations } = await supabase
+                .from('live_locations')
+                .select('*')
+                .order('created_at', { ascending: false })
+                .limit(40);
+
+            if (locations && locations.length > 0) {
+                locations.forEach(l => {
+                    if (l.user_phone && !latestUserLoc.has(l.user_phone)) {
+                        latestUserLoc.set(l.user_phone, l);
+                    }
+                });
+            }
+        } catch (e) {
+            console.warn("Could not query live_locations for map:", e);
+        }
+
+        // Track users with an active SOS alert on the map
+        const usersWithSos = new Set();
+
+        // 2. Plot SOS Alert Markers (aligned with user's actual road location)
         const activeAlerts = alerts.filter(a => a.status === 'active' && a.latitude && a.longitude);
         activeAlerts.forEach(alert => {
-            const coords = [parseFloat(alert.latitude), parseFloat(alert.longitude)];
+            let lat = parseFloat(alert.latitude);
+            let lng = parseFloat(alert.longitude);
+
+            // If citizen has live telemetry in live_locations, use the live location coordinates
+            // so the SOS marker is positioned exactly where the citizen is walking on the road
+            if (alert.user_phone && latestUserLoc.has(alert.user_phone)) {
+                const live = latestUserLoc.get(alert.user_phone);
+                if (live.latitude && live.longitude && !isNaN(live.latitude) && !isNaN(live.longitude)) {
+                    lat = parseFloat(live.latitude);
+                    lng = parseFloat(live.longitude);
+                }
+            }
+
+            if (alert.user_phone) usersWithSos.add(alert.user_phone);
+
+            const coords = [lat, lng];
             mapBounds.push(coords);
 
             const userObj = usersCache.get(alert.user_phone);
@@ -699,76 +748,59 @@ document.addEventListener('DOMContentLoaded', () => {
                 <b>🚨 ${alert.alert_type || 'SOS Alert'}</b><br>
                 User: ${userName} (${alert.user_phone})<br>
                 Status: ACTIVE<br>
-                Time: ${new Date(alert.created_at).toLocaleTimeString()}
+                Time: ${parseUtcDate(alert.created_at).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true })}
             `);
             marker.on('click', () => selectAlertById(alert.id));
             layerSosGroup.addLayer(marker);
         });
 
-        // 2. Plot Real Live Locations from live_locations table
-        try {
-            const { data: locations } = await supabase
-                .from('live_locations')
-                .select('*')
-                .order('created_at', { ascending: false })
-                .limit(20);
+        // 3. Plot Citizens from live_locations (skip normal dot if user already has an SOS alert displayed)
+        latestUserLoc.forEach((loc, phone) => {
+            if (loc.latitude && loc.longitude) {
+                // If user already has an active SOS pin on the map, don't double render a blue dot
+                if (usersWithSos.has(phone)) return;
 
-            if (locations && locations.length > 0) {
-                // Group by user_phone
-                const latestUserLoc = new Map();
-                locations.forEach(l => {
-                    if (l.user_phone && !latestUserLoc.has(l.user_phone)) {
-                        latestUserLoc.set(l.user_phone, l);
-                    }
-                });
+                const coords = [parseFloat(loc.latitude), parseFloat(loc.longitude)];
+                mapBounds.push(coords);
 
-                latestUserLoc.forEach((loc, phone) => {
-                    if (loc.latitude && loc.longitude) {
-                        const coords = [parseFloat(loc.latitude), parseFloat(loc.longitude)];
-                        mapBounds.push(coords);
+                const userObj = usersCache.get(phone);
+                const name = userObj ? userObj.full_name : phone;
 
-                        const userObj = usersCache.get(phone);
-                        const name = userObj ? userObj.full_name : phone;
-
-                        // Check if deviated
-                        if (loc.alert_status === 'deviated') {
-                            const devHtml = `
-                                <div style="position:relative; display:flex; align-items:center; justify-content:center;">
-                                    <div style="width:20px; height:20px; border-radius:50%; background:#7426B8; border:3px solid #FFFFFF; box-shadow:0 0 10px rgba(116,38,184,0.7); display:flex; align-items:center; justify-content:center; color:white; font-size:12px; font-weight:800;">!</div>
-                                    <div style="position:absolute; bottom:24px; left:50%; transform:translateX(-50%); z-index:10;">
-                                        <div class="map-speech-bubble-dev">
-                                            <strong>Route Deviation</strong>
-                                            <span>${name}</span>
-                                        </div>
-                                    </div>
+                // Check if deviated
+                if (loc.alert_status === 'deviated') {
+                    const devHtml = `
+                        <div style="position:relative; display:flex; align-items:center; justify-content:center;">
+                            <div style="width:20px; height:20px; border-radius:50%; background:#7426B8; border:3px solid #FFFFFF; box-shadow:0 0 10px rgba(116,38,184,0.7); display:flex; align-items:center; justify-content:center; color:white; font-size:12px; font-weight:800;">!</div>
+                            <div style="position:absolute; bottom:24px; left:50%; transform:translateX(-50%); z-index:10;">
+                                <div class="map-speech-bubble-dev">
+                                    <strong>Route Deviation</strong>
+                                    <span>${name}</span>
                                 </div>
-                            `;
-                            const devIcon = L.divIcon({ html: devHtml, className: '', iconSize: [40, 40], iconAnchor: [20, 20] });
-                            const devMarker = L.marker(coords, { icon: devIcon }).bindPopup(`<b>⚠️ Route Deviation</b><br>${name}`);
-                            layerDeviationGroup.addLayer(devMarker);
-                        } else {
-                            const userHtml = `
-                                <div style="position:relative; display:flex; align-items:center; justify-content:center;">
-                                    <div class="pulse-radar-wave"></div>
-                                    <div style="width:14px; height:14px; border-radius:50%; background:#1E60FF; border:3px solid #FFFFFF; box-shadow:0 0 8px rgba(30,96,255,0.8); z-index:2;"></div>
-                                    <div style="position:absolute; bottom:20px; left:50%; transform:translateX(-50%); z-index:10;">
-                                        <div class="map-speech-bubble-route">
-                                            <strong>● ${name}</strong>
-                                            <span>Mode: ${loc.travel_mode || 'Normal'}</span>
-                                        </div>
-                                    </div>
+                            </div>
+                        </div>
+                    `;
+                    const devIcon = L.divIcon({ html: devHtml, className: '', iconSize: [40, 40], iconAnchor: [20, 20] });
+                    const devMarker = L.marker(coords, { icon: devIcon }).bindPopup(`<b>⚠️ Route Deviation</b><br>${name}`);
+                    layerDeviationGroup.addLayer(devMarker);
+                } else {
+                    const userHtml = `
+                        <div style="position:relative; display:flex; align-items:center; justify-content:center;">
+                            <div class="pulse-radar-wave"></div>
+                            <div style="width:14px; height:14px; border-radius:50%; background:#1E60FF; border:3px solid #FFFFFF; box-shadow:0 0 8px rgba(30,96,255,0.8); z-index:2;"></div>
+                            <div style="position:absolute; bottom:20px; left:50%; transform:translateX(-50%); z-index:10;">
+                                <div class="map-speech-bubble-route">
+                                    <strong>● ${name}</strong>
+                                    <span>Mode: ${loc.travel_mode || 'Normal'}</span>
                                 </div>
-                            `;
-                            const userIcon = L.divIcon({ html: userHtml, className: '', iconSize: [40, 40], iconAnchor: [20, 20] });
-                            const userMarker = L.marker(coords, { icon: userIcon }).bindPopup(`<b>Citizen Position</b><br>${name}`);
-                            layerUsersGroup.addLayer(userMarker);
-                        }
-                    }
-                });
+                            </div>
+                        </div>
+                    `;
+                    const userIcon = L.divIcon({ html: userHtml, className: '', iconSize: [40, 40], iconAnchor: [20, 20] });
+                    const userMarker = L.marker(coords, { icon: userIcon }).bindPopup(`<b>Citizen Position</b><br>${name}`);
+                    layerUsersGroup.addLayer(userMarker);
+                }
             }
-        } catch (e) {
-            console.warn("Could not query live_locations for map:", e);
-        }
+        });
 
         // Adjust Map Bounds to include actual coordinates
         if (mapBounds.length > 0) {
@@ -802,9 +834,26 @@ document.addEventListener('DOMContentLoaded', () => {
             await calculateNearestPatrolRecommendations(alert);
         }
 
-        // Focus map
-        if (policeMap && alert.latitude && alert.longitude) {
-            policeMap.setView([parseFloat(alert.latitude), parseFloat(alert.longitude)], 15, { animate: true });
+        // Focus map on citizen's live coordinates
+        let focusLat = parseFloat(alert.latitude);
+        let focusLng = parseFloat(alert.longitude);
+        try {
+            const { data: latestLoc } = await supabase
+                .from('live_locations')
+                .select('latitude, longitude')
+                .eq('user_phone', alert.user_phone)
+                .order('created_at', { ascending: false })
+                .limit(1)
+                .maybeSingle();
+
+            if (latestLoc && latestLoc.latitude && latestLoc.longitude) {
+                focusLat = parseFloat(latestLoc.latitude);
+                focusLng = parseFloat(latestLoc.longitude);
+            }
+        } catch (e) {}
+
+        if (policeMap && focusLat && focusLng) {
+            policeMap.setView([focusLat, focusLng], 15, { animate: true });
         }
     };
 
@@ -931,7 +980,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Action Log Tab Timeline
         const timelineContainer = document.getElementById('actionLogTimeline');
         if (timelineContainer) {
-            const createdTime = new Date(alert.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+            const createdTime = parseUtcDate(alert.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
             timelineContainer.innerHTML = `
                 <div class="log-entry">
                     <span class="log-time">${createdTime}</span>
@@ -1090,7 +1139,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                     if (streamTimerOverlay) {
                         streamTimerOverlay.style.display = 'block';
-                        streamTimerOverlay.innerText = new Date(videoRecord.captured_at).toLocaleTimeString();
+                        streamTimerOverlay.innerText = parseUtcDate(videoRecord.captured_at).toLocaleTimeString();
                     }
 
                     // Populate thumbnails
@@ -1323,7 +1372,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const hasCoords = targetLoc && targetLoc.latitude != null && targetLoc.longitude != null;
                 const lat = hasCoords ? parseFloat(targetLoc.latitude) : null;
                 const lng = hasCoords ? parseFloat(targetLoc.longitude) : null;
-                const locTime = targetLoc?.created_at ? new Date(targetLoc.created_at) : null;
+                const locTime = targetLoc?.created_at ? parseUtcDate(targetLoc.created_at) : null;
 
                 // Freshness Policy:
                 // Manual: fresh if < 60 minutes. Stale if >= 60 minutes.

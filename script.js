@@ -17,6 +17,17 @@ document.addEventListener('DOMContentLoaded', () => {
         profileImg.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=7b2cbf&color=fff&rounded=true`;
     }
 
+    function parseUtcDate(input) {
+        if (!input) return new Date();
+        if (input instanceof Date) return input;
+        let str = String(input).trim();
+        if (!str) return new Date();
+        const hasTimezone = /Z$/i.test(str) || /[+-]\d{2}(:?\d{2})?$/.test(str);
+        if (!hasTimezone) str = str.replace(' ', 'T') + 'Z';
+        const d = new Date(str);
+        return isNaN(d.getTime()) ? new Date(input) : d;
+    }
+
     /* =========================================
        1. MAP INITIALIZATION — Real Device Geolocation
        ========================================= */
@@ -42,7 +53,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const userIcon = L.icon({
         iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
         shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-        iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34]
+        iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34],
+        className: 'user-journey-marker'
     });
 
     const destIcon = L.icon({
@@ -57,6 +69,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let liveUserCoords = null; // { lat, lng, accuracy, timestamp }
     let globalGpsWatchId = null;
+    let isJourneyActive = false;
+    let simulationCoords = null;
 
     function applyUserGpsPosition(latitude, longitude, accuracy = null) {
         if (!latitude || !longitude || isNaN(latitude) || isNaN(longitude)) return;
@@ -70,6 +84,16 @@ document.addEventListener('DOMContentLoaded', () => {
             accuracy: accuracy || 10,
             timestamp: Date.now()
         };
+
+        // When journey simulation or deviation is active, keep background liveUserCoords updated
+        // but DO NOT snap userMarker and camera away from simulated journey progress!
+        if (isJourneyActive || lastDeviatedPosition) {
+            if (isEmergencyCountdownActive || isEmergencyDispatchedActive) {
+                onDispatchedLocationSecured(lat, lng, accuracy || 8);
+            }
+            return;
+        }
+
         startLoc = [lat, lng];
 
         if (!userMarker) {
@@ -458,12 +482,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function clearExistingRoutes() {
+        if (isJourneyActive) stopTracking();
         if (safestRouteLine) { userMap.removeLayer(safestRouteLine); safestRouteLine = null; }
         if (shortestRouteLine) { userMap.removeLayer(shortestRouteLine); shortestRouteLine = null; }
         if (altRouteLine) { userMap.removeLayer(altRouteLine); altRouteLine = null; }
         if (deviationLine) { userMap.removeLayer(deviationLine); deviationLine = null; }
         safestPath = null; shortPath = null; altPath = null;
         activePathCoords = null;
+        simulationCoords = null;
         routesGenerated = false;
     }
 
@@ -764,20 +790,33 @@ document.addEventListener('DOMContentLoaded', () => {
         const activeModeObj = document.querySelector('.mode-btn.active span');
         if (activeModeObj) travelMode = activeModeObj.innerText;
         
-        // Determine real live GPS position for SOS record
+        // Determine real live position for SOS record:
+        // Priority 1: Explicit coords passed in options
+        // Priority 2: Deviated road location if user deviated from route
+        // Priority 3: Current walking/journey position if journey is active or marker along route
+        // Priority 4: Active SOS coords / Live device GPS / Start location
         let alertLat, alertLng;
-        if (activeSosLat && activeSosLng) {
+        if (options.latitude && options.longitude) {
+            alertLat = Number(options.latitude).toFixed(5);
+            alertLng = Number(options.longitude).toFixed(5);
+        } else if (lastDeviatedPosition && Array.isArray(lastDeviatedPosition)) {
+            alertLat = Number(lastDeviatedPosition[0]).toFixed(5);
+            alertLng = Number(lastDeviatedPosition[1]).toFixed(5);
+        } else if (isJourneyActive && userMarker) {
+            alertLat = Number(userMarker.getLatLng().lat).toFixed(5);
+            alertLng = Number(userMarker.getLatLng().lng).toFixed(5);
+        } else if (userMarker && (routesGenerated || isJourneyActive)) {
+            alertLat = Number(userMarker.getLatLng().lat).toFixed(5);
+            alertLng = Number(userMarker.getLatLng().lng).toFixed(5);
+        } else if (activeSosLat && activeSosLng) {
             alertLat = Number(activeSosLat).toFixed(5);
             alertLng = Number(activeSosLng).toFixed(5);
         } else if (liveUserCoords) {
             alertLat = Number(liveUserCoords.lat).toFixed(5);
             alertLng = Number(liveUserCoords.lng).toFixed(5);
-        } else if (lastDeviatedPosition) {
-            alertLat = lastDeviatedPosition[0].toFixed(5);
-            alertLng = lastDeviatedPosition[1].toFixed(5);
         } else if (userMarker) {
-            alertLat = userMarker.getLatLng().lat.toFixed(5);
-            alertLng = userMarker.getLatLng().lng.toFixed(5);
+            alertLat = Number(userMarker.getLatLng().lat).toFixed(5);
+            alertLng = Number(userMarker.getLatLng().lng).toFixed(5);
         } else if (startLoc) {
             alertLat = Number(startLoc[0]).toFixed(5);
             alertLng = Number(startLoc[1]).toFixed(5);
@@ -785,6 +824,9 @@ document.addEventListener('DOMContentLoaded', () => {
             alertLat = "0.0000";
             alertLng = "0.0000";
         }
+
+        activeSosLat = parseFloat(alertLat);
+        activeSosLng = parseFloat(alertLng);
 
         // 1. Get authenticated user ID UUID
         activeUserId = await getAuthenticatedUserId();
@@ -856,6 +898,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // 3. INSERT INTO emergency_alerts LINKED WITH sos_id
         if (supabase) {
+             const nowIso = new Date().toISOString();
              const { error } = await supabase.from('emergency_alerts').insert([{
                  sos_id: activeSosId,
                  user_phone: emergencyData.phone,
@@ -863,7 +906,8 @@ document.addEventListener('DOMContentLoaded', () => {
                  latitude: parseFloat(alertLat),
                  longitude: parseFloat(alertLng),
                  message: `${fullMessage} [MODE:${travelMode}]`,
-                 status: 'active'
+                 status: 'active',
+                 created_at: nowIso
              }]);
              if (error) {
                  console.warn("Supabase insert with sos_id failed, attempting standard insert:", error);
@@ -874,7 +918,8 @@ document.addEventListener('DOMContentLoaded', () => {
                      latitude: parseFloat(alertLat),
                      longitude: parseFloat(alertLng),
                      message: `${fullMessage} [MODE:${travelMode}] [SOS:${activeSosId}]`,
-                     status: 'active'
+                     status: 'active',
+                     created_at: nowIso
                  }]);
                  if (fallbackError) {
                      console.error("Supabase fallback insert also failed:", fallbackError);
@@ -934,6 +979,50 @@ document.addEventListener('DOMContentLoaded', () => {
     /* =========================================
        5. TRACKING LOGIC
        ========================================= */
+    // Generate evenly spaced coordinates along route for smooth, glitch-free simulation
+    function generateSmoothSimulationPath(coords, targetPoints = 55) {
+        if (!coords || coords.length < 2) return coords || [];
+        
+        // Calculate cumulative polyline segment distances
+        const dists = [0];
+        let totalDist = 0;
+        for (let i = 1; i < coords.length; i++) {
+            const p1 = coords[i - 1];
+            const p2 = coords[i];
+            const dLat = (p2[0] - p1[0]);
+            const dLng = (p2[1] - p1[1]);
+            const dist = Math.sqrt(dLat * dLat + dLng * dLng);
+            totalDist += dist;
+            dists.push(totalDist);
+        }
+
+        if (totalDist === 0) return coords;
+
+        const count = Math.max(25, Math.min(90, targetPoints));
+        const smoothPath = [coords[0]];
+        const stepDist = totalDist / (count - 1);
+
+        let currSeg = 0;
+        for (let i = 1; i < count - 1; i++) {
+            const targetDist = i * stepDist;
+            while (currSeg < dists.length - 1 && dists[currSeg + 1] < targetDist) {
+                currSeg++;
+            }
+            const segStartDist = dists[currSeg];
+            const segEndDist = dists[currSeg + 1];
+            const segLen = segEndDist - segStartDist;
+            const t = segLen > 0 ? (targetDist - segStartDist) / segLen : 0;
+            
+            const p1 = coords[currSeg];
+            const p2 = coords[currSeg + 1];
+            const interpLat = p1[0] + t * (p2[0] - p1[0]);
+            const interpLng = p1[1] + t * (p2[1] - p1[1]);
+            smoothPath.push([interpLat, interpLng]);
+        }
+        smoothPath.push(coords[coords.length - 1]);
+        return smoothPath;
+    }
+
     const startJourneyBtn = document.getElementById('startJourneyBtn');
     
     if (startJourneyBtn) {
@@ -979,26 +1068,39 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 if(liveTrackingInterval) clearInterval(liveTrackingInterval);
                 
+                isJourneyActive = true;
+                simulationCoords = generateSmoothSimulationPath(activePathCoords, 55);
                 currentStep = 0;
-                broadcastLiveLocation(activePathCoords[currentStep]);
+                
+                const initialLoc = simulationCoords[0] || activePathCoords[0];
+                if (userMarker) {
+                    userMarker.setLatLng(initialLoc);
+                    if (userMap) userMap.panTo(initialLoc, { animate: true, duration: 0.8 });
+                }
+                broadcastLiveLocation(initialLoc);
                 
                 liveTrackingInterval = setInterval(() => {
                     currentStep++;
-                    if(currentStep < activePathCoords.length) {
-                        const newLoc = activePathCoords[currentStep];
+                    if (simulationCoords && currentStep < simulationCoords.length) {
+                        const newLoc = simulationCoords[currentStep];
                         if (userMarker) {
                             userMarker.setLatLng(newLoc);
-                            if(userMap) userMap.panTo(newLoc);
+                            if (userMap) userMap.panTo(newLoc, { animate: true, duration: 1.0 });
                         }
                         broadcastLiveLocation(newLoc);
                     } else {
                         clearInterval(liveTrackingInterval);
+                        liveTrackingInterval = null;
+                        isJourneyActive = false;
+                        simulationCoords = null;
                         alert("You have reached your destination.");
                         startJourneyBtn.click();
                     }
-                }, 3500);
+                }, 1200);
 
             } else {
+                isJourneyActive = false;
+                simulationCoords = null;
                 btnText.innerText = 'Start Journey';
                 if(btnIcon) { btnIcon.classList.remove('la-stop-circle'); btnIcon.classList.add('la-play'); }
                 startJourneyBtn.style.background = 'var(--success)';
@@ -1006,7 +1108,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 const liveInd = document.querySelector('.live-indicator');
                 if(liveInd) liveInd.style.display = 'none';
-                if(liveTrackingInterval) clearInterval(liveTrackingInterval);
+                if(liveTrackingInterval) {
+                    clearInterval(liveTrackingInterval);
+                    liveTrackingInterval = null;
+                }
 
                 const homeJourneyTag = document.getElementById('homeJourneyStatusTag');
                 const homeJourneyDesc = document.getElementById('homeJourneyDescText');
@@ -1047,7 +1152,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 latitude: coords[0],
                 longitude: coords[1],
                 travel_mode: travelMode,
-                alert_status: payload.isDeviated ? 'deviated' : 'normal'
+                alert_status: payload.isDeviated ? 'deviated' : 'normal',
+                created_at: new Date().toISOString()
             }]);
         }
     }
@@ -1225,9 +1331,11 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Store the deviated position so the alert sends this exact location
             lastDeviatedPosition = deviatedPos;
+            activeSosLat = Number(deviatedPos[0]);
+            activeSosLng = Number(deviatedPos[1]);
             
             userMarker.setLatLng(deviatedPos);
-            userMap.panTo(deviatedPos);
+            userMap.panTo(deviatedPos, { animate: true, duration: 1.0 });
             broadcastLiveLocation(deviatedPos);
             
             if (deviationLine) userMap.removeLayer(deviationLine);
@@ -1291,9 +1399,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function autoTriggerDeviationSOS() {
+        const devPos = lastDeviatedPosition || (userMarker ? [userMarker.getLatLng().lat, userMarker.getLatLng().lng] : null);
         closeDeviationAlert();
         // Do NOT stop tracking; keep broadcasting location for police
-        triggerSOSAction("Auto-SOS Activated", "User unresponsive to deviation alerts for 45 seconds.");
+        if (devPos) {
+            broadcastLiveLocation(devPos);
+            triggerSOSAction("Auto-SOS Activated", "User unresponsive to deviation alerts for 45 seconds.", {
+                latitude: devPos[0],
+                longitude: devPos[1]
+            });
+        } else {
+            triggerSOSAction("Auto-SOS Activated", "User unresponsive to deviation alerts for 45 seconds.");
+        }
     }
 
     function closeDeviationAlert() {
@@ -1318,7 +1435,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Resume tracking from where we left off after user confirms safe
     function resumeTrackingAfterDeviation() {
-        if (!activePathCoords || preDeviationStep === null) return;
+        const path = simulationCoords || activePathCoords;
+        if (!path || preDeviationStep === null) return;
 
         // Remove the red deviation line
         if (deviationLine) { userMap.removeLayer(deviationLine); deviationLine = null; }
@@ -1326,38 +1444,43 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Snap marker back to route at the saved step
         currentStep = preDeviationStep;
-        const snapLoc = activePathCoords[currentStep];
+        const snapLoc = path[currentStep];
         if (userMarker && snapLoc) {
             userMarker.setLatLng(snapLoc);
-            if(userMap) userMap.panTo(snapLoc);
+            if(userMap) userMap.panTo(snapLoc, { animate: true, duration: 1.0 });
             broadcastLiveLocation(snapLoc);
         }
         preDeviationStep = null;
 
         // Resume the tracking interval to continue to destination
         if (liveTrackingInterval) clearInterval(liveTrackingInterval);
+        isJourneyActive = true;
         liveTrackingInterval = setInterval(() => {
             currentStep++;
-            if (currentStep < activePathCoords.length) {
-                const newLoc = activePathCoords[currentStep];
+            if (path && currentStep < path.length) {
+                const newLoc = path[currentStep];
                 if (userMarker) {
                     userMarker.setLatLng(newLoc);
-                    if(userMap) userMap.panTo(newLoc);
+                    if(userMap) userMap.panTo(newLoc, { animate: true, duration: 1.0 });
                 }
                 broadcastLiveLocation(newLoc);
             } else {
                 clearInterval(liveTrackingInterval);
                 liveTrackingInterval = null;
+                isJourneyActive = false;
+                simulationCoords = null;
                 alert("You have reached your destination.");
                 if (startJourneyBtn) startJourneyBtn.click(); // Reset button
             }
-        }, 3500);
+        }, 1200);
 
-        console.log("Tracking resumed from step", currentStep, "of", activePathCoords.length);
+        console.log("Tracking resumed from step", currentStep, "of", path.length);
     }
 
     // Stop tracking completely (used when NOT SAFE or SOS)
     function stopTracking() {
+        isJourneyActive = false;
+        simulationCoords = null;
         if (liveTrackingInterval) { clearInterval(liveTrackingInterval); liveTrackingInterval = null; }
         preDeviationStep = null;
 
@@ -1452,10 +1575,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnNotSafe = document.getElementById('btnNotSafe');
     if (btnNotSafe) {
         btnNotSafe.addEventListener('click', () => {
+            const devPos = lastDeviatedPosition || (userMarker ? [userMarker.getLatLng().lat, userMarker.getLatLng().lng] : null);
             // First: close the deviation modal and kill the auto-escalation timer
             closeDeviationAlert();
             // Do NOT stop tracking; keep movement broadcasting active for emergency response
-            triggerSOSAction("Not Safe Triggered", "User reported NOT SAFE due to route deviation");
+            if (devPos) {
+                broadcastLiveLocation(devPos);
+                triggerSOSAction("Not Safe Triggered", "User reported NOT SAFE due to route deviation", {
+                    latitude: devPos[0],
+                    longitude: devPos[1]
+                });
+            } else {
+                triggerSOSAction("Not Safe Triggered", "User reported NOT SAFE due to route deviation");
+            }
         });
     }
 
@@ -1752,7 +1884,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const borderCol = isResolved ? 'var(--success)' : 'var(--danger)';
                 const iconCol = isResolved ? 'var(--success)' : 'var(--danger)';
                 const icon = isResolved ? 'la-check-circle' : 'la-exclamation-triangle';
-                const time = new Date(a.created_at).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' });
+                const time = parseUtcDate(a.created_at).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' });
                 return `
                     <div style="background: white; border: 1px solid #e2e8f0; border-left: 4px solid ${borderCol}; border-radius: var(--radius-sm); padding: 14px; box-shadow: var(--shadow-sm); margin-bottom: 8px;">
                         <div style="display: flex; justify-content: space-between; align-items: flex-start;">
@@ -2184,6 +2316,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function onDispatchedLocationSecured(lat, lng, accuracy = 8) {
         if (!lat || !lng || isNaN(lat) || isNaN(lng)) return;
+
+        // If user is deviated or in journey simulation, preserve the user's actual road position
+        if (lastDeviatedPosition && Array.isArray(lastDeviatedPosition)) {
+            lat = lastDeviatedPosition[0];
+            lng = lastDeviatedPosition[1];
+        } else if (isJourneyActive && userMarker) {
+            lat = userMarker.getLatLng().lat;
+            lng = userMarker.getLatLng().lng;
+        }
+
         activeSosLat = Number(lat);
         activeSosLng = Number(lng);
 
@@ -2280,7 +2422,11 @@ document.addEventListener('DOMContentLoaded', () => {
         populateDispatchedContacts();
 
         // Check if real live coordinates are already available
-        if (liveUserCoords) {
+        if (lastDeviatedPosition && Array.isArray(lastDeviatedPosition)) {
+            onDispatchedLocationSecured(lastDeviatedPosition[0], lastDeviatedPosition[1], 5);
+        } else if (isJourneyActive && userMarker) {
+            onDispatchedLocationSecured(userMarker.getLatLng().lat, userMarker.getLatLng().lng, 5);
+        } else if (liveUserCoords) {
             onDispatchedLocationSecured(liveUserCoords.lat, liveUserCoords.lng, liveUserCoords.accuracy);
         } else if (startLoc) {
             onDispatchedLocationSecured(startLoc[0], startLoc[1], 15);

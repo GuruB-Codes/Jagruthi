@@ -10,6 +10,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Populate Initials Badge
+    function parseUtcDate(input) {
+        if (!input) return new Date();
+        if (input instanceof Date) return input;
+        let str = String(input).trim();
+        if (!str) return new Date();
+        const hasTimezone = /Z$/i.test(str) || /[+-]\d{2}(:?\d{2})?$/.test(str);
+        if (!hasTimezone) str = str.replace(' ', 'T') + 'Z';
+        const d = new Date(str);
+        return isNaN(d.getTime()) ? new Date(input) : d;
+    }
+
     const contactName = localStorage.getItem('fullName') || localStorage.getItem('userName') || 'Emergency Contact';
     const badge = document.getElementById('contactInitialsBadge');
     if (badge) {
@@ -149,7 +160,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             historyList.innerHTML = alerts.map(a => {
                 const isResolved = a.status === 'resolved';
-                const timeStr = new Date(a.created_at).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' });
+                const timeStr = parseUtcDate(a.created_at).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' });
                 return `
                     <div class="history-card">
                         <div class="history-icon ${isResolved ? 'bg-gray' : 'bg-red'}">
@@ -994,7 +1005,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 updateLiveTracking({
                     lat: latestLoc.latitude,
                     lng: latestLoc.longitude,
-                    time: new Date(latestLoc.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                    time: parseUtcDate(latestLoc.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
                     isDeviated: latestLoc.alert_status === 'deviated'
                 });
             } else {

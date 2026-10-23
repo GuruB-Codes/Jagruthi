@@ -5663,6 +5663,16 @@ input:checked + .switch-slider:before {
     transform: scale(0.98);
 }
 
+/* Smooth movement transition for journey simulation marker */
+.leaflet-marker-icon.user-journey-marker {
+    transition: transform 1.1s cubic-bezier(0.25, 1, 0.5, 1) !important;
+}
+
+.leaflet-zoom-anim .leaflet-marker-icon.user-journey-marker {
+    transition: none !important;
+}
+
+
 
 
 

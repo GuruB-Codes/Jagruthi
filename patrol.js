@@ -36,6 +36,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // 2. State Management
+    function parseUtcDate(input) {
+        if (!input) return new Date();
+        if (input instanceof Date) return input;
+        let str = String(input).trim();
+        if (!str) return new Date();
+        const hasTimezone = /Z$/i.test(str) || /[+-]\d{2}(:?\d{2})?$/.test(str);
+        if (!hasTimezone) str = str.replace(' ', 'T') + 'Z';
+        const d = new Date(str);
+        return isNaN(d.getTime()) ? new Date(input) : d;
+    }
+
     let isOnDuty = false;
     let watchId = null;
     let latestCoords = null;
@@ -303,7 +314,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (activeDispatchCard) activeDispatchCard.style.display = 'block';
         if (dispVictimName) dispVictimName.innerText = alert.user_phone || 'Distress Citizen';
         if (dispAlertType) dispAlertType.innerText = alert.alert_type || 'Emergency SOS';
-        if (dispReceivedTime) dispReceivedTime.innerText = `Received ${new Date(alert.created_at).toLocaleTimeString()}`;
+        if (dispReceivedTime) dispReceivedTime.innerText = `Received ${parseUtcDate(alert.created_at).toLocaleTimeString()}`;
 
         // Extract escalation status
         const escalation = alert.police_escalation || 'ASSIGNED';

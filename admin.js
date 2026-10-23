@@ -10,6 +10,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // === Admin Initials Badge ===
+    function parseUtcDate(input) {
+        if (!input) return new Date();
+        if (input instanceof Date) return input;
+        let str = String(input).trim();
+        if (!str) return new Date();
+        const hasTimezone = /Z$/i.test(str) || /[+-]\d{2}(:?\d{2})?$/.test(str);
+        if (!hasTimezone) str = str.replace(' ', 'T') + 'Z';
+        const d = new Date(str);
+        return isNaN(d.getTime()) ? new Date(input) : d;
+    }
+
     const adminName = localStorage.getItem('fullName') || 'Admin';
     const adminBadge = document.getElementById('adminInitialsBadge');
     if (adminBadge) {
@@ -199,7 +210,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         ...alert,
                         userName: alert.user_phone,
                         status: 'ACTIVE',
-                        timestamp: new Date(alert.created_at).toLocaleTimeString(),
+                        timestamp: parseUtcDate(alert.created_at).toLocaleTimeString(),
                         alertType: alert.alert_type
                     }, isFirstPoll);
                 }
@@ -999,7 +1010,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                     <div style="text-align:right;">
                         <span style="font-size:0.72rem;background:#ecfdf5;color:#10b981;padding:2px 8px;border-radius:10px;font-weight:600;">Resolved</span>
-                        <div style="font-size:0.72rem;color:#94a3b8;margin-top:3px;">${a.created_at ? new Date(a.created_at).toLocaleTimeString() : '--'}</div>
+                        <div style="font-size:0.72rem;color:#94a3b8;margin-top:3px;">${a.created_at ? parseUtcDate(a.created_at).toLocaleTimeString() : '--'}</div>
                     </div>
                 </div>
             `).join('');
@@ -1031,7 +1042,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <tr>
                         <td><strong>#${a.id ? a.id.substring(0, 8) : 'INC'}</strong></td>
                         <td>${a.alert_type || 'SOS Alert'}</td>
-                        <td>${a.created_at ? new Date(a.created_at).toLocaleTimeString() : '--'}</td>
+                        <td>${a.created_at ? parseUtcDate(a.created_at).toLocaleTimeString() : '--'}</td>
                         <td><span style="background:${badgeBg};color:${badgeColor};padding:2px 8px;border-radius:12px;font-size:0.75rem;font-weight:600;">${(a.status || 'ACTIVE').toUpperCase()}</span></td>
                     </tr>
                 `;
