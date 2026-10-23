@@ -100,19 +100,7 @@
                                 <span id="homeContactsPreviewText" style="display:none;">Emergency contacts linked</span>
                             </button>
 
-                            <!-- Card 2: My Location -->
-                            <button type="button" class="safety-grid-card" id="btnGridLocation" aria-label="My Location">
-                                <div class="safety-card-icon-wrap">
-                                    <i class="las la-crosshairs"></i>
-                                </div>
-                                <span class="safety-card-label">My Location</span>
-                                <span class="safety-card-sub" id="homeGpsStatus">Live GPS</span>
-                                <span id="homeCurrentLocText" style="display:none;">Detecting location...</span>
-                                <span id="homeJourneyStatusTag" style="display:none;">Standby</span>
-                                <span id="homeJourneyDescText" style="display:none;">Safe corridor ready</span>
-                            </button>
-
-                            <!-- Card 3: Capture Evidence -->
+                            <!-- Card 2: Capture Evidence -->
                             <button type="button" class="safety-grid-card" id="btnGridEvidence" aria-label="Capture Evidence">
                                 <div class="safety-card-icon-wrap">
                                     <i class="las la-camera"></i>
@@ -121,7 +109,7 @@
                                 <span class="safety-card-sub text-danger" style="color: #ef4444;"><i class="las la-dot-circle"></i> Photo / Video</span>
                             </button>
 
-                            <!-- Card 4: Fake Call -->
+                            <!-- Card 3: Fake Call -->
                             <button type="button" class="safety-grid-card" id="btnGridFakeCall" aria-label="Fake Call">
                                 <div class="safety-card-icon-wrap">
                                     <i class="las la-phone-volume"></i>
@@ -129,21 +117,23 @@
                                 <span class="safety-card-label">Fake Call</span>
                             </button>
 
-                            <!-- Card 5: Safety Instructions -->
-                            <button type="button" class="safety-grid-card" id="btnGridInstructions" aria-label="Safety Instructions">
-                                <div class="safety-card-icon-wrap">
-                                    <i class="las la-book-open"></i>
-                                </div>
-                                <span class="safety-card-label">Safety Instructions</span>
-                            </button>
-
-                            <!-- Card 6: Emergency Services -->
+                            <!-- Card 4: Emergency Services -->
                             <button type="button" class="safety-grid-card" id="btnGridServices" aria-label="Emergency Services">
                                 <div class="safety-card-icon-wrap">
                                     <i class="las la-shield-alt"></i>
                                 </div>
                                 <span class="safety-card-label">Emergency Services</span>
                             </button>
+                        </div>
+
+                        <!-- Preserved DOM nodes for GPS background resolution and telemetry compatibility -->
+                        <div style="display: none;" aria-hidden="true">
+                            <button type="button" id="btnGridLocation"></button>
+                            <button type="button" id="btnGridInstructions"></button>
+                            <span id="homeGpsStatus">Live GPS</span>
+                            <span id="homeCurrentLocText">Detecting location...</span>
+                            <span id="homeJourneyStatusTag">Standby</span>
+                            <span id="homeJourneyDescText">Safe corridor ready</span>
                         </div>
                     </div>
 

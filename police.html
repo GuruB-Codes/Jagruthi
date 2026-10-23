@@ -163,17 +163,45 @@
                             <span class="notif-badge-bubble" id="topNotifBadge">0</span>
                         </button>
                         
-                        <!-- Notification Popover Menu -->
+                        <!-- Notification Popover Menu: Recent Emergency Alerts -->
                         <div class="notif-dropdown" id="notifDropdown">
                             <div class="notif-dropdown-header">
-                                <span>Recent Emergency Alerts</span>
-                                <span class="badge-active-case" id="notifUnreadPill">0 Active</span>
+                                <div class="notif-header-title">
+                                    <i class="las la-bell header-bell-icon"></i>
+                                    <span>Recent Emergency Alerts</span>
+                                    <span class="badge-active-case" id="notifUnreadPill">0 Active</span>
+                                </div>
+                                <button class="notif-close-btn" id="notifCloseBtn" title="Close"><i class="las la-times"></i></button>
                             </div>
-                            <div class="notif-dropdown-list" id="notifDropdownList">
-                                <div class="empty-state-card" style="padding:20px 10px;">
-                                    <p>Loading notifications...</p>
+
+                            <!-- Filter Tabs: All, Active, Resolved -->
+                            <div class="notif-filter-tabs">
+                                <button class="notif-filter-btn active" data-filter="all">All Alerts</button>
+                                <button class="notif-filter-btn" data-filter="active">Active Only</button>
+                                <button class="notif-filter-btn" data-filter="resolved">Resolved</button>
+                            </div>
+
+                            <!-- Real Alert Cards Container -->
+                            <div class="recent-alerts-list" id="recentAlertsList">
+                                <div class="empty-state-card" id="alertsLoadingState">
+                                    <i class="las la-spinner la-spin"></i>
+                                    <p>Connecting to emergency database...</p>
+                                    <small>Fetching live alerts from Supabase</small>
                                 </div>
                             </div>
+
+                            <!-- Footer with View All -->
+                            <div class="notif-dropdown-footer">
+                                <a href="javascript:void(0)" class="panel-action-link" id="viewAllAlertsLink">
+                                    <span>View Incident Details</span>
+                                    <i class="las la-arrow-right"></i>
+                                </a>
+                            </div>
+
+                            <!-- Preserved DOM IDs for DB synchronization compatibility -->
+                            <div id="activeCasesList" style="display:none;"></div>
+                            <span id="activeCasesCount" style="display:none;">0 Active</span>
+                            <div id="notifDropdownList" style="display:none;"></div>
                         </div>
                     </div>
 
@@ -281,37 +309,43 @@
                 </section>
 
                 <!-- ==================================================================
-                     2. MIDDLE ROW: MAP (LEFT) & RECENT ALERTS (RIGHT)
+                     2. MIDDLE ROW: FULL-WIDTH WIDESCREEN LIVE MAP
                      ================================================================== -->
                 <section class="middle-dashboard-grid">
 
-                    <!-- Map Panel Card -->
+                    <!-- Map Panel Card (Full Width) -->
                     <div class="card-panel map-panel-card" id="policeMapPanel">
                         <div class="panel-header">
                             <div class="panel-title-group">
                                 <i class="las la-map-marker-alt header-icon-dark"></i>
                                 <h3 class="panel-title">Live Location Map</h3>
+                                <span class="badge-fullscreen-pill" id="mapLiveBadge"><span class="live-dot-pulse"></span> Live GPS Radar</span>
                             </div>
-                            <div class="map-view-dropdown-container">
-                                <button class="map-view-dropdown-btn" id="mapViewDropdownBtn" title="Switch Map Provider">
-                                    <i class="las la-layer-group"></i>
-                                    <span id="currentMapTypeName">Google Streets</span>
-                                    <i class="las la-angle-down"></i>
-                                </button>
-                                <div class="map-type-dropdown-menu" id="mapTypeDropdownMenu">
-                                    <button class="map-type-opt active" data-map-type="google-streets">
-                                        <i class="las la-map"></i> Google Streets (Default)
+                            <div class="panel-header-actions" style="display:flex; align-items:center; gap:10px;">
+                                <div class="map-view-dropdown-container">
+                                    <button class="map-view-dropdown-btn" id="mapViewDropdownBtn" title="Switch Map Provider">
+                                        <i class="las la-layer-group"></i>
+                                        <span id="currentMapTypeName">Google Streets</span>
+                                        <i class="las la-angle-down"></i>
                                     </button>
-                                    <button class="map-type-opt" data-map-type="google-hybrid">
-                                        <i class="las la-satellite"></i> Google Satellite & Hybrid
-                                    </button>
-                                    <button class="map-type-opt" data-map-type="google-terrain">
-                                        <i class="las la-mountain"></i> Google Terrain
-                                    </button>
-                                    <button class="map-type-opt" data-map-type="osm">
-                                        <i class="las la-globe"></i> OpenStreetMap / Carto
-                                    </button>
+                                    <div class="map-type-dropdown-menu" id="mapTypeDropdownMenu">
+                                        <button class="map-type-opt active" data-map-type="google-streets">
+                                            <i class="las la-map"></i> Google Streets (Default)
+                                        </button>
+                                        <button class="map-type-opt" data-map-type="google-hybrid">
+                                            <i class="las la-satellite"></i> Google Satellite & Hybrid
+                                        </button>
+                                        <button class="map-type-opt" data-map-type="google-terrain">
+                                            <i class="las la-mountain"></i> Google Terrain
+                                        </button>
+                                        <button class="map-type-opt" data-map-type="osm">
+                                            <i class="las la-globe"></i> OpenStreetMap / Carto
+                                        </button>
+                                    </div>
                                 </div>
+                                <button class="map-header-action-btn" id="mapFullscreenBtn" title="Toggle Fullscreen Map">
+                                    <i class="las la-expand"></i>
+                                </button>
                             </div>
                         </div>
 
@@ -388,27 +422,6 @@
                                 <span id="mapStatusText">Connecting GPS Feed...</span>
                             </div>
                         </div>
-                    </div>
-
-                    <!-- Recent Alerts Panel (Populated with Real Supabase Records) -->
-                    <div class="card-panel alerts-panel-card">
-                        <div class="panel-header">
-                            <h3 class="panel-title">Recent Alerts</h3>
-                            <a href="javascript:void(0)" class="panel-action-link" id="viewAllAlertsLink">View All <i class="las la-arrow-right"></i></a>
-                        </div>
-
-                        <!-- Real Alert Cards Container -->
-                        <div class="recent-alerts-list" id="recentAlertsList">
-                            <div class="empty-state-card" id="alertsLoadingState">
-                                <i class="las la-spinner la-spin"></i>
-                                <p>Connecting to emergency database...</p>
-                                <small>Fetching live alerts from Supabase</small>
-                            </div>
-                        </div>
-
-                        <!-- Preserved DOM IDs for DB synchronization compatibility -->
-                        <div id="activeCasesList" style="display:none;"></div>
-                        <span id="activeCasesCount" style="display:none;">0 Active</span>
                     </div>
                 </section>
 
@@ -924,75 +937,115 @@
             <div id="patrolRegAlert" class="patrol-alert-box" style="display:none;"></div>
             <form id="patrolRegistrationForm" onsubmit="return false;">
                 <input type="hidden" id="patrolEditUnitId" value="">
-                <div class="patrol-form-grid">
-                    <div class="form-group">
-                        <label for="patrolInputId">Patrol ID <span class="text-danger">*</span></label>
-                        <div class="input-with-action">
-                            <input type="text" id="patrolInputId" placeholder="e.g. PATROL-001" autocomplete="off" required>
-                            <button type="button" class="btn-input-sub" id="btnAutoGenerateId" title="Generate Sequential Patrol ID">Auto</button>
+
+                <!-- 1. Patrol Name Input (Primary) -->
+                <div class="form-group" style="margin-bottom: 12px;">
+                    <label for="patrolInputUnitName" style="font-size: 0.95rem; font-weight: 700; color: #0D1535; display: flex; align-items: center; gap: 8px;">
+                        <i class="las la-shield-alt" style="color: var(--police-pink); font-size: 1.25rem;"></i> Patrol Name / Callsign <span class="text-danger">*</span>
+                    </label>
+                    <input type="text" id="patrolInputUnitName" placeholder="Enter patrol name (e.g. Patrol 1, Cheetah-01, Hoysala-4)..." style="font-size: 0.98rem; padding: 11px 14px; border: 2px solid #CBD5E1; border-radius: 10px; font-weight: 600; width: 100%; box-sizing: border-box;" autocomplete="off" required autofocus>
+                </div>
+
+                <!-- 2. Interactive Pin Patrol on Map -->
+                <div class="manual-coords-preview-box" id="regManualCoordsBox" style="margin-top: 10px;">
+                    <div class="preview-box-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <i class="las la-map-marked-alt" style="color: var(--police-pink); font-size: 1.2rem;"></i>
+                            <strong style="color: var(--police-text-main); font-size: 0.9rem;">Pin Patrol Location on Map</strong>
                         </div>
+                        <button type="button" class="btn-preset-pill" id="btnRegPickOnMainMap" style="background: #0D1535; color: #FCD34D; border: 1px solid #FCD34D; cursor: pointer; padding: 5px 12px; font-weight: 700; border-radius: 8px;">
+                            <i class="las la-expand-arrows-alt"></i> Pick on Main Dashboard Map
+                        </button>
                     </div>
-                    <div class="form-group">
-                        <label for="patrolInputUnitName">Unit Name / Callsign <span class="text-danger">*</span></label>
-                        <input type="text" id="patrolInputUnitName" placeholder="e.g. Cheetah-04, Eagle-02" autocomplete="off" required>
+
+                    <div class="map-helper-hint" style="margin-bottom: 8px; font-size: 0.8rem; color: #475569; display: flex; align-items: center; gap: 5px;">
+                        <i class="las la-mouse-pointer" style="color: var(--police-pink);"></i> Click anywhere on the map or drag the pin to set the patrol's location:
                     </div>
-                    <div class="form-group">
-                        <label for="patrolInputOfficerName">Officer Name <span class="text-danger">*</span></label>
-                        <input type="text" id="patrolInputOfficerName" placeholder="e.g. Inspector Rajesh Kumar" autocomplete="off" required>
+
+                    <!-- Interactive mini map for pinning -->
+                    <div id="regPatrolMiniMap" class="picker-leaflet-box" style="height: 250px; width: 100%; margin-bottom: 10px; border-radius: 10px; border: 2px solid #CBD5E1; overflow: hidden; position: relative;"></div>
+
+                    <!-- Geocoded Address Preview -->
+                    <div class="addr-preview-row" style="margin-bottom: 10px; display: flex; align-items: center; gap: 8px; background: #FFFFFF; padding: 8px 12px; border-radius: 8px; border: 1px solid #E2E8F0;">
+                        <i class="las la-map-marker-alt" style="color: #EF4444; font-size: 1.2rem; flex-shrink: 0;"></i>
+                        <span id="regAddrPreviewText" style="font-size: 0.84rem; color: #1E293B; font-weight: 600;">Click on map or drag pin to set location</span>
                     </div>
-                    <div class="form-group">
-                        <label for="patrolInputPhone">Officer Contact Number <span class="text-danger">*</span></label>
-                        <input type="tel" id="patrolInputPhone" placeholder="10-digit mobile, e.g. 9876543225" maxlength="15" autocomplete="off" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="patrolInputVehicleReg">Vehicle Registration Number</label>
-                        <input type="text" id="patrolInputVehicleReg" placeholder="e.g. KA-04-G-1234 (optional)" autocomplete="off">
-                    </div>
-                    <div class="form-group">
-                        <label for="patrolInputStation">Station / Outpost</label>
-                        <input type="text" id="patrolInputStation" placeholder="e.g. Yelahanka Police Station" autocomplete="off">
-                    </div>
-                    <div class="form-group">
-                        <label for="patrolInputStatus">Availability Status <span class="text-danger">*</span></label>
-                        <select id="patrolInputStatus" class="fleet-select">
-                            <option value="available">Available (Ready for Dispatch)</option>
-                            <option value="assigned">Assigned (Active Incident)</option>
-                            <option value="unavailable">Unavailable (Maintenance / Break)</option>
-                            <option value="off_duty">Off Duty</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="patrolInputLocationMode">Initial Location Source <span class="text-danger">*</span></label>
-                        <select id="patrolInputLocationMode" class="fleet-select">
-                            <option value="manual">Manual Location (Inspector sets coordinates)</option>
-                            <option value="gps">GPS Telemetry (Device / Patrol Tracker app)</option>
-                        </select>
+
+                    <!-- Quick Location Presets -->
+                    <div class="quick-presets-row" style="margin-bottom: 4px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                        <span class="preset-label" style="font-size: 0.76rem; font-weight: 700; color: #64748B;">Quick Areas:</span>
+                        <button type="button" class="btn-preset-pill btn-reg-preset" data-lat="13.0380" data-lng="77.5120">Yelahanka</button>
+                        <button type="button" class="btn-preset-pill btn-reg-preset" data-lat="13.0358" data-lng="77.5970">Hebbal</button>
+                        <button type="button" class="btn-preset-pill btn-reg-preset" data-lat="12.9716" data-lng="77.5946">MG Road</button>
+                        <button type="button" class="btn-preset-pill btn-reg-preset" data-lat="12.9352" data-lng="77.6245">Koramangala</button>
+                        <button type="button" class="btn-preset-pill btn-reg-preset" data-lat="13.1878" data-lng="77.5670">Rajanukunte</button>
                     </div>
                 </div>
 
-                <!-- Initial Coordinates (shown when Manual mode is selected) -->
-                <div class="manual-coords-preview-box" id="regManualCoordsBox">
-                    <div class="preview-box-header">
-                        <i class="las la-map-pin"></i>
-                        <span>Initial Coordinates (Optional - can also be set or picked on map after registration)</span>
-                    </div>
-                    <div class="patrol-form-grid" style="margin-top:8px;">
-                        <div class="form-group">
-                            <label for="patrolRegLat">Latitude (-90 to 90)</label>
-                            <input type="number" step="0.000001" id="patrolRegLat" placeholder="e.g. 13.0380" min="-90" max="90">
+                <!-- 3. Collapsible Advanced / Optional Details (Kept for compatibility, collapsed by default) -->
+                <details class="patrol-advanced-toggle">
+                    <summary>
+                        <span><i class="las la-sliders-h"></i> Additional Details (Optional / Auto-Generated)</span>
+                        <i class="las la-angle-down"></i>
+                    </summary>
+                    <div class="patrol-advanced-body">
+                        <div class="patrol-form-grid">
+                            <div class="form-group">
+                                <label for="patrolInputId">Patrol ID</label>
+                                <div class="input-with-action">
+                                    <input type="text" id="patrolInputId" placeholder="e.g. PATROL-001" autocomplete="off">
+                                    <button type="button" class="btn-input-sub" id="btnAutoGenerateId" title="Generate Sequential Patrol ID">Auto</button>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="patrolInputOfficerName">Officer Name</label>
+                                <input type="text" id="patrolInputOfficerName" placeholder="e.g. Inspector Rajesh Kumar" autocomplete="off">
+                            </div>
+                            <div class="form-group">
+                                <label for="patrolInputPhone">Contact Number</label>
+                                <input type="tel" id="patrolInputPhone" placeholder="Auto-generated if left empty" maxlength="15" autocomplete="off">
+                            </div>
+                            <div class="form-group">
+                                <label for="patrolInputVehicleReg">Vehicle Registration</label>
+                                <input type="text" id="patrolInputVehicleReg" placeholder="e.g. KA-04-G-1234 (optional)" autocomplete="off">
+                            </div>
+                            <div class="form-group">
+                                <label for="patrolInputStation">Station / Outpost</label>
+                                <input type="text" id="patrolInputStation" placeholder="e.g. Yelahanka Police Station" autocomplete="off">
+                            </div>
+                            <div class="form-group">
+                                <label for="patrolInputStatus">Availability Status</label>
+                                <select id="patrolInputStatus" class="fleet-select">
+                                    <option value="available">Available (Ready for Dispatch)</option>
+                                    <option value="assigned">Assigned (Active Incident)</option>
+                                    <option value="unavailable">Unavailable</option>
+                                    <option value="off_duty">Off Duty</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="display:none;">
+                                <label for="patrolInputLocationMode">Initial Location Source</label>
+                                <select id="patrolInputLocationMode" class="fleet-select">
+                                    <option value="manual" selected>Manual Location</option>
+                                    <option value="gps">GPS Telemetry</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="patrolRegLat">Latitude</label>
+                                <input type="number" step="0.000001" id="patrolRegLat" placeholder="13.038000" min="-90" max="90">
+                            </div>
+                            <div class="form-group">
+                                <label for="patrolRegLng">Longitude</label>
+                                <input type="number" step="0.000001" id="patrolRegLng" placeholder="77.512000" min="-180" max="180">
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label for="patrolRegLng">Longitude (-180 to 180)</label>
-                            <input type="number" step="0.000001" id="patrolRegLng" placeholder="e.g. 77.5120" min="-180" max="180">
-                        </div>
                     </div>
-                </div>
+                </details>
             </form>
         </div>
         <div class="patrol-modal-footer">
             <button type="button" class="btn-cancel-report" id="btnCancelPatrolReg">Cancel</button>
-            <button type="button" class="btn-action-primary-pink" id="btnSavePatrolSubmit">
-                <i class="las la-check-circle"></i> Save Patrol Unit
+            <button type="button" class="btn-action-primary-pink" id="btnSavePatrolSubmit" style="padding: 10px 22px; font-weight: 700; font-size: 0.92rem;">
+                <i class="las la-check-circle"></i> Save & Pin Patrol Unit
             </button>
         </div>
     </div>

@@ -15,10 +15,13 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
-    const officerName = localStorage.getItem('fullName') || localStorage.getItem('userName') || 'Officer Vineet';
-    const officerPhone = localStorage.getItem('userPhone') || '9876543222';
-    const officerStation = localStorage.getItem('policeStation') || 'Yelahanka Police Station';
-    const officerId = localStorage.getItem('officerId') || 'P 102';
+    const sessionName = (localStorage.getItem('fullName') || localStorage.getItem('userName') || '').trim();
+    // Vineet is system administrator, not field patrol unit
+    const isVineet = sessionName.toLowerCase().includes('vineet');
+    const officerName = (!isVineet && sessionName) ? sessionName : 'Patrol Officer';
+    const officerPhone = (!isVineet && localStorage.getItem('userPhone')) ? localStorage.getItem('userPhone') : '9845593427';
+    const officerStation = localStorage.getItem('policeStation') || 'Command Center';
+    const officerId = (!isVineet && localStorage.getItem('officerId')) ? localStorage.getItem('officerId') : 'PATROL-001';
 
     // Populate DOM
     const patrolOfficerName = document.getElementById('patrolOfficerName');

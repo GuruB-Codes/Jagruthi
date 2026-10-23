@@ -53,13 +53,83 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    let currentAlertFilter = 'all';
+
     if (notifBellBtn && notifDropdown) {
         notifBellBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             notifDropdown.classList.toggle('show');
             if (profileDropdownMenu) profileDropdownMenu.classList.remove('show');
         });
+
+        notifDropdown.addEventListener('click', (e) => {
+            e.stopPropagation();
+        });
     }
+
+    const notifCloseBtn = document.getElementById('notifCloseBtn');
+    if (notifCloseBtn && notifDropdown) {
+        notifCloseBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            notifDropdown.classList.remove('show');
+        });
+    }
+
+    const notifFilterBtns = document.querySelectorAll('.notif-filter-btn');
+    notifFilterBtns.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            notifFilterBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentAlertFilter = btn.dataset.filter || 'all';
+            if (realAlertsList) {
+                renderAlertsList(realAlertsList);
+            }
+        });
+    });
+
+    const viewAllAlertsLink = document.getElementById('viewAllAlertsLink');
+    if (viewAllAlertsLink) {
+        viewAllAlertsLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (notifDropdown) notifDropdown.classList.remove('show');
+            const target = document.querySelector('.bottom-dashboard-grid') || document.querySelector('.alert-details-card');
+            if (target) target.scrollIntoView({ behavior: 'smooth' });
+        });
+    }
+
+    // Map Fullscreen Toggle
+    const mapFullscreenBtn = document.getElementById('mapFullscreenBtn');
+    const policeMapPanel = document.getElementById('policeMapPanel');
+    if (mapFullscreenBtn && policeMapPanel) {
+        mapFullscreenBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            policeMapPanel.classList.toggle('fullscreen-map');
+            const icon = mapFullscreenBtn.querySelector('i');
+            if (policeMapPanel.classList.contains('fullscreen-map')) {
+                if (icon) icon.className = 'las la-compress';
+                mapFullscreenBtn.title = 'Exit Fullscreen Map';
+            } else {
+                if (icon) icon.className = 'las la-expand';
+                mapFullscreenBtn.title = 'Toggle Fullscreen Map';
+            }
+            if (policeMap) setTimeout(() => policeMap.invalidateSize(), 200);
+        });
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && policeMapPanel && policeMapPanel.classList.contains('fullscreen-map')) {
+            policeMapPanel.classList.remove('fullscreen-map');
+            const icon = mapFullscreenBtn?.querySelector('i');
+            if (icon) icon.className = 'las la-expand';
+            if (policeMap) setTimeout(() => policeMap.invalidateSize(), 200);
+        }
+    });
+
+    window.addEventListener('resize', () => {
+        if (policeMap) policeMap.invalidateSize();
+    });
 
     document.addEventListener('click', () => {
         if (profileDropdownMenu) profileDropdownMenu.classList.remove('show');
@@ -102,8 +172,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (patrolSec) patrolSec.scrollIntoView({ behavior: 'smooth' });
                 fetchRealPatrolUnits();
             } else if (navTarget === 'alerts') {
-                const alertsCard = document.querySelector('.alerts-panel-card');
-                if (alertsCard) alertsCard.scrollIntoView({ behavior: 'smooth' });
+                if (notifDropdown) {
+                    notifDropdown.classList.add('show');
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
             } else if (navTarget === 'cases') {
                 const detailsCard = document.querySelector('.alert-details-card');
                 if (detailsCard) detailsCard.scrollIntoView({ behavior: 'smooth' });
@@ -310,22 +382,7 @@ document.addEventListener('DOMContentLoaded', () => {
         bindLayerToggle('layerPoliceStations', layerPoliceGroup);
         bindLayerToggle('layerPatrolUnits', layerPatrolGroup);
 
-        // Acquire Officer Live Browser GPS if permitted
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(pos => {
-                officerLocation = [pos.coords.latitude, pos.coords.longitude];
-                const officerIcon = L.icon({
-                    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
-                    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-                    iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34]
-                });
-                L.marker(officerLocation, { icon: officerIcon })
-                    .addTo(layerPoliceGroup)
-                    .bindPopup(`<b>Officer Unit</b><br>${storedOfficerName}`);
-            }, err => {
-                console.log("Officer GPS not acquired:", err.message);
-            });
-        }
+        // Police stations layer initialization (Administrator is command center, not a patrol unit)
     }
 
     function bindLayerToggle(checkboxId, layerGroup) {
@@ -581,7 +638,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             // Automatically select first alert if none is selected
-            if (!selectedAlertId || !alerts.some(a => a.id === selectedAlertId)) {
+            if (alerts.length > 0 && (!selectedAlertId || !alerts.some(a => a.id === selectedAlertId))) {
                 selectAlertById(alerts[0].id);
             }
 
@@ -593,13 +650,31 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Render alert cards in Recent Alerts panel
+    // Render alert cards in Recent Alerts panel (inside Bell dropdown)
     async function renderAlertsList(alerts) {
         const alertsContainer = document.getElementById('recentAlertsList');
         if (!alertsContainer) return;
 
+        let filtered = alerts;
+        if (currentAlertFilter === 'active') {
+            filtered = alerts.filter(a => a.status === 'active');
+        } else if (currentAlertFilter === 'resolved') {
+            filtered = alerts.filter(a => a.status === 'resolved');
+        }
+
+        if (!filtered || filtered.length === 0) {
+            alertsContainer.innerHTML = `
+                <div class="empty-state-card" style="padding: 32px 14px; text-align: center;">
+                    <i class="las la-shield-alt" style="font-size: 2.2rem; color: #10B981; margin-bottom: 8px; display: block;"></i>
+                    <p style="font-weight: 600; color: #1E293B; margin: 0 0 4px;">No ${currentAlertFilter === 'all' ? '' : currentAlertFilter} alerts found</p>
+                    <small style="color: #64748B;">All safety perimeters normal</small>
+                </div>
+            `;
+            return;
+        }
+
         // Geocode top alerts in background
-        alertsContainer.innerHTML = alerts.map((alert, index) => {
+        alertsContainer.innerHTML = filtered.map((alert, index) => {
             const isSelected = (alert.id === selectedAlertId) || (!selectedAlertId && index === 0);
             const userObj = usersCache.get(alert.user_phone);
             const userName = userObj ? userObj.full_name : alert.user_phone;
@@ -650,10 +725,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }).join('');
 
         // Attach click handlers
-        alerts.forEach(alert => {
+        filtered.forEach(alert => {
             const el = document.getElementById(`alertItem-${alert.id}`);
             if (el) {
-                el.addEventListener('click', () => selectAlertById(alert.id));
+                el.addEventListener('click', () => {
+                    selectAlertById(alert.id);
+                    if (notifDropdown) notifDropdown.classList.remove('show');
+                });
             }
 
             // Async reverse-geocode human readable address
@@ -666,12 +744,96 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // SECTION C: Map Updates with Real Database Coordinates
+    // SECTION C: Map Updates with Real Database Coordinates & Dynamic Movement Tracking
+    const activeCitizenMarkers = new Map();
+    let hasInitialFittedBounds = false;
+
+    function isPatrolLocation(phone, travelMode) {
+        if (!phone) return false;
+        const tm = (travelMode || '').toUpperCase();
+        if (tm.includes('MANUAL') || tm.includes('PATROL')) return true;
+        if (realPatrolUnits && realPatrolUnits.some(u => u.phone === phone)) return true;
+        return false;
+    }
+
+    window.updateCitizenLivePosition = function(phone, lat, lng, travelMode = 'Normal', alertStatus = 'normal') {
+        if (!policeMap || isNaN(lat) || isNaN(lng)) return;
+
+        // Strictly verify: Patrol units must NEVER be plotted as citizens
+        if (isPatrolLocation(phone, travelMode)) {
+            if (activeCitizenMarkers.has(phone)) {
+                layerUsersGroup.removeLayer(activeCitizenMarkers.get(phone));
+                activeCitizenMarkers.delete(phone);
+            }
+            const pUnit = realPatrolUnits.find(u => u.phone === phone);
+            if (pUnit) {
+                pUnit.latitude = parseFloat(lat);
+                pUnit.longitude = parseFloat(lng);
+                updatePatrolMapMarkers();
+            }
+            return;
+        }
+
+        // Strictly verify: Citizens must ONLY be plotted on the police dashboard if they have an ACTIVE emergency alert
+        const hasActiveAlert = realAlertsList && realAlertsList.some(a => a.user_phone === phone && a.status === 'active');
+        if (!hasActiveAlert) {
+            if (activeCitizenMarkers.has(phone)) {
+                layerUsersGroup.removeLayer(activeCitizenMarkers.get(phone));
+                activeCitizenMarkers.delete(phone);
+            }
+            return;
+        }
+
+        const coords = [parseFloat(lat), parseFloat(lng)];
+        const userObj = usersCache.get(phone);
+        const name = userObj ? userObj.full_name : phone;
+
+        const isDeviated = (alertStatus === 'deviated');
+        const pulseClass = isDeviated ? 'pulse-radar-wave-purple' : '';
+        const dotBg = isDeviated ? '#7426B8' : '#1E60FF';
+        const innerIcon = isDeviated ? '<i class="las la-route"></i>' : '<i class="las la-user"></i>';
+
+        const userHtml = `
+            <div style="position:relative; display:flex; align-items:center; justify-content:center;">
+                <div class="pulse-radar-wave ${pulseClass}"></div>
+                <div style="width:18px; height:18px; border-radius:50%; background:${dotBg}; border:3px solid #FFFFFF; box-shadow:0 0 10px rgba(30,96,255,0.8); z-index:2; display:flex; align-items:center; justify-content:center; color:white; font-size:10px;">
+                    ${innerIcon}
+                </div>
+            </div>
+        `;
+        const userIcon = L.divIcon({ html: userHtml, className: '', iconSize: [40, 40], iconAnchor: [20, 20] });
+
+        if (activeCitizenMarkers.has(phone)) {
+            const marker = activeCitizenMarkers.get(phone);
+            // Smoothly glide marker to new coordinates!
+            marker.setLatLng(coords);
+            marker.setIcon(userIcon);
+            marker.setPopupContent(`<b>Citizen Position</b><br>${name}<br>Mode: ${travelMode || 'Normal'}<br>Status: ${alertStatus.toUpperCase()}`);
+        } else {
+            const marker = L.marker(coords, { icon: userIcon });
+            marker.bindPopup(`<b>Citizen Position</b><br>${name}<br>Mode: ${travelMode || 'Normal'}<br>Status: ${alertStatus.toUpperCase()}`);
+            layerUsersGroup.addLayer(marker);
+            activeCitizenMarkers.set(phone, marker);
+        }
+
+        // If this user matches the active emergency alert, update the active alert telemetry in details panel
+        const currentAlert = realAlertsList.find(a => a.id === selectedAlertId);
+        if (currentAlert && currentAlert.user_phone === phone) {
+            const infoLat = document.getElementById('infoLat');
+            const infoLng = document.getElementById('infoLng');
+            if (infoLat) infoLat.innerText = parseFloat(lat).toFixed(6);
+            if (infoLng) infoLng.innerText = parseFloat(lng).toFixed(6);
+            reverseGeocode(parseFloat(lat), parseFloat(lng)).then(addr => {
+                const infoAddress = document.getElementById('infoAddress');
+                if (infoAddress) infoAddress.innerText = addr;
+            });
+        }
+    };
+
     async function updateMapWithRealRecords(alerts) {
         if (!policeMap) return;
 
         layerSosGroup.clearLayers();
-        layerUsersGroup.clearLayers();
         layerDeviationGroup.clearLayers();
 
         const mapStatusText = document.getElementById('mapStatusText');
@@ -707,7 +869,6 @@ document.addEventListener('DOMContentLoaded', () => {
             let lng = parseFloat(alert.longitude);
 
             // If citizen has live telemetry in live_locations, use the live location coordinates
-            // so the SOS marker is positioned exactly where the citizen is walking on the road
             if (alert.user_phone && latestUserLoc.has(alert.user_phone)) {
                 const live = latestUserLoc.get(alert.user_phone);
                 if (live.latitude && live.longitude && !isNaN(live.latitude) && !isNaN(live.longitude)) {
@@ -727,13 +888,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const sosMarkerHtml = `
                 <div style="position:relative; display:flex; align-items:center; justify-content:center;">
                     <div class="pulse-radar-wave pulse-radar-wave-red"></div>
-                    <div style="width:22px; height:22px; border-radius:50%; background:#F41464; border:3px solid #FFFFFF; box-shadow:0 0 12px rgba(244,20,100,0.9); z-index:2; display:flex; align-items:center; justify-content:center;">
-                        <i class="las la-exclamation" style="color:white; font-size:12px; font-weight:900;"></i>
-                    </div>
-                    <div style="position:absolute; bottom:28px; left:50%; transform:translateX(-50%); z-index:10;">
-                        <div class="map-speech-bubble-sos">
-                            ${alert.alert_type || 'SOS'} • ${formatRelativeTime(alert.created_at)}<br>${userName}
-                        </div>
+                    <div style="width:24px; height:24px; border-radius:50%; background:#F41464; border:3px solid #FFFFFF; box-shadow:0 0 12px rgba(244,20,100,0.9); z-index:2; display:flex; align-items:center; justify-content:center;">
+                        <i class="las la-exclamation" style="color:white; font-size:13px; font-weight:900;"></i>
                     </div>
                 </div>
             `;
@@ -754,58 +910,76 @@ document.addEventListener('DOMContentLoaded', () => {
             layerSosGroup.addLayer(marker);
         });
 
-        // 3. Plot Citizens from live_locations (skip normal dot if user already has an SOS alert displayed)
+        // Clean up citizen markers for citizens whose alerts are now resolved
+        activeCitizenMarkers.forEach((marker, phone) => {
+            if (!activeAlerts.some(a => a.user_phone === phone)) {
+                layerUsersGroup.removeLayer(marker);
+                activeCitizenMarkers.delete(phone);
+            }
+        });
+
+        // If there are no active alerts, clear all distress layers completely
+        if (activeAlerts.length === 0) {
+            layerSosGroup.clearLayers();
+            layerDeviationGroup.clearLayers();
+            layerRouteGroup.clearLayers();
+            layerUsersGroup.clearLayers();
+            activeCitizenMarkers.clear();
+            if (mapStatusText) mapStatusText.innerText = "All incidents resolved - Command standby";
+            return;
+        }
+
+        // 3. Smoothly Plot/Move Citizens from live_locations (strictly for active emergencies and excluding patrols)
         latestUserLoc.forEach((loc, phone) => {
             if (loc.latitude && loc.longitude) {
-                // If user already has an active SOS pin on the map, don't double render a blue dot
-                if (usersWithSos.has(phone)) return;
+                // If location belongs to a registered patrol unit or manual patrol coordinate, patrol marker renders it!
+                if (isPatrolLocation(phone, loc.travel_mode)) {
+                    if (activeCitizenMarkers.has(phone)) {
+                        layerUsersGroup.removeLayer(activeCitizenMarkers.get(phone));
+                        activeCitizenMarkers.delete(phone);
+                    }
+                    return;
+                }
+
+                // If citizen does NOT have an active alert, do not plot on police dashboard
+                if (!activeAlerts.some(a => a.user_phone === phone)) {
+                    if (activeCitizenMarkers.has(phone)) {
+                        layerUsersGroup.removeLayer(activeCitizenMarkers.get(phone));
+                        activeCitizenMarkers.delete(phone);
+                    }
+                    return;
+                }
+
+                // If user already has an active SOS pin on the map, remove duplicate citizen dot
+                if (usersWithSos.has(phone)) {
+                    if (activeCitizenMarkers.has(phone)) {
+                        layerUsersGroup.removeLayer(activeCitizenMarkers.get(phone));
+                        activeCitizenMarkers.delete(phone);
+                    }
+                    return;
+                }
 
                 const coords = [parseFloat(loc.latitude), parseFloat(loc.longitude)];
                 mapBounds.push(coords);
 
-                const userObj = usersCache.get(phone);
-                const name = userObj ? userObj.full_name : phone;
-
-                // Check if deviated
-                if (loc.alert_status === 'deviated') {
-                    const devHtml = `
-                        <div style="position:relative; display:flex; align-items:center; justify-content:center;">
-                            <div style="width:20px; height:20px; border-radius:50%; background:#7426B8; border:3px solid #FFFFFF; box-shadow:0 0 10px rgba(116,38,184,0.7); display:flex; align-items:center; justify-content:center; color:white; font-size:12px; font-weight:800;">!</div>
-                            <div style="position:absolute; bottom:24px; left:50%; transform:translateX(-50%); z-index:10;">
-                                <div class="map-speech-bubble-dev">
-                                    <strong>Route Deviation</strong>
-                                    <span>${name}</span>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                    const devIcon = L.divIcon({ html: devHtml, className: '', iconSize: [40, 40], iconAnchor: [20, 20] });
-                    const devMarker = L.marker(coords, { icon: devIcon }).bindPopup(`<b>⚠️ Route Deviation</b><br>${name}`);
-                    layerDeviationGroup.addLayer(devMarker);
-                } else {
-                    const userHtml = `
-                        <div style="position:relative; display:flex; align-items:center; justify-content:center;">
-                            <div class="pulse-radar-wave"></div>
-                            <div style="width:14px; height:14px; border-radius:50%; background:#1E60FF; border:3px solid #FFFFFF; box-shadow:0 0 8px rgba(30,96,255,0.8); z-index:2;"></div>
-                            <div style="position:absolute; bottom:20px; left:50%; transform:translateX(-50%); z-index:10;">
-                                <div class="map-speech-bubble-route">
-                                    <strong>● ${name}</strong>
-                                    <span>Mode: ${loc.travel_mode || 'Normal'}</span>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                    const userIcon = L.divIcon({ html: userHtml, className: '', iconSize: [40, 40], iconAnchor: [20, 20] });
-                    const userMarker = L.marker(coords, { icon: userIcon }).bindPopup(`<b>Citizen Position</b><br>${name}`);
-                    layerUsersGroup.addLayer(userMarker);
-                }
+                // Dynamically update or add citizen position without clearing other markers
+                updateCitizenLivePosition(
+                    phone,
+                    parseFloat(loc.latitude),
+                    parseFloat(loc.longitude),
+                    loc.travel_mode || 'Normal',
+                    loc.alert_status || 'normal'
+                );
             }
         });
 
-        // Adjust Map Bounds to include actual coordinates
+        // Adjust Map Bounds only on initial load so map view does not jerk while user walks
         if (mapBounds.length > 0) {
             if (mapStatusText) mapStatusText.innerText = `${mapBounds.length} GPS Coordinates Active`;
-            if (policeMap) policeMap.fitBounds(mapBounds, { padding: [50, 50], maxZoom: 15 });
+            if (!hasInitialFittedBounds && policeMap) {
+                hasInitialFittedBounds = true;
+                policeMap.fitBounds(mapBounds, { padding: [50, 50], maxZoom: 15 });
+            }
         } else {
             if (mapStatusText) mapStatusText.innerText = "No active GPS coordinates";
         }
@@ -1316,7 +1490,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             // 1. Query police_units table
-            const { data: units, error } = await supabase
+            let { data: units, error } = await supabase
                 .from('police_units')
                 .select('*')
                 .order('created_at', { ascending: false });
@@ -1325,6 +1499,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.error("Error fetching police_units:", error);
                 return;
             }
+
+            // Exclude administrator Vineet from field patrol registry
+            units = units.filter(u => {
+                const name = (u.officer_name || '').toLowerCase();
+                const id = (u.officer_id || '').toLowerCase();
+                const phone = u.phone || '';
+                return !name.includes('vineet') && !id.includes('vineet') && phone !== '9876543222';
+            });
 
             // 2. Query latest live_locations for patrol officers
             const phones = units.map(u => u.phone).filter(Boolean);
@@ -1436,7 +1618,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 renderPatrolUnitsList(realPatrolUnits);
             }
 
-            // 7. Update Leaflet Map Markers
+            // 7. Clean up any citizen layer markers that belong to patrol units
+            realPatrolUnits.forEach(u => {
+                if (u.phone && activeCitizenMarkers.has(u.phone)) {
+                    layerUsersGroup.removeLayer(activeCitizenMarkers.get(u.phone));
+                    activeCitizenMarkers.delete(u.phone);
+                }
+            });
+
+            // 8. Update Leaflet Map Markers
             updatePatrolMapMarkers();
 
         } catch (e) {
@@ -1765,14 +1955,48 @@ document.addEventListener('DOMContentLoaded', () => {
     // Cancel map picker button
     const btnCancelMapPicker = document.getElementById('btnCancelMapPicker');
     if (btnCancelMapPicker) {
-        btnCancelMapPicker.addEventListener('click', stopMapLocationPicker);
+        btnCancelMapPicker.addEventListener('click', () => {
+            if (isRegisteringMapPicker) {
+                stopMapLocationPicker();
+                isRegisteringMapPicker = false;
+                const modal = document.getElementById('patrolRegistrationModal');
+                const overlay = document.getElementById('patrolRegOverlay');
+                if (modal) modal.classList.add('show');
+                if (overlay) overlay.classList.add('show');
+            } else {
+                stopMapLocationPicker();
+            }
+        });
     }
 
     // Confirm map picker button
     const btnConfirmMapPicker = document.getElementById('btnConfirmMapPicker');
     if (btnConfirmMapPicker) {
         btnConfirmMapPicker.addEventListener('click', async () => {
-            if (!pickingPatrolUnit || !tempPickerMarker || !supabase) return;
+            if (!tempPickerMarker) return;
+
+            // Scenario A: Pinned for new patrol registration
+            if (isRegisteringMapPicker) {
+                const pos = tempPickerMarker.getLatLng();
+                stopMapLocationPicker();
+                isRegisteringMapPicker = false;
+
+                const modal = document.getElementById('patrolRegistrationModal');
+                const overlay = document.getElementById('patrolRegOverlay');
+                if (modal) modal.classList.add('show');
+                if (overlay) overlay.classList.add('show');
+
+                syncRegInputs(pos.lat, pos.lng, true);
+                if (regMiniMap && regMiniMarker) {
+                    regMiniMap.setView([pos.lat, pos.lng], 14);
+                    regMiniMarker.setLatLng([pos.lat, pos.lng]);
+                    regMiniMap.invalidateSize();
+                }
+                return;
+            }
+
+            // Scenario B: Pinned for existing patrol unit
+            if (!pickingPatrolUnit || !supabase) return;
 
             const pos = tempPickerMarker.getLatLng();
             btnConfirmMapPicker.disabled = true;
@@ -2093,14 +2317,28 @@ document.addEventListener('DOMContentLoaded', () => {
         const regLatInput = document.getElementById('patrolRegLat');
         const regLngInput = document.getElementById('patrolRegLng');
         const regBox = document.getElementById('regManualCoordsBox');
-        if (regLatInput) regLatInput.value = '';
-        if (regLngInput) regLngInput.value = '';
+        if (regLatInput) regLatInput.value = '13.038000';
+        if (regLngInput) regLngInput.value = '77.512000';
         const modeSelect = document.getElementById('patrolInputLocationMode');
         if (modeSelect) modeSelect.value = 'manual';
         if (regBox) regBox.style.display = 'block';
 
+        const detailsEl = modal.querySelector('.patrol-advanced-toggle');
+        if (detailsEl) detailsEl.open = false;
+
         if (modal) modal.classList.add('show');
         if (overlay) overlay.classList.add('show');
+
+        const nameInput = document.getElementById('patrolInputUnitName');
+        if (nameInput) setTimeout(() => nameInput.focus(), 80);
+
+        // Initialize / Refresh Mini Leaflet Map for registration
+        setTimeout(() => {
+            initOrUpdateRegMiniMap(13.0380, 77.5120);
+        }, 100);
+        setTimeout(() => {
+            if (regMiniMap) regMiniMap.invalidateSize();
+        }, 300);
     };
 
     window.openEditPatrolModal = function(unitId) {
@@ -2141,12 +2379,21 @@ document.addEventListener('DOMContentLoaded', () => {
         if (modeSelect) modeSelect.value = unit.locationMode || 'gps';
 
         // Prepopulate existing coordinates
-        if (regLatInput) regLatInput.value = (unit.latitude != null) ? unit.latitude.toFixed(6) : '';
-        if (regLngInput) regLngInput.value = (unit.longitude != null) ? unit.longitude.toFixed(6) : '';
-        if (regBox) regBox.style.display = (unit.locationMode === 'manual') ? 'block' : 'none';
+        const initLat = (unit.latitude != null) ? unit.latitude : 13.0380;
+        const initLng = (unit.longitude != null) ? unit.longitude : 77.5120;
+        if (regLatInput) regLatInput.value = initLat.toFixed(6);
+        if (regLngInput) regLngInput.value = initLng.toFixed(6);
+        if (regBox) regBox.style.display = 'block';
 
         if (modal) modal.classList.add('show');
         if (overlay) overlay.classList.add('show');
+
+        setTimeout(() => {
+            initOrUpdateRegMiniMap(initLat, initLng);
+        }, 150);
+        setTimeout(() => {
+            if (regMiniMap) regMiniMap.invalidateSize();
+        }, 300);
     };
 
     function closePatrolRegModal() {
@@ -2189,7 +2436,201 @@ document.addEventListener('DOMContentLoaded', () => {
         if (idInput) idInput.value = nextId;
     }
 
-    if (btnAutoGenerateId) btnAutoGenerateId.onclick = generateNextPatrolId;
+    // Mini Leaflet Map Handler for Patrol Registration
+    let regMiniMap = null;
+    let regMiniMarker = null;
+    let isRegisteringMapPicker = false;
+
+    function initOrUpdateRegMiniMap(lat, lng) {
+        const container = document.getElementById('regPatrolMiniMap');
+        if (!container) return;
+
+        const regIcon = L.divIcon({
+            html: `
+                <div class="reg-pin-marker-wrap">
+                    <div class="reg-pin-pulse-ring"></div>
+                    <div class="reg-pin-bubble">
+                        <i class="las la-car"></i>
+                    </div>
+                    <div class="reg-pin-label-pill">📍 DRAG TO PIN</div>
+                </div>
+            `,
+            className: 'custom-reg-patrol-pin',
+            iconSize: [60, 68],
+            iconAnchor: [30, 36]
+        });
+
+        if (!regMiniMap) {
+            regMiniMap = L.map('regPatrolMiniMap', { zoomControl: true }).setView([lat, lng], 14);
+            L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+                maxZoom: 20,
+                subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+                attribution: '&copy; Google Maps'
+            }).addTo(regMiniMap);
+
+            regMiniMarker = L.marker([lat, lng], { icon: regIcon, draggable: true }).addTo(regMiniMap);
+
+            regMiniMarker.on('drag', (e) => {
+                const pos = e.target.getLatLng();
+                syncRegInputs(pos.lat, pos.lng, false);
+            });
+
+            regMiniMarker.on('dragend', (e) => {
+                const pos = e.target.getLatLng();
+                syncRegInputs(pos.lat, pos.lng, true);
+            });
+
+            regMiniMap.on('click', (e) => {
+                regMiniMarker.setLatLng(e.latlng);
+                syncRegInputs(e.latlng.lat, e.latlng.lng, true);
+            });
+        } else {
+            regMiniMap.setView([lat, lng], 14);
+            if (!regMiniMarker) {
+                regMiniMarker = L.marker([lat, lng], { icon: regIcon, draggable: true }).addTo(regMiniMap);
+            } else {
+                regMiniMarker.setIcon(regIcon);
+                regMiniMarker.setLatLng([lat, lng]);
+            }
+            regMiniMap.invalidateSize();
+        }
+        syncRegInputs(lat, lng, true);
+    }
+
+    function syncRegInputs(lat, lng, doGeocode = true) {
+        const latInput = document.getElementById('patrolRegLat');
+        const lngInput = document.getElementById('patrolRegLng');
+        const addrSpan = document.getElementById('regAddrPreviewText');
+
+        if (latInput) latInput.value = Number(lat).toFixed(6);
+        if (lngInput) lngInput.value = Number(lng).toFixed(6);
+
+        if (doGeocode && addrSpan) {
+            addrSpan.innerText = "Locating address...";
+            reverseGeocode(lat, lng).then(addr => {
+                if (addrSpan) addrSpan.innerText = addr || `Lat: ${Number(lat).toFixed(4)}, Lng: ${Number(lng).toFixed(4)}`;
+            });
+        }
+    }
+
+    // Connect text input change to mini map marker
+    const regLatInputEl = document.getElementById('patrolRegLat');
+    const regLngInputEl = document.getElementById('patrolRegLng');
+    [regLatInputEl, regLngInputEl].forEach(inp => {
+        if (inp) {
+            inp.addEventListener('input', () => {
+                const lat = parseFloat(regLatInputEl.value);
+                const lng = parseFloat(regLngInputEl.value);
+                if (!isNaN(lat) && !isNaN(lng) && regMiniMarker && regMiniMap) {
+                    regMiniMarker.setLatLng([lat, lng]);
+                    regMiniMap.panTo([lat, lng]);
+                    reverseGeocode(lat, lng).then(addr => {
+                        const addrSpan = document.getElementById('regAddrPreviewText');
+                        if (addrSpan) addrSpan.innerText = addr || `Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}`;
+                    });
+                }
+            });
+        }
+    });
+
+    // Preset location quick buttons
+    document.querySelectorAll('.btn-reg-preset').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const lat = parseFloat(btn.dataset.lat);
+            const lng = parseFloat(btn.dataset.lng);
+            if (!isNaN(lat) && !isNaN(lng)) {
+                if (regMiniMap && regMiniMarker) {
+                    regMiniMarker.setLatLng([lat, lng]);
+                    regMiniMap.setView([lat, lng], 14);
+                }
+                syncRegInputs(lat, lng, true);
+            }
+        });
+    });
+
+    // Pick on Main Dashboard Map button inside registration modal
+    const btnRegPickOnMainMap = document.getElementById('btnRegPickOnMainMap');
+    if (btnRegPickOnMainMap) {
+        btnRegPickOnMainMap.addEventListener('click', (e) => {
+            e.preventDefault();
+            const modal = document.getElementById('patrolRegistrationModal');
+            const overlay = document.getElementById('patrolRegOverlay');
+            if (modal) modal.classList.remove('show');
+            if (overlay) overlay.classList.remove('show');
+
+            const curLat = parseFloat(document.getElementById('patrolRegLat')?.value) || 13.0380;
+            const curLng = parseFloat(document.getElementById('patrolRegLng')?.value) || 77.5120;
+            const unitName = document.getElementById('patrolInputUnitName')?.value.trim() || document.getElementById('patrolInputOfficerName')?.value.trim() || 'New Patrol';
+
+            startMainMapPickerForRegistration(unitName, curLat, curLng);
+        });
+    }
+
+    function startMainMapPickerForRegistration(unitName, initialLat, initialLng) {
+        isRegisteringMapPicker = true;
+
+        const mapCard = document.querySelector('.map-panel-card');
+        if (mapCard) mapCard.scrollIntoView({ behavior: 'smooth' });
+        if (policeMap) policeMap.invalidateSize();
+
+        const banner = document.getElementById('mapLocationPickerBanner');
+        const unitNameSpan = document.getElementById('pickerTargetUnitName');
+        const latSpan = document.getElementById('pickerLatDisplay');
+        const lngSpan = document.getElementById('pickerLngDisplay');
+        const addrSpan = document.getElementById('pickerAddrDisplay');
+
+        if (unitNameSpan) unitNameSpan.innerText = `${unitName} (Pin Position)`;
+        if (banner) banner.style.display = 'flex';
+
+        if (latSpan) latSpan.innerText = initialLat.toFixed(6);
+        if (lngSpan) lngSpan.innerText = initialLng.toFixed(6);
+
+        reverseGeocode(initialLat, initialLng).then(addr => {
+            if (addrSpan) addrSpan.innerText = addr;
+        });
+
+        if (tempPickerMarker && policeMap) {
+            policeMap.removeLayer(tempPickerMarker);
+        }
+
+        const pickerIcon = L.divIcon({
+            html: `
+                <div style="position:relative; display:flex; align-items:center; justify-content:center;">
+                    <div style="width:38px; height:38px; border-radius:50%; background:#D97706; border:3px solid #FFFFFF; box-shadow:0 0 16px rgba(217,119,6,0.9); display:flex; align-items:center; justify-content:center; color:white; font-size:16px; cursor:move;">
+                        <i class="las la-car"></i>
+                    </div>
+                    <div style="position:absolute; bottom:42px; left:50%; transform:translateX(-50%); white-space:nowrap; background:#0D1535; color:#FCD34D; font-size:11px; font-weight:800; padding:3px 8px; border-radius:6px; border:1px solid #FCD34D;">
+                        📍 PIN PATROL LOCATION
+                    </div>
+                </div>
+            `,
+            className: '',
+            iconSize: [44, 44],
+            iconAnchor: [22, 22]
+        });
+
+        tempPickerMarker = L.marker([initialLat, initialLng], {
+            icon: pickerIcon,
+            draggable: true
+        }).addTo(policeMap);
+
+        policeMap.setView([initialLat, initialLng], 15);
+
+        tempPickerMarker.on('drag', (e) => {
+            const pos = e.target.getLatLng();
+            if (latSpan) latSpan.innerText = pos.lat.toFixed(6);
+            if (lngSpan) lngSpan.innerText = pos.lng.toFixed(6);
+        });
+
+        tempPickerMarker.on('dragend', async (e) => {
+            const pos = e.target.getLatLng();
+            const addr = await reverseGeocode(pos.lat, pos.lng);
+            if (addrSpan) addrSpan.innerText = addr;
+        });
+
+        policeMap.on('click', onMapLocationPickerClick);
+    }
 
     // Patrol Save / Registration Submit
     if (btnSavePatrolSubmit) {
@@ -2197,35 +2638,51 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!supabase) return;
 
             const editId = document.getElementById('patrolEditUnitId')?.value;
-            const patrolId = document.getElementById('patrolInputId')?.value.trim();
-            const unitName = document.getElementById('patrolInputUnitName')?.value.trim();
-            const officerName = document.getElementById('patrolInputOfficerName')?.value.trim();
-            const phone = document.getElementById('patrolInputPhone')?.value.trim();
+            let patrolId = document.getElementById('patrolInputId')?.value.trim();
+            let unitName = document.getElementById('patrolInputUnitName')?.value.trim();
+            let officerName = document.getElementById('patrolInputOfficerName')?.value.trim();
+            let phone = document.getElementById('patrolInputPhone')?.value.trim();
             const vehReg = document.getElementById('patrolInputVehicleReg')?.value.trim();
-            const station = document.getElementById('patrolInputStation')?.value.trim() || storedStation;
+            const station = document.getElementById('patrolInputStation')?.value.trim() || storedStation || 'Yelahanka Police Station';
             const status = document.getElementById('patrolInputStatus')?.value || 'available';
             const locationMode = document.getElementById('patrolInputLocationMode')?.value || 'manual';
 
             const alertBox = document.getElementById('patrolRegAlert');
             if (alertBox) alertBox.style.display = 'none';
 
-            // Validation: required fields
-            if (!patrolId || !unitName || !officerName || !phone) {
+            // Smart Auto-Fill: Allow registering simply by Name
+            if (!unitName && !officerName) {
                 if (alertBox) {
-                    alertBox.innerText = "Please complete all required fields: Patrol ID, Unit Name, Officer Name, and Phone.";
+                    alertBox.innerText = "Please enter at least a Patrol Unit Name (e.g. Cheetah-01) or Officer Name.";
                     alertBox.style.display = 'block';
                 }
                 return;
             }
 
-            // Validation: Phone format
-            const cleanPhone = phone.replace(/[^0-9]/g, '');
+            if (!unitName) unitName = officerName;
+            if (!officerName) officerName = unitName;
+
+            if (!patrolId) {
+                let maxNum = 0;
+                realPatrolUnits.forEach(u => {
+                    const m = (u.cleanPatrolId || '').match(/(\d+)/);
+                    if (m) {
+                        const num = parseInt(m[1], 10);
+                        if (num > maxNum) maxNum = num;
+                    }
+                });
+                patrolId = `PATROL-${String(maxNum + 1).padStart(3, '0')}`;
+            }
+
+            let cleanPhone = phone ? phone.replace(/[^0-9]/g, '') : '';
             if (cleanPhone.length < 10) {
-                if (alertBox) {
-                    alertBox.innerText = "Please provide a valid 10-digit phone number.";
-                    alertBox.style.display = 'block';
+                // Generate a guaranteed unique phone number for this patrol unit
+                let randomSuffix = Math.floor(10000000 + Math.random() * 90000000);
+                cleanPhone = '98' + randomSuffix;
+                while (realPatrolUnits.some(u => u.phone === cleanPhone)) {
+                    randomSuffix = Math.floor(10000000 + Math.random() * 90000000);
+                    cleanPhone = '98' + randomSuffix;
                 }
-                return;
             }
 
             // Duplicate prevention check:
@@ -2236,18 +2693,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (duplicateIdUnit) {
                 if (alertBox) {
                     alertBox.innerText = `Patrol ID '${patrolId}' is already registered to ${duplicateIdUnit.officerName}. Please specify a unique identifier.`;
-                    alertBox.style.display = 'block';
-                }
-                return;
-            }
-
-            const duplicatePhoneUnit = realPatrolUnits.find(u =>
-                u.id !== editId &&
-                u.phone === cleanPhone
-            );
-            if (duplicatePhoneUnit) {
-                if (alertBox) {
-                    alertBox.innerText = `Phone number '${cleanPhone}' is already linked to ${duplicatePhoneUnit.cleanPatrolId}. Please use a unique phone number.`;
                     alertBox.style.display = 'block';
                 }
                 return;
@@ -2275,59 +2720,54 @@ document.addEventListener('DOMContentLoaded', () => {
                         .eq('id', editId);
 
                     if (error) throw error;
-
-                    // If manual coordinates supplied during edit, save to live_locations
-                    if (locationMode === 'manual') {
-                        const regLat = parseFloat(document.getElementById('patrolRegLat')?.value);
-                        const regLng = parseFloat(document.getElementById('patrolRegLng')?.value);
-
-                        if (!isNaN(regLat) && !isNaN(regLng) && regLat >= -90 && regLat <= 90 && regLng >= -180 && regLng <= 180) {
-                            await supabase.from('live_locations').insert([{
-                                user_phone: cleanPhone,
-                                latitude: parseFloat(regLat.toFixed(6)),
-                                longitude: parseFloat(regLng.toFixed(6)),
-                                travel_mode: `MANUAL | ${vehReg || unitName}`,
-                                alert_status: status,
-                                created_at: new Date().toISOString()
-                            }]);
-                        }
-                    }
                 } else {
-                    // Insert new unit
-                    const { data: newUnits, error } = await supabase
-                        .from('police_units')
-                        .insert([{
-                            officer_id: formattedOfficerId,
-                            officer_name: formattedOfficerName,
-                            phone: cleanPhone,
-                            station_name: station,
-                            status: status,
-                            created_at: new Date().toISOString()
-                        }])
-                        .select();
-
-                    if (error) throw error;
-
-                    // If initial coordinates supplied in manual mode, save to live_locations
-                    const regLat = parseFloat(document.getElementById('patrolRegLat')?.value);
-                    const regLng = parseFloat(document.getElementById('patrolRegLng')?.value);
-
-                    if (!isNaN(regLat) && !isNaN(regLng) && regLat >= -90 && regLat <= 90 && regLng >= -180 && regLng <= 180) {
-                        await supabase.from('live_locations').insert([{
-                            user_phone: cleanPhone,
-                            latitude: parseFloat(regLat.toFixed(6)),
-                            longitude: parseFloat(regLng.toFixed(6)),
-                            travel_mode: `MANUAL | ${vehReg || unitName}`,
-                            alert_status: status,
-                            created_at: new Date().toISOString()
-                        }]);
+                    // Insert new unit with fallback for schema differences
+                    let insertPayload = {
+                        officer_id: formattedOfficerId,
+                        officer_name: formattedOfficerName,
+                        phone: cleanPhone,
+                        station_name: station,
+                        status: status,
+                        created_at: new Date().toISOString()
+                    };
+                    let { error } = await supabase.from('police_units').insert([insertPayload]);
+                    if (error) {
+                        delete insertPayload.created_at;
+                        const retry = await supabase.from('police_units').insert([insertPayload]);
+                        if (retry.error) throw retry.error;
                     }
                 }
+
+                // Retrieve pinned coordinates (from mini-map or manual inputs)
+                let regLat = parseFloat(document.getElementById('patrolRegLat')?.value);
+                let regLng = parseFloat(document.getElementById('patrolRegLng')?.value);
+
+                if (isNaN(regLat) || isNaN(regLng) || regLat < -90 || regLat > 90 || regLng < -180 || regLng > 180) {
+                    regLat = 13.0380;
+                    regLng = 77.5120;
+                }
+
+                // Immediately insert pinned coordinates into live_locations
+                await supabase.from('live_locations').insert([{
+                    user_phone: cleanPhone,
+                    latitude: parseFloat(regLat.toFixed(6)),
+                    longitude: parseFloat(regLng.toFixed(6)),
+                    travel_mode: `MANUAL | ${vehReg || unitName}`,
+                    alert_status: status,
+                    created_at: new Date().toISOString()
+                }]);
 
                 closePatrolRegModal();
                 await fetchRealPatrolUnits();
 
-                alert(`Patrol unit ${patrolId} successfully ${editId ? 'updated' : 'registered'} in Jagruthi Police database!`);
+                // Center main dashboard map on the newly pinned patrol unit!
+                if (policeMap && regLat && regLng) {
+                    policeMap.setView([regLat, regLng], 15, { animate: true });
+                    const mapCard = document.querySelector('.map-panel-card');
+                    if (mapCard) mapCard.scrollIntoView({ behavior: 'smooth' });
+                }
+
+                alert(`Patrol Unit "${unitName}" (${patrolId}) successfully ${editId ? 'updated' : 'registered'} and pinned on map!`);
             } catch (err) {
                 console.error("Failed to register patrol unit:", err);
                 if (alertBox) {
@@ -2481,6 +2921,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const destLat = parseFloat(alert.latitude);
         const destLon = parseFloat(alert.longitude);
 
+        if (isNaN(destLat) || isNaN(destLon)) return;
+
         // Filter and calculate distances
         const routingPromises = realPatrolUnits.map(async (unit) => {
             // Exclude units without coordinates
@@ -2494,24 +2936,27 @@ document.addEventListener('DOMContentLoaded', () => {
                 };
             }
 
-            // Check eligibility: must not be off_duty or unavailable
             const isEligible = unit.status === 'available';
 
             // Straight-line distance
-            const straightKm = calculateDistanceKm(unit.latitude, unit.longitude, destLat, destLon);
+            const straightKmStr = calculateDistanceKm(unit.latitude, unit.longitude, destLat, destLon);
+            const straightKm = parseFloat(straightKmStr);
 
             try {
-                // Query OSRM for road distance and duration
+                // Query OSRM for road distance and duration (with 1.5s timeout)
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 1500);
                 const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${unit.longitude},${unit.latitude};${destLon},${destLat}?overview=false`;
-                const res = await fetch(osrmUrl);
+                const res = await fetch(osrmUrl, { signal: controller.signal });
+                clearTimeout(timeoutId);
                 const data = await res.json();
 
                 if (data.routes && data.routes.length > 0) {
-                    const roadKm = (data.routes[0].distance / 1000).toFixed(1);
+                    const roadKm = parseFloat((data.routes[0].distance / 1000).toFixed(1));
                     const roadMins = Math.max(1, Math.round(data.routes[0].duration / 60));
                     return {
                         ...unit,
-                        calculatedDistance: parseFloat(roadKm),
+                        calculatedDistance: roadKm,
                         calculatedEta: roadMins,
                         distLabel: `${roadKm} km (~${roadMins} min Road ETA)`,
                         isRoadRouted: true,
@@ -2524,9 +2969,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
             return {
                 ...unit,
-                calculatedDistance: parseFloat(straightKm),
+                calculatedDistance: straightKm,
                 calculatedEta: Math.max(1, Math.round(straightKm * 2.5)),
-                distLabel: `${straightKm} km (straight-line, routing unavailable)`,
+                distLabel: `${straightKm} km (straight-line)`,
                 isRoadRouted: false,
                 isEligible
             };
@@ -2534,16 +2979,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const unitsWithDist = await Promise.all(routingPromises);
 
-        // Ranking Policy:
-        // 1. Eligible (Available) and Fresh units first, ordered by shortest distance / ETA
-        // 2. Eligible units with stale locations
-        // 3. Ineligible units (Assigned, Off Duty, Unavailable)
+        // Sort strictly by distance to SOS victim (shortest distance first)
         unitsWithDist.sort((a, b) => {
-            const aScore = (a.isEligible ? 0 : 10) + (a.isStale ? 2 : 0);
-            const bScore = (b.isEligible ? 0 : 10) + (b.isStale ? 2 : 0);
+            const aDist = (typeof a.calculatedDistance === 'number' && !isNaN(a.calculatedDistance)) ? a.calculatedDistance : Infinity;
+            const bDist = (typeof b.calculatedDistance === 'number' && !isNaN(b.calculatedDistance)) ? b.calculatedDistance : Infinity;
 
-            if (aScore !== bScore) return aScore - bScore;
-            return a.calculatedDistance - b.calculatedDistance;
+            if (aDist !== bDist) return aDist - bDist;
+            return (a.calculatedEta || 0) - (b.calculatedEta || 0);
         });
 
         realPatrolUnits = unitsWithDist;
@@ -2567,8 +3009,10 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // Recommended unit: first available unit with valid distance and non-stale location
-        const recommendedUnit = units.find(u => u.status === 'available' && u.calculatedDistance !== Infinity && !u.isStale);
+        // Recommended unit: closest unit with fixed coordinates to the SOS user
+        const eligibleUnits = units.filter(u => u.calculatedDistance !== Infinity && !isNaN(u.calculatedDistance));
+        const closestAvailable = eligibleUnits.find(u => u.status === 'available');
+        const recommendedUnit = closestAvailable || eligibleUnits[0] || null;
         const recommendedId = recommendedUnit ? recommendedUnit.id : null;
 
         container.innerHTML = units.map(unit => {
@@ -2650,40 +3094,52 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const coords = [unit.latitude, unit.longitude];
             const isManual = unit.locationSource === 'Manual';
+            const isDispatched = unit.status === 'assigned';
 
-            let dotColor = '#0ABF78'; // Green available
-            if (isManual) dotColor = '#D97706'; // Amber for manual
-            else if (unit.status === 'assigned') dotColor = '#1E60FF';
-            else if (unit.status === 'unavailable' || unit.status === 'off_duty') dotColor = '#94A3B8';
+            // High-visibility status and animation styling
+            let dotColor = '#0ABF78'; // Green available (GPS)
+            let pulseClass = 'pulse-radar-wave-green';
 
-            const sourceTag = isManual
-                ? '<span style="color:#FCD34D;">[MANUAL]</span>'
-                : '<span style="color:#60A5FA;">[GPS]</span>';
+            if (isDispatched) {
+                dotColor = '#2563EB'; // Vibrant Electric Blue for Dispatched Patrol
+                pulseClass = 'pulse-radar-wave-dispatched'; // High-intensity dual-ring dispatch pulse
+            } else if (isManual) {
+                dotColor = '#D97706'; // Amber for manual
+                pulseClass = 'pulse-radar-wave-amber';
+            } else if (unit.status === 'unavailable' || unit.status === 'off_duty') {
+                dotColor = '#94A3B8';
+                pulseClass = ''; // No pulse wave if off duty
+            }
 
             const markerHtml = `
                 <div style="position:relative; display:flex; align-items:center; justify-content:center;">
-                    <div style="width:28px; height:28px; border-radius:50%; background:${dotColor}; border:3px solid #FFFFFF; box-shadow:0 0 12px ${dotColor}; display:flex; align-items:center; justify-content:center; color:white; font-size:13px; z-index:3;">
-                        <i class="las la-car"></i>
+                    ${pulseClass ? `<div class="pulse-radar-wave ${pulseClass}"></div>` : ''}
+                    <div style="width:30px; height:30px; border-radius:50%; background:${dotColor}; border:3px solid #FFFFFF; box-shadow:0 0 14px ${dotColor}; display:flex; align-items:center; justify-content:center; color:white; font-size:14px; z-index:3; transition:all 0.3s ease;">
+                        <i class="las ${isDispatched ? 'la-shield-alt' : 'la-car'}"></i>
                     </div>
-                    <div style="position:absolute; bottom:30px; left:50%; transform:translateX(-50%); white-space:nowrap; background:rgba(13,21,53,0.92); color:white; font-size:11px; font-weight:700; padding:2px 8px; border-radius:6px; border:1px solid rgba(255,255,255,0.2); pointer-events:none;">
-                        ${sourceTag} ${unit.cleanPatrolId}
-                    </div>
+                    ${isDispatched ? `
+                        <div style="position:absolute; top:-24px; left:50%; transform:translateX(-50%); background:#2563EB; color:white; font-size:9px; font-weight:800; padding:2px 7px; border-radius:4px; box-shadow:0 2px 8px rgba(37,99,235,0.6); white-space:nowrap; letter-spacing:0.5px; z-index:4; display:flex; align-items:center; gap:4px; pointer-events:none;">
+                            <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:#67E8F9; animation:beaconBlink 0.7s infinite alternate;"></span> DISPATCHED
+                        </div>
+                    ` : ''}
                 </div>
             `;
 
             const icon = L.divIcon({ html: markerHtml, className: '', iconSize: [36, 36], iconAnchor: [18, 18] });
             const marker = L.marker(coords, { icon });
             marker.bindPopup(`
-                <div style="font-family: inherit; min-width: 210px;">
+                <div style="font-family: inherit; min-width: 220px;">
                     <div style="font-size: 13px; font-weight: 700; margin-bottom: 5px; display: flex; align-items: center; justify-content: space-between;">
                         <span>🚔 ${unit.cleanPatrolId}</span>
-                        <span style="font-size: 10px; padding: 2px 6px; border-radius: 4px; background: ${isManual ? '#D97706' : '#2563EB'}; color: white; font-weight: 700;">${isManual ? 'MANUAL' : 'GPS'}</span>
+                        <span style="font-size: 10px; padding: 2px 6px; border-radius: 4px; background: ${isDispatched ? '#2563EB' : (isManual ? '#D97706' : '#0ABF78')}; color: white; font-weight: 700;">
+                            ${isDispatched ? 'DISPATCHED' : (isManual ? 'MANUAL' : 'GPS')}
+                        </span>
                     </div>
                     <div style="font-size: 11px; color: #475569; line-height: 1.45; margin-bottom: 8px;">
                         <div>Officer: <b>${unit.officerName}</b> (${unit.unitCallsign})</div>
                         <div>Vehicle: <b>${unit.vehicleReg || 'N/A'}</b></div>
                         <div>Station: ${unit.station_name || 'N/A'}</div>
-                        <div>Status: <span style="font-weight: 600; text-transform: uppercase;">${unit.status}</span></div>
+                        <div>Status: <span style="font-weight: 700; color: ${isDispatched ? '#2563EB' : '#0D1535'}; text-transform: uppercase;">${isDispatched ? 'ASSIGNED & RESPONDING' : unit.status}</span></div>
                         <div>Updated: ${unit.lastLocationTime ? formatRelativeTime(unit.lastLocationTime) : 'N/A'}</div>
                     </div>
                     <div style="display: flex; gap: 6px; border-top: 1px solid #E2E8F0; padding-top: 6px;">
@@ -2705,7 +3161,14 @@ document.addEventListener('DOMContentLoaded', () => {
      */
     window.openDispatchConfirmModal = function(unitId) {
         const unit = realPatrolUnits.find(u => u.id === unitId);
-        const alert = realAlertsList.find(a => a.id === selectedAlertId);
+        let alert = realAlertsList.find(a => a.id === selectedAlertId);
+
+        // Auto-select latest active emergency alert if none is selected
+        if (!alert && realAlertsList.length > 0) {
+            alert = realAlertsList[0];
+            selectedAlertId = alert.id;
+            selectAlertById(alert.id);
+        }
 
         if (!alert) {
             window.alert("Please select an active emergency alert first.");
@@ -2810,6 +3273,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     .update({ status: 'assigned' })
                     .eq('id', selectedPatrolUnit.id);
 
+                // Optimistically mark assigned in memory immediately
+                selectedPatrolUnit.status = 'assigned';
+                const foundUnit = realPatrolUnits.find(u => u.id === selectedPatrolUnit.id);
+                if (foundUnit) {
+                    foundUnit.status = 'assigned';
+                }
+                updatePatrolMapMarkers();
+
                 // 3. Update emergency_alerts with assignment tag
                 const dispatchTag = `[ASSIGNED: ${selectedPatrolUnit.cleanPatrolId} (${selectedPatrolUnit.unitCallsign}) | OFFICER: ${selectedPatrolUnit.officerName} | PHONE: ${selectedPatrolUnit.phone} | SOURCE: ${selectedPatrolUnit.locationSource} | AT: ${new Date().toLocaleTimeString()}${instructions ? ' | NOTE: ' + instructions : ''}]`;
                 const updatedMessage = alert.message ? `${alert.message} | ${dispatchTag}` : dispatchTag;
@@ -2828,6 +3299,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 // 4. Draw road route polyline from unit to victim on Leaflet map
                 if (selectedPatrolUnit.latitude && selectedPatrolUnit.longitude && alert.latitude && alert.longitude) {
                     await drawAssignedPatrolRoute(selectedPatrolUnit.latitude, selectedPatrolUnit.longitude, alert.latitude, alert.longitude);
+                }
+
+                // Center map on the dispatched patrol and distress location
+                if (policeMap && selectedPatrolUnit.latitude && selectedPatrolUnit.longitude) {
+                    policeMap.setView([selectedPatrolUnit.latitude, selectedPatrolUnit.longitude], 15, { animate: true });
                 }
 
                 // 5. Update UI state
@@ -3013,7 +3489,41 @@ document.addEventListener('DOMContentLoaded', () => {
                                 .eq('id', alert.sos_id);
                         }
                     }
+
+                    // Reset citizen's telemetry status in live_locations to 'normal' so polling does not re-deviate
+                    if (alert.user_phone) {
+                        await supabase
+                            .from('live_locations')
+                            .insert([{
+                                user_phone: alert.user_phone,
+                                latitude: alert.latitude || 13.133,
+                                longitude: alert.longitude || 77.574,
+                                travel_mode: 'Normal',
+                                alert_status: 'normal',
+                                created_at: new Date().toISOString()
+                            }]);
+                    }
+
+                    // Release assigned patrol unit back to available
+                    const assignedUnit = realPatrolUnits.find(u => u.status === 'assigned');
+                    if (assignedUnit) {
+                        await supabase
+                            .from('police_units')
+                            .update({ status: 'available' })
+                            .eq('id', assignedUnit.id);
+                        assignedUnit.status = 'available';
+                    }
                 }
+
+                // Immediately clear map layers for resolved alert
+                if (alert.user_phone && activeCitizenMarkers.has(alert.user_phone)) {
+                    layerUsersGroup.removeLayer(activeCitizenMarkers.get(alert.user_phone));
+                    activeCitizenMarkers.delete(alert.user_phone);
+                }
+                layerSosGroup.clearLayers();
+                layerRouteGroup.clearLayers();
+                layerDeviationGroup.clearLayers();
+                try { localStorage.removeItem('safeRouteLiveLocation'); } catch (e) {}
 
                 if (reportOverlay) reportOverlay.classList.remove('show');
                 if (reportModal) reportModal.classList.remove('show');
@@ -3024,6 +3534,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Refresh state
                 await fetchRealPoliceStats();
                 await fetchRealEmergencyAlerts();
+                await fetchRealPatrolUnits();
 
                 window.alert("Case marked resolved and archived in police records.");
             } catch (err) {
@@ -3153,6 +3664,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 })
                 .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'live_locations' }, async (payload) => {
                     console.log("Realtime: live_locations update:", payload);
+                    if (payload.new && payload.new.latitude && payload.new.longitude) {
+                        const phone = payload.new.user_phone;
+                        const lat = parseFloat(payload.new.latitude);
+                        const lng = parseFloat(payload.new.longitude);
+                        window.updateCitizenLivePosition(
+                            phone,
+                            lat,
+                            lng,
+                            payload.new.travel_mode || 'Normal',
+                            payload.new.alert_status || 'normal'
+                        );
+                    }
                     if (realAlertsList.length > 0) {
                         updateMapWithRealRecords(realAlertsList);
                     }
@@ -3176,6 +3699,37 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Instant Cross-Window / Tab Live Movement Sync (when user is moving in user tab)
+    window.addEventListener('storage', (e) => {
+        if (e.key === 'safeRouteLiveLocation' && e.newValue) {
+            try {
+                const data = JSON.parse(e.newValue);
+                if (data.lat && data.lng) {
+                    const userPhone = localStorage.getItem('userPhone') || 'Citizen';
+                    window.updateCitizenLivePosition(
+                        userPhone,
+                        parseFloat(data.lat),
+                        parseFloat(data.lng),
+                        'Walking',
+                        data.isDeviated ? 'deviated' : 'normal'
+                    );
+                }
+            } catch (err) {}
+        }
+    });
+
+    // Check initial safeRouteLiveLocation from storage on load
+    try {
+        const initialSaved = localStorage.getItem('safeRouteLiveLocation');
+        if (initialSaved) {
+            const data = JSON.parse(initialSaved);
+            if (data.lat && data.lng) {
+                const phone = localStorage.getItem('userPhone') || 'Citizen';
+                window.updateCitizenLivePosition(phone, data.lat, data.lng, 'Walking', data.isDeviated ? 'deviated' : 'normal');
+            }
+        }
+    } catch (e) {}
+
     function triggerIncomingAlertModal(alert) {
         const popPolUserName = document.getElementById('popPolUserName');
         const popPolAlertType = document.getElementById('popPolAlertType');
@@ -3196,16 +3750,45 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (e) {}
     }
 
-    // Controlled fallback polling every 8 seconds
+    // High-frequency live telemetry polling so moving citizens update on the map in real-time
+    const telemetryTimer = setInterval(async () => {
+        if (!supabase) return;
+        try {
+            const { data: recs } = await supabase
+                .from('live_locations')
+                .select('*')
+                .order('created_at', { ascending: false })
+                .limit(10);
+
+            if (recs && recs.length > 0) {
+                const seenPhones = new Set();
+                recs.forEach(r => {
+                    if (r.user_phone && !seenPhones.has(r.user_phone) && r.latitude && r.longitude) {
+                        seenPhones.add(r.user_phone);
+                        window.updateCitizenLivePosition(
+                            r.user_phone,
+                            parseFloat(r.latitude),
+                            parseFloat(r.longitude),
+                            r.travel_mode || 'Normal',
+                            r.alert_status || 'normal'
+                        );
+                    }
+                });
+            }
+        } catch (e) {}
+    }, 1500);
+
+    // Controlled fallback polling every 8 seconds for dashboard stats
     const pollingTimer = setInterval(async () => {
         await fetchRealPoliceStats();
         await fetchRealEmergencyAlerts();
         await fetchRealPatrolUnits();
     }, 8000);
 
-    // Clean up channel & timer on window unload
+    // Clean up channel & timers on window unload
     window.addEventListener('beforeunload', () => {
         clearInterval(pollingTimer);
+        clearInterval(telemetryTimer);
         if (realtimeChannel && supabase) {
             supabase.removeChannel(realtimeChannel);
         }

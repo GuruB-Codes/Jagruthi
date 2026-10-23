@@ -2118,6 +2118,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const emDispatchedContactsList = document.getElementById('emDispatchedContactsList');
     const emBottomStatusToast = document.getElementById('emBottomStatusToast');
     const emBottomStatusToastText = document.getElementById('emBottomStatusToastText');
+    const emScreenTitle = document.getElementById('emScreenTitle');
+    const emScreenSubtitle = document.getElementById('emScreenSubtitle');
 
     let activeSosLat = null;
     let activeSosLng = null;
@@ -3244,6 +3246,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // When clicking "My Location" on the Home grid, go directly to Safety tab
+    const btnGridLocation = document.getElementById('btnGridLocation');
     if (btnGridLocation) {
         btnGridLocation.addEventListener('click', () => {
             if (navTabSafety) navTabSafety.click();
