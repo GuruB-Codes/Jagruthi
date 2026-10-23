@@ -942,12 +942,21 @@ document.addEventListener('DOMContentLoaded', () => {
             navTabSos.click();
         }
 
-        // 4. START EVIDENCE CAPTURE & SECURE STORAGE ONLY WHEN SILENT SOS IS TRIGGERED!
-        // As per specification: Automatic video and audio capture occurs ONLY on Silent SOS, NOT on SOS + Siren
-        const shouldCaptureEvidence = options.captureEvidence === true || (type && type.toLowerCase().includes("silent"));
+        // 4. START EVIDENCE CAPTURE & SECURE STORAGE ON SILENT SOS OR JOURNEY SOS!
+        const isJourneyTabActive = document.getElementById('tab-journey') && document.getElementById('tab-journey').classList.contains('active');
+        const isJourneyContext = isJourneyActive || 
+                                 isJourneyTabActive || 
+                                 options.isJourney === true || 
+                                 type === "Not Safe Triggered" || 
+                                 type === "Auto-SOS Activated" || 
+                                 type.toLowerCase().includes("journey");
+
+        const shouldCaptureEvidence = options.captureEvidence === true || 
+                                      (type && type.toLowerCase().includes("silent")) ||
+                                      isJourneyContext;
 
         if (shouldCaptureEvidence) {
-            console.log("🔒 [SILENT SOS] Starting Automatic Video & Audio Evidence Capture & Storage Upload...");
+            console.log(`🔒 [${isJourneyContext ? 'JOURNEY SOS' : 'SILENT SOS'}] Automatically recording video & audio evidence and uploading to database...`);
             if (window.emergencyMedia) {
                 window.emergencyMedia.captureAndUploadEvidence({
                     sosId: activeSosId,
@@ -955,7 +964,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     duration: 6000
                 }).then(result => {
                     console.log("Evidence capture & upload completed. Result:", result);
-                    if (result.success) {
+                    if (result && result.success) {
                         emergencyData.evidence_status = "captured";
                         localStorage.setItem('safeRouteEmergency', JSON.stringify(emergencyData));
                     }
@@ -1123,6 +1132,28 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (homeJourneyDesc) {
                     homeJourneyDesc.innerText = "Safe route corridor ready";
                 }
+            }
+        });
+    }
+
+    // Direct SOS trigger button in Journey tab
+    const journeySosBtn = document.getElementById('journeySosBtn');
+    if (journeySosBtn) {
+        journeySosBtn.addEventListener('click', () => {
+            const currentCoords = (isJourneyActive && userMarker) ? [userMarker.getLatLng().lat, userMarker.getLatLng().lng] : (liveUserCoords ? [liveUserCoords.lat, liveUserCoords.lng] : null);
+            if (currentCoords) {
+                broadcastLiveLocation(currentCoords);
+                triggerSOSAction("Journey SOS Triggered", "Emergency SOS triggered by user in Journey mode", {
+                    latitude: currentCoords[0],
+                    longitude: currentCoords[1],
+                    isJourney: true,
+                    captureEvidence: true
+                });
+            } else {
+                triggerSOSAction("Journey SOS Triggered", "Emergency SOS triggered by user in Journey mode", {
+                    isJourney: true,
+                    captureEvidence: true
+                });
             }
         });
     }
@@ -1406,10 +1437,15 @@ document.addEventListener('DOMContentLoaded', () => {
             broadcastLiveLocation(devPos);
             triggerSOSAction("Auto-SOS Activated", "User unresponsive to deviation alerts for 45 seconds.", {
                 latitude: devPos[0],
-                longitude: devPos[1]
+                longitude: devPos[1],
+                captureEvidence: true,
+                isJourney: true
             });
         } else {
-            triggerSOSAction("Auto-SOS Activated", "User unresponsive to deviation alerts for 45 seconds.");
+            triggerSOSAction("Auto-SOS Activated", "User unresponsive to deviation alerts for 45 seconds.", {
+                captureEvidence: true,
+                isJourney: true
+            });
         }
     }
 
@@ -1583,10 +1619,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 broadcastLiveLocation(devPos);
                 triggerSOSAction("Not Safe Triggered", "User reported NOT SAFE due to route deviation", {
                     latitude: devPos[0],
-                    longitude: devPos[1]
+                    longitude: devPos[1],
+                    captureEvidence: true,
+                    isJourney: true
                 });
             } else {
-                triggerSOSAction("Not Safe Triggered", "User reported NOT SAFE due to route deviation");
+                triggerSOSAction("Not Safe Triggered", "User reported NOT SAFE due to route deviation", {
+                    captureEvidence: true,
+                    isJourney: true
+                });
             }
         });
     }

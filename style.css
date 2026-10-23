@@ -657,6 +657,9 @@ h1, h2, h3 { color: var(--text-dark); font-weight: 700; }
 
 /* Bottom Action Bar (Scrollable inside Journey tab) */
 .bottom-action-bar {
+    display: flex;
+    gap: 12px;
+    align-items: center;
     position: static;
     width: 100%;
     margin-top: 18px;
@@ -671,8 +674,8 @@ h1, h2, h3 { color: var(--text-dark); font-weight: 700; }
 }
 
 .btn-start-journey {
+    flex: 1;
     pointer-events: auto;
-    width: 100%;
     background: var(--success);
     color: white;
     border: none;
@@ -692,6 +695,27 @@ h1, h2, h3 { color: var(--text-dark); font-weight: 700; }
 .btn-start-journey:active { transform: scale(0.98); }
 .btn-start-journey i { font-size: 1.3rem; }
 .btn-start-journey .arrow-icon { margin-left: auto; background: rgba(255,255,255,0.2); padding: 4px; border-radius: 50%; }
+
+.btn-journey-sos {
+    flex: 0 0 auto;
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: white;
+    border: none;
+    border-radius: var(--radius-round);
+    padding: 16px 22px;
+    font-size: 1.05rem;
+    font-weight: 700;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 8px 20px rgba(239, 68, 68, 0.45);
+    cursor: pointer;
+    transition: var(--transition);
+}
+.btn-journey-sos:active { transform: scale(0.96); }
+.btn-journey-sos i { font-size: 1.3rem; }
+
 
 /* Floating SOS Button */
 .sos-btn {

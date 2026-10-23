@@ -637,9 +637,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
-            // Automatically select first alert if none is selected
-            if (alerts.length > 0 && (!selectedAlertId || !alerts.some(a => a.id === selectedAlertId))) {
-                selectAlertById(alerts[0].id);
+            // Automatically select first ACTIVE alert if available
+            const activeAlerts = alerts.filter(a => a.status === 'active');
+            if (activeAlerts.length > 0) {
+                // If no active alert is selected or selected alert is resolved, select first ACTIVE alert
+                if (!selectedAlertId || !activeAlerts.some(a => a.id === selectedAlertId)) {
+                    selectAlertById(activeAlerts[0].id);
+                }
+            } else {
+                // No active emergencies exist!
+                selectedAlertId = null;
+                clearActiveAlertDetails();
             }
 
             // Plot real alert locations on map
@@ -675,7 +683,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Geocode top alerts in background
         alertsContainer.innerHTML = filtered.map((alert, index) => {
-            const isSelected = (alert.id === selectedAlertId) || (!selectedAlertId && index === 0);
+            const isSelected = (alert.id === selectedAlertId);
             const userObj = usersCache.get(alert.user_phone);
             const userName = userObj ? userObj.full_name : alert.user_phone;
 
@@ -1180,15 +1188,43 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function clearActiveAlertDetails() {
         const alertDetailCaseId = document.getElementById('alertDetailCaseId');
-        if (alertDetailCaseId) alertDetailCaseId.innerText = "No Active Alerts";
+        if (alertDetailCaseId) alertDetailCaseId.innerText = "No Active Incident";
+        const alertDetailTime = document.getElementById('alertDetailTime');
+        if (alertDetailTime) alertDetailTime.innerText = "All perimeters clear";
         const infoName = document.getElementById('infoName');
         if (infoName) infoName.innerText = "—";
         const infoPhone = document.getElementById('infoPhone');
         if (infoPhone) infoPhone.innerText = "—";
         const infoAddress = document.getElementById('infoAddress');
-        if (infoAddress) infoAddress.innerText = "No location";
+        if (infoAddress) infoAddress.innerText = "No active emergency location";
         const infoRouteStatus = document.getElementById('infoRouteStatus');
-        if (infoRouteStatus) infoRouteStatus.innerText = "System Idle";
+        if (infoRouteStatus) infoRouteStatus.innerText = "Standby • Normal";
+        const infoSpeed = document.getElementById('infoSpeed');
+        if (infoSpeed) infoSpeed.innerText = "0 km/h";
+        const infoBearing = document.getElementById('infoBearing');
+        if (infoBearing) infoBearing.innerText = "N/A";
+        const driverDetailsText = document.getElementById('driverDetailsText');
+        if (driverDetailsText) driverDetailsText.innerText = "No active journey";
+
+        // Reset evidence previews
+        const realEvdVideo = document.getElementById('realEvdVideo');
+        if (realEvdVideo) { realEvdVideo.pause(); realEvdVideo.src = ''; realEvdVideo.style.display = 'none'; }
+        const videoEmptyPlaceholder = document.getElementById('videoEmptyPlaceholder');
+        if (videoEmptyPlaceholder) videoEmptyPlaceholder.style.display = 'flex';
+        const capturedImagesGrid = document.getElementById('capturedImagesGrid');
+        if (capturedImagesGrid) capturedImagesGrid.innerHTML = '';
+        const realEvdAudio = document.getElementById('realEvdAudio');
+        if (realEvdAudio) { realEvdAudio.pause(); realEvdAudio.src = ''; }
+        const audioPlayerRow = document.getElementById('audioPlayerRow');
+        if (audioPlayerRow) audioPlayerRow.style.display = 'none';
+        const audioEmptyPlaceholder = document.getElementById('audioEmptyPlaceholder');
+        if (audioEmptyPlaceholder) audioEmptyPlaceholder.style.display = 'flex';
+
+        // Unselect alert list items
+        document.querySelectorAll('.recent-alert-item').forEach(el => el.classList.remove('selected'));
+
+        // Reset Nearby Resources / Patrol recommendations to default fleet list
+        renderPatrolUnitsList(realPatrolUnits);
     }
 
     function focusActiveAlertOnMap() {
@@ -3248,26 +3284,10 @@ document.addEventListener('DOMContentLoaded', () => {
             btnConfirmDispatchSubmit.innerHTML = '<i class="las la-spinner la-spin"></i> Dispatching Unit...';
 
             try {
-                // 1. Concurrency Check: verify unit is still available
-                const { data: checkUnit } = await supabase
-                    .from('police_units')
-                    .select('status')
-                    .eq('id', selectedPatrolUnit.id)
-                    .single();
-
-                if (checkUnit && checkUnit.status !== 'available') {
-                    window.alert(`Dispatch conflict: ${selectedPatrolUnit.cleanPatrolId} is currently ${checkUnit.status}. Please choose another unit.`);
-                    btnConfirmDispatchSubmit.disabled = false;
-                    btnConfirmDispatchSubmit.innerHTML = '<i class="las la-paper-plane"></i> Confirm & Dispatch Unit';
-                    closeDispatchConfirmModal();
-                    await fetchRealPatrolUnits();
-                    return;
-                }
-
                 const instructionsInput = document.getElementById('dispatchInstructions');
                 const instructions = instructionsInput ? instructionsInput.value.trim() : '';
 
-                // 2. Update police_units status to assigned
+                // 1. Update police_units status to assigned
                 await supabase
                     .from('police_units')
                     .update({ status: 'assigned' })
@@ -3515,6 +3535,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
 
+                // Explicitly deselect this alert so it is never re-selected on refresh
+                selectedAlertId = null;
+
                 // Immediately clear map layers for resolved alert
                 if (alert.user_phone && activeCitizenMarkers.has(alert.user_phone)) {
                     layerUsersGroup.removeLayer(activeCitizenMarkers.get(alert.user_phone));
@@ -3530,6 +3553,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 btnSubmitReport.disabled = false;
                 btnSubmitReport.innerHTML = '<i class="las la-check-circle"></i> Complete & Close Case';
                 if (reportText) reportText.value = '';
+
+                // Clear details panel immediately
+                clearActiveAlertDetails();
 
                 // Refresh state
                 await fetchRealPoliceStats();
