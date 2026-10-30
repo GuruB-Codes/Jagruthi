@@ -1211,14 +1211,34 @@ document.addEventListener('DOMContentLoaded', () => {
         if (realEvdVideo) { realEvdVideo.pause(); realEvdVideo.src = ''; realEvdVideo.style.display = 'none'; }
         const videoEmptyPlaceholder = document.getElementById('videoEmptyPlaceholder');
         if (videoEmptyPlaceholder) videoEmptyPlaceholder.style.display = 'flex';
+        const videoEmptyTitle = document.getElementById('videoEmptyTitle');
+        if (videoEmptyTitle) videoEmptyTitle.innerText = "Select an alert to view attached evidence";
+        const videoThumbSidebar = document.getElementById('videoThumbSidebar');
+        if (videoThumbSidebar) videoThumbSidebar.innerHTML = '<div class="empty-state-card" style="padding:10px 4px; font-size:0.75rem;"><span>No clips</span></div>';
         const capturedImagesGrid = document.getElementById('capturedImagesGrid');
-        if (capturedImagesGrid) capturedImagesGrid.innerHTML = '';
+        if (capturedImagesGrid) {
+            capturedImagesGrid.innerHTML = `
+                <div class="empty-state-card" style="grid-column: span 2;">
+                    <i class="las la-images"></i>
+                    <p>No captured snapshots available for selected case</p>
+                </div>
+            `;
+        }
         const realEvdAudio = document.getElementById('realEvdAudio');
         if (realEvdAudio) { realEvdAudio.pause(); realEvdAudio.src = ''; }
         const audioPlayerRow = document.getElementById('audioPlayerRow');
         if (audioPlayerRow) audioPlayerRow.style.display = 'none';
+        const audioWaveformGraphic = document.getElementById('audioWaveformGraphic');
+        if (audioWaveformGraphic) audioWaveformGraphic.style.display = 'none';
         const audioEmptyPlaceholder = document.getElementById('audioEmptyPlaceholder');
         if (audioEmptyPlaceholder) audioEmptyPlaceholder.style.display = 'flex';
+        const streamLivePill = document.getElementById('streamLivePill');
+        if (streamLivePill) streamLivePill.style.display = 'none';
+        const streamTimerOverlay = document.getElementById('streamTimerOverlay');
+        if (streamTimerOverlay) streamTimerOverlay.style.display = 'none';
+        const evidenceBadge = document.getElementById('evidenceBadge');
+        if (evidenceBadge) { evidenceBadge.classList.add('hidden'); evidenceBadge.style.display = 'none'; }
+        window.currentAlertEvidence = null;
 
         // Unselect alert list items
         document.querySelectorAll('.recent-alert-item').forEach(el => el.classList.remove('selected'));
@@ -1235,8 +1255,109 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // SECTION D: Real Evidence Stream from Supabase Storage 'jagruthi-evidence'
+    window.currentAlertEvidence = {
+        videoUrl: null,
+        audioUrl: null,
+        imageUrl: null,
+        records: []
+    };
+
+    // Global Modal Functions for Evidence Vault
+    window.openEvidenceModal = function(type, mediaUrl, metaText = '') {
+        const evdOverlay = document.getElementById('evdOverlay');
+        const evdModal = document.getElementById('evdModal');
+        const evdVideo = document.getElementById('evdVideo');
+        const evdAudio = document.getElementById('evdAudio');
+        const evdImgViewer = document.getElementById('evdImgViewer');
+        const evdFullscreenImg = document.getElementById('evdFullscreenImg');
+        const evdStorageMeta = document.getElementById('evdStorageMeta');
+        const evdLoading = document.getElementById('evdLoading');
+
+        if (!evdModal || !evdOverlay) return;
+
+        if (evdLoading) evdLoading.classList.add('hidden');
+        if (evdVideo) { evdVideo.pause(); evdVideo.src = ''; evdVideo.style.display = 'none'; }
+        if (evdAudio) { evdAudio.pause(); evdAudio.src = ''; evdAudio.style.display = 'none'; }
+        if (evdImgViewer) evdImgViewer.style.display = 'none';
+
+        if (type === 'video' && evdVideo && mediaUrl) {
+            evdVideo.src = mediaUrl;
+            evdVideo.style.display = 'block';
+            evdVideo.play().catch(e => console.log("Video auto-play notice:", e));
+        } else if (type === 'image' && evdFullscreenImg && evdImgViewer && mediaUrl) {
+            evdFullscreenImg.src = mediaUrl;
+            evdImgViewer.style.display = 'block';
+        } else if (type === 'audio' && evdAudio && mediaUrl) {
+            evdAudio.src = mediaUrl;
+            evdAudio.style.display = 'block';
+            evdAudio.play().catch(e => console.log("Audio auto-play notice:", e));
+        }
+
+        if (evdStorageMeta) {
+            evdStorageMeta.innerText = metaText ? `Verified Evidence (${metaText}) • Private Vault: jagruthi-evidence` : `Verified Secure Storage (Supabase Private Vault: jagruthi-evidence)`;
+        }
+
+        evdOverlay.classList.add('show');
+        evdModal.classList.add('show');
+        evdOverlay.style.display = 'block';
+        evdModal.style.display = 'block';
+    };
+
+    window.closeEvidenceModal = function() {
+        const evdOverlay = document.getElementById('evdOverlay');
+        const evdModal = document.getElementById('evdModal');
+        const evdVideo = document.getElementById('evdVideo');
+        const evdAudio = document.getElementById('evdAudio');
+
+        if (evdVideo) evdVideo.pause();
+        if (evdAudio) evdAudio.pause();
+        if (evdOverlay) {
+            evdOverlay.classList.remove('show');
+            evdOverlay.style.display = 'none';
+        }
+        if (evdModal) {
+            evdModal.classList.remove('show');
+            evdModal.style.display = 'none';
+        }
+    };
+
+    // Helper classification functions for evidence records
+    function isImageEvidenceRecord(r) {
+        const fn = (r.file_name || '').toLowerCase();
+        const t = (r.evidence_type || '').toLowerCase();
+        return t === 'photo' || t === 'image' || fn.endsWith('.jpg') || fn.endsWith('.jpeg') || fn.endsWith('.png') || fn.endsWith('.webp') || fn.startsWith('photo_');
+    }
+
+    function isVideoEvidenceRecord(r) {
+        if (isImageEvidenceRecord(r)) return false;
+        const fn = (r.file_name || '').toLowerCase();
+        const t = (r.evidence_type || '').toLowerCase();
+        return t === 'video' || fn.endsWith('.mp4') || fn.endsWith('.webm') || fn.endsWith('.mov') || fn.endsWith('.mkv');
+    }
+
+    function isAudioEvidenceRecord(r) {
+        const fn = (r.file_name || '').toLowerCase();
+        const t = (r.evidence_type || '').toLowerCase();
+        return t === 'audio' || fn.endsWith('.mp3') || fn.endsWith('.wav') || fn.endsWith('.ogg') || fn.endsWith('.m4a') || fn.endsWith('.aac');
+    }
+
+    async function getRecordMediaUrl(record) {
+        if (record.local_url) return record.local_url;
+        if (record.storage_path && supabase) {
+            try {
+                const { data: sData, error: sErr } = await supabase.storage
+                    .from('jagruthi-evidence')
+                    .createSignedUrl(record.storage_path, 3600);
+                if (!sErr && sData && sData.signedUrl) return sData.signedUrl;
+            } catch (e) {
+                console.warn("Storage sign exception for", record.storage_path, e);
+            }
+        }
+        return null;
+    }
+
     async function loadRealEvidenceForAlert(alert) {
-        if (!supabase) return;
+        if (!alert) return;
 
         // Elements
         const realEvdVideo = document.getElementById('realEvdVideo');
@@ -1252,6 +1373,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const audioWaveformGraphic = document.getElementById('audioWaveformGraphic');
         const audioEmptyPlaceholder = document.getElementById('audioEmptyPlaceholder');
         const evidenceSummaryList = document.getElementById('evidenceSummaryList');
+        const evidenceBadge = document.getElementById('evidenceBadge');
 
         // Reset elements
         if (realEvdVideo) {
@@ -1265,18 +1387,91 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (audioPlayerRow) audioPlayerRow.style.display = 'none';
         if (audioWaveformGraphic) audioWaveformGraphic.style.display = 'none';
+        if (streamLivePill) streamLivePill.style.display = 'none';
+        if (streamTimerOverlay) streamTimerOverlay.style.display = 'none';
 
-        // Extract sos_id
-        let targetSosId = alert.sos_id || null;
-        if (!targetSosId && alert.message && alert.message.includes('[SOS:')) {
+        window.currentAlertEvidence = {
+            videoUrl: null,
+            audioUrl: null,
+            imageUrl: null,
+            records: []
+        };
+
+        // Collect candidate IDs for evidence matching
+        const candidateSosIds = [];
+        if (alert.sos_id) candidateSosIds.push(alert.sos_id);
+        if (alert.message && alert.message.includes('[SOS:')) {
             const m = alert.message.match(/\[SOS:(.*?)\]/);
-            if (m && m[1]) targetSosId = m[1];
+            if (m && m[1] && !candidateSosIds.includes(m[1])) candidateSosIds.push(m[1]);
+        }
+        if (alert.id && !candidateSosIds.includes(alert.id)) candidateSosIds.push(alert.id);
+
+        let evidenceRecords = [];
+        let matchedSosId = candidateSosIds[0] || null;
+
+        if (supabase) {
+            try {
+                // 1. Query by candidate sos_id in sos_evidence
+                for (const cId of candidateSosIds) {
+                    const { data: recs, error: rErr } = await supabase
+                        .from('sos_evidence')
+                        .select('*')
+                        .eq('sos_id', cId)
+                        .order('created_at', { ascending: false });
+                    if (!rErr && recs && recs.length > 0) {
+                        evidenceRecords = recs;
+                        matchedSosId = cId;
+                        break;
+                    }
+                }
+
+                // 2. Fallback: Query by user_id linked to user_phone
+                if (evidenceRecords.length === 0 && alert.user_phone) {
+                    const userObj = usersCache.get(alert.user_phone);
+                    const userId = userObj ? userObj.id : null;
+                    if (userId) {
+                        const { data: userRecs } = await supabase
+                            .from('sos_evidence')
+                            .select('*')
+                            .eq('user_id', userId)
+                            .order('created_at', { ascending: false })
+                            .limit(10);
+                        if (userRecs && userRecs.length > 0) {
+                            evidenceRecords = userRecs;
+                        }
+                    }
+                }
+            } catch (queryErr) {
+                console.warn("Exception querying sos_evidence from database:", queryErr);
+            }
         }
 
-        if (!targetSosId) {
+        // 3. Fallback: Check local storage for captured evidence
+        if (evidenceRecords.length === 0) {
+            try {
+                const localCaptured = JSON.parse(localStorage.getItem('jagruthiCapturedEvidence') || '[]');
+                if (localCaptured && localCaptured.length > 0) {
+                    evidenceRecords = localCaptured.map(item => ({
+                        id: item.id,
+                        evidence_type: item.type,
+                        file_name: item.fileName || (item.type + '_' + item.id),
+                        storage_path: item.storagePath || null,
+                        local_url: item.url || null,
+                        captured_at: item.capturedAt,
+                        status: item.cloudSynced ? 'UPLOADED' : 'LOCAL_SAVED'
+                    }));
+                }
+            } catch (lsErr) {
+                console.warn("Exception reading local captured evidence:", lsErr);
+            }
+        }
+
+        window.currentAlertEvidence.records = evidenceRecords;
+
+        if (!evidenceRecords || evidenceRecords.length === 0) {
             if (videoEmptyPlaceholder) {
                 videoEmptyPlaceholder.style.display = 'flex';
-                if (videoEmptyTitle) videoEmptyTitle.innerText = "No evidence session attached to this alert";
+                if (videoEmptyTitle) videoEmptyTitle.innerText = "No evidence recordings found in vault";
             }
             if (audioEmptyPlaceholder) audioEmptyPlaceholder.style.display = 'flex';
             if (capturedImagesGrid) {
@@ -1287,125 +1482,359 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                 `;
             }
+            if (videoThumbSidebar) {
+                videoThumbSidebar.innerHTML = `
+                    <div class="empty-state-card" style="padding:10px 4px; font-size:0.75rem;">
+                        <span>No clips</span>
+                    </div>
+                `;
+            }
             if (evidenceSummaryList) {
-                evidenceSummaryList.innerHTML = `<div class="empty-state-card"><p>No evidence records attached</p></div>`;
+                evidenceSummaryList.innerHTML = `<div class="empty-state-card"><p>Zero evidence files attached</p></div>`;
+            }
+            if (evidenceBadge) {
+                evidenceBadge.classList.add('hidden');
+                evidenceBadge.style.display = 'none';
             }
             return;
         }
 
-        try {
-            // Query sos_evidence table for records linked to this sos_id
-            const { data: evidenceRecords, error } = await supabase
-                .from('sos_evidence')
-                .select('*')
-                .eq('sos_id', targetSosId);
+        // Categorize evidence records
+        const videoRecords = evidenceRecords.filter(isVideoEvidenceRecord);
+        const imageRecords = evidenceRecords.filter(isImageEvidenceRecord);
+        const audioRecords = evidenceRecords.filter(isAudioEvidenceRecord);
 
-            if (error || !evidenceRecords || evidenceRecords.length === 0) {
+        // 1. POPULATE EVIDENCE SUMMARY LIST (Tab in Details Panel)
+        if (evidenceSummaryList) {
+            evidenceSummaryList.innerHTML = evidenceRecords.map(r => {
+                const iconClass = isImageEvidenceRecord(r) ? 'las la-image text-info' : (isVideoEvidenceRecord(r) ? 'las la-video text-danger' : 'las la-microphone text-success');
+                const timeStr = r.captured_at ? parseUtcDate(r.captured_at).toLocaleTimeString() : '';
+                return `
+                    <div class="evd-row" style="display:flex; justify-content:space-between; align-items:center; padding:9px 6px; border-bottom:1px solid #1E293B;">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <i class="${iconClass}" style="font-size:1.15rem;"></i>
+                            <div>
+                                <span style="font-size:0.83rem; font-weight:600; color:#F8FAFC;">${(r.evidence_type || 'MEDIA').toUpperCase()}: ${r.file_name}</span>
+                                ${timeStr ? `<small style="display:block; color:#64748B; font-size:0.72rem;">Captured: ${timeStr}</small>` : ''}
+                            </div>
+                        </div>
+                        <strong style="color:${r.status === 'UPLOADED' ? '#0ABF78' : '#FF9F1C'}; font-size:0.75rem; padding:2px 8px; border-radius:4px; background:rgba(255,255,255,0.05);">${r.status || 'RECORDED'}</strong>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // 2. POPULATE EVIDENCE BADGE
+        if (evidenceBadge) {
+            evidenceBadge.innerHTML = `
+                <div style="background: rgba(15, 23, 42, 0.75); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 10px; padding: 10px 14px; margin-top: 12px; display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <i class="las la-shield-alt text-success" style="font-size: 1.3rem;"></i>
+                        <div>
+                            <span style="font-size: 0.85rem; font-weight: 700; color: #F8FAFC; display:block;">Verified Evidence Vault</span>
+                            <small style="color: #94A3B8; font-size: 0.72rem;">${evidenceRecords.length} secure record(s) on file</small>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 6px;">
+                        ${videoRecords.length > 0 ? `<span class="nav-badge-pill" style="background:#EF4444; font-size:0.7rem; font-weight:700;">${videoRecords.length} VIDEO</span>` : ''}
+                        ${imageRecords.length > 0 ? `<span class="nav-badge-pill" style="background:#0284C7; font-size:0.7rem; font-weight:700;">${imageRecords.length} PHOTO</span>` : ''}
+                        ${audioRecords.length > 0 ? `<span class="nav-badge-pill" style="background:#10B981; font-size:0.7rem; font-weight:700;">${audioRecords.length} AUDIO</span>` : ''}
+                    </div>
+                </div>
+            `;
+            evidenceBadge.classList.remove('hidden');
+            evidenceBadge.style.display = 'block';
+        }
+
+        // 3. VIDEO EVIDENCE PROCESSING
+        const primaryVideoRecord = videoRecords.find(e => e.status === 'UPLOADED') || videoRecords[0];
+        let primaryVideoUrl = null;
+
+        if (primaryVideoRecord) {
+            primaryVideoUrl = await getRecordMediaUrl(primaryVideoRecord);
+            if (primaryVideoUrl) {
+                window.currentAlertEvidence.videoUrl = primaryVideoUrl;
+                if (videoEmptyPlaceholder) videoEmptyPlaceholder.style.display = 'none';
+                if (realEvdVideo) {
+                    realEvdVideo.onerror = () => {
+                        realEvdVideo.style.display = 'none';
+                        if (videoEmptyPlaceholder) {
+                            videoEmptyPlaceholder.style.display = 'flex';
+                            if (videoEmptyTitle) videoEmptyTitle.innerText = "Video file format not supported or storage link expired";
+                        }
+                    };
+                    realEvdVideo.src = primaryVideoUrl;
+                    realEvdVideo.style.display = 'block';
+                    realEvdVideo.style.cursor = 'pointer';
+                    realEvdVideo.title = "Click to View Full Screen";
+                    realEvdVideo.onclick = () => window.openEvidenceModal('video', primaryVideoUrl, 'Video Feed');
+                }
+                if (streamLivePill) {
+                    streamLivePill.style.display = 'flex';
+                    if (streamPillText) streamPillText.innerText = "RECORDED VAULT";
+                }
+                if (streamTimerOverlay) {
+                    streamTimerOverlay.style.display = 'block';
+                    streamTimerOverlay.innerText = primaryVideoRecord.captured_at ? parseUtcDate(primaryVideoRecord.captured_at).toLocaleTimeString() : 'FEED TIME';
+                }
+            } else {
                 if (videoEmptyPlaceholder) {
                     videoEmptyPlaceholder.style.display = 'flex';
-                    if (videoEmptyTitle) videoEmptyTitle.innerText = "No evidence recordings found in vault";
+                    if (videoEmptyTitle) videoEmptyTitle.innerText = "Storage file inaccessible or authorization pending";
                 }
+            }
+        } else {
+            if (videoEmptyPlaceholder) {
+                videoEmptyPlaceholder.style.display = 'flex';
+                const isUploading = evidenceRecords.some(e => e.evidence_type === 'video' && e.status === 'UPLOADING');
+                if (videoEmptyTitle) videoEmptyTitle.innerText = isUploading ? "Video recording is uploading..." : (imageRecords.length > 0 ? "Images available in Captured Images tab" : "No video file attached");
+            }
+        }
+
+        // 4. THUMBNAILS COLUMN SIDEBAR
+        if (videoThumbSidebar) {
+            const allVisualRecords = [...videoRecords, ...imageRecords];
+            if (allVisualRecords.length > 0) {
+                const thumbPromises = allVisualRecords.slice(0, 6).map(async (rec, idx) => {
+                    const url = await getRecordMediaUrl(rec);
+                    if (!url) return '';
+                    const isVid = isVideoEvidenceRecord(rec);
+                    const pillText = isVid ? 'VIDEO' : 'PHOTO';
+                    const pillColor = isVid ? '#EF4444' : '#0284C7';
+                    const mediaElement = isVid
+                        ? `<video src="${url}" style="width:100%; height:100%; object-fit:cover; pointer-events:none;"></video>`
+                        : `<img src="${url}" alt="Thumb ${idx}" style="width:100%; height:100%; object-fit:cover;">`;
+                    return `
+                        <div class="thumb-card ${idx === 0 ? 'active' : ''}" style="cursor:pointer;" title="Click to View" onclick="${isVid ? `document.getElementById('realEvdVideo').src='${url}'; document.getElementById('realEvdVideo').style.display='block'; if(document.getElementById('videoEmptyPlaceholder')) document.getElementById('videoEmptyPlaceholder').style.display='none';` : `window.openEvidenceModal('image', '${url}', 'Snapshot');`}">
+                            ${mediaElement}
+                            <span class="thumb-pill-live" style="background:${pillColor};">${pillText}</span>
+                        </div>
+                    `;
+                });
+                const renderedThumbs = await Promise.all(thumbPromises);
+                videoThumbSidebar.innerHTML = renderedThumbs.filter(Boolean).join('');
+            } else {
+                videoThumbSidebar.innerHTML = `
+                    <div class="empty-state-card" style="padding:10px 4px; font-size:0.75rem;">
+                        <span>No clips</span>
+                    </div>
+                `;
+            }
+        }
+
+        // 5. CAPTURED IMAGES GRID TAB
+        if (capturedImagesGrid) {
+            if (imageRecords.length > 0) {
+                const imageItems = await Promise.all(imageRecords.map(async (imgRec, idx) => {
+                    const url = await getRecordMediaUrl(imgRec);
+                    const timeStr = imgRec.captured_at ? parseUtcDate(imgRec.captured_at).toLocaleTimeString() : 'Snapshot';
+                    return { rec: imgRec, url, timeStr, index: idx };
+                }));
+
+                const validImages = imageItems.filter(it => it.url);
+                if (validImages.length > 0) {
+                    window.currentAlertEvidence.imageUrl = validImages[0].url;
+                    capturedImagesGrid.innerHTML = validImages.map(it => `
+                        <div class="captured-img-card" style="cursor:pointer;" title="Click to View Full Size" onclick="window.openEvidenceModal('image', '${it.url}', '${it.timeStr}')">
+                            <img src="${it.url}" alt="Snapshot ${it.index + 1}" loading="lazy" onerror="this.onerror=null; this.src='login-bg.jpg';">
+                            <div class="img-meta-tag"><i class="las la-clock"></i> ${it.timeStr} • ${it.rec.file_name || 'Photo'}</div>
+                        </div>
+                    `).join('');
+                } else {
+                    capturedImagesGrid.innerHTML = `
+                        <div class="empty-state-card" style="grid-column: span 2;">
+                            <i class="las la-exclamation-circle text-warning"></i>
+                            <p>Photo evidence authorization link generating...</p>
+                        </div>
+                    `;
+                }
+            } else {
+                capturedImagesGrid.innerHTML = `
+                    <div class="empty-state-card" style="grid-column: span 2;">
+                        <i class="las la-images"></i>
+                        <p>No captured snapshots available for selected case</p>
+                    </div>
+                `;
+            }
+        }
+
+        // 6. AUDIO EVIDENCE TAB
+        const primaryAudioRecord = audioRecords.find(e => e.status === 'UPLOADED') || audioRecords[0];
+        if (primaryAudioRecord) {
+            const audioUrl = await getRecordMediaUrl(primaryAudioRecord);
+            if (audioUrl) {
+                window.currentAlertEvidence.audioUrl = audioUrl;
+                if (audioEmptyPlaceholder) audioEmptyPlaceholder.style.display = 'none';
+                if (audioWaveformGraphic) audioWaveformGraphic.style.display = 'flex';
+                if (audioPlayerRow) audioPlayerRow.style.display = 'flex';
+                if (realEvdAudio) {
+                    realEvdAudio.onerror = () => {
+                        if (audioPlayerRow) audioPlayerRow.style.display = 'none';
+                        if (audioWaveformGraphic) audioWaveformGraphic.style.display = 'none';
+                        if (audioEmptyPlaceholder) audioEmptyPlaceholder.style.display = 'flex';
+                    };
+                    realEvdAudio.src = audioUrl;
+                    realEvdAudio.style.display = 'block';
+                }
+            } else {
                 if (audioEmptyPlaceholder) audioEmptyPlaceholder.style.display = 'flex';
-                if (evidenceSummaryList) {
-                    evidenceSummaryList.innerHTML = `<div class="empty-state-card"><p>Zero evidence files uploaded</p></div>`;
+            }
+        } else {
+            if (audioEmptyPlaceholder) audioEmptyPlaceholder.style.display = 'flex';
+        }
+    }
+
+    // Connect View Full Screen button for Evidence
+    const btnEvidenceFullscreen = document.getElementById('btnEvidenceFullscreen');
+    if (btnEvidenceFullscreen) {
+        btnEvidenceFullscreen.addEventListener('click', () => {
+            const activeTabBtn = document.querySelector('.pill-tab-btn.active');
+            const tabKey = activeTabBtn ? activeTabBtn.dataset.evidenceTab : 'video';
+            const evidence = window.currentAlertEvidence || {};
+
+            if (tabKey === 'images') {
+                if (evidence.imageUrl) {
+                    window.openEvidenceModal('image', evidence.imageUrl, 'Captured Image');
+                } else {
+                    alert("No snapshot image available to display full screen.");
                 }
+            } else if (tabKey === 'audio') {
+                if (evidence.audioUrl) {
+                    window.openEvidenceModal('audio', evidence.audioUrl, 'Audio Recording');
+                } else {
+                    alert("No audio recording attached to display full screen.");
+                }
+            } else {
+                if (evidence.videoUrl) {
+                    window.openEvidenceModal('video', evidence.videoUrl, 'Live Video Stream');
+                } else if (evidence.imageUrl) {
+                    window.openEvidenceModal('image', evidence.imageUrl, 'Captured Snapshot');
+                } else {
+                    alert("No video or media evidence attached to display full screen.");
+                }
+            }
+        });
+    }
+
+    // Connect Officer Evidence Capture Workflow
+    const btnOfficerCaptureEvidence = document.getElementById('btnOfficerCaptureEvidence');
+    const officerEvidenceFileInput = document.getElementById('officerEvidenceFileInput');
+
+    if (btnOfficerCaptureEvidence && officerEvidenceFileInput) {
+        btnOfficerCaptureEvidence.addEventListener('click', () => {
+            const currentAlert = realAlertsList.find(a => a.id === selectedAlertId) || realAlertsList[0];
+            if (!currentAlert) {
+                alert("Please select an active incident from the alerts list before capturing evidence.");
+                return;
+            }
+            officerEvidenceFileInput.click();
+        });
+
+        officerEvidenceFileInput.addEventListener('change', async (event) => {
+            const file = event.target.files?.[0];
+            if (!file) return;
+
+            const currentAlert = realAlertsList.find(a => a.id === selectedAlertId) || realAlertsList[0];
+            if (!currentAlert) {
+                alert("Please select an active incident first.");
                 return;
             }
 
-            // Evidence summary tab
-            if (evidenceSummaryList) {
-                evidenceSummaryList.innerHTML = evidenceRecords.map(r => `
-                    <div class="evd-row">
-                        <span><b>${r.evidence_type.toUpperCase()}:</b> ${r.file_name}</span>
-                        <strong style="color:${r.status === 'UPLOADED' ? '#0ABF78' : '#FF9F1C'};">${r.status}</strong>
-                    </div>
-                `).join('');
+            const targetSosId = currentAlert.sos_id || (currentAlert.message && currentAlert.message.match(/\[SOS:(.*?)\]/)?.[1]) || currentAlert.id || ('sos_' + Date.now());
+            const isPhoto = file.type.startsWith('image/');
+            const type = isPhoto ? 'photo' : 'video';
+            const timestamp = Date.now();
+            const cleanName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+            const fileName = `police_${type}_${timestamp}_${cleanName}`;
+            const storagePath = `police/${targetSosId}/${fileName}`;
+
+            const streamLivePill = document.getElementById('streamLivePill');
+            const streamPillText = document.getElementById('streamPillText');
+            if (streamLivePill) {
+                streamLivePill.style.display = 'flex';
+                if (streamPillText) streamPillText.innerText = "UPLOADING...";
             }
 
-            // 1. VIDEO EVIDENCE
-            const videoRecord = evidenceRecords.find(e => e.evidence_type === 'video' && e.status === 'UPLOADED');
-            if (videoRecord && videoRecord.storage_path) {
-                // Generate secure signed URL from Supabase Storage
-                const { data: signedData, error: signErr } = await supabase.storage
-                    .from('jagruthi-evidence')
-                    .createSignedUrl(videoRecord.storage_path, 3600);
+            try {
+                let uploadSuccess = false;
+                if (supabase) {
+                    const { error: upErr } = await supabase.storage
+                        .from('jagruthi-evidence')
+                        .upload(storagePath, file, { contentType: file.type, upsert: true });
 
-                if (signedData && signedData.signedUrl && !signErr) {
-                    if (videoEmptyPlaceholder) videoEmptyPlaceholder.style.display = 'none';
-                    if (realEvdVideo) {
-                        realEvdVideo.onerror = () => {
-                            realEvdVideo.style.display = 'none';
-                            if (videoEmptyPlaceholder) {
-                                videoEmptyPlaceholder.style.display = 'flex';
-                                if (videoEmptyTitle) videoEmptyTitle.innerText = "Video file not found in storage bucket (404)";
-                            }
-                        };
-                        realEvdVideo.src = signedData.signedUrl;
-                        realEvdVideo.style.display = 'block';
-                    }
-                    if (streamLivePill) {
-                        streamLivePill.style.display = 'flex';
-                        if (streamPillText) streamPillText.innerText = "RECORDED VAULT";
-                    }
-                    if (streamTimerOverlay) {
-                        streamTimerOverlay.style.display = 'block';
-                        streamTimerOverlay.innerText = parseUtcDate(videoRecord.captured_at).toLocaleTimeString();
+                    if (upErr) {
+                        console.warn("Direct upload error:", upErr.message);
+                    } else {
+                        uploadSuccess = true;
                     }
 
-                    // Populate thumbnails
-                    if (videoThumbSidebar) {
-                        videoThumbSidebar.innerHTML = `
-                            <div class="thumb-card active">
-                                <video src="${signedData.signedUrl}" style="width:100%; height:100%; object-fit:cover;"></video>
-                                <span class="thumb-pill-live">VIDEO</span>
-                            </div>
-                        `;
+                    if (window.jagruthiSosService) {
+                        await window.jagruthiSosService.createSosEvidenceRecord({
+                            sosId: targetSosId,
+                            userId: 'police_command',
+                            evidenceType: type,
+                            storagePath: storagePath,
+                            fileName: fileName,
+                            capturedAt: new Date().toISOString(),
+                            status: uploadSuccess ? 'UPLOADED' : 'LOCAL_SAVED'
+                        });
+                    } else {
+                        await supabase.from('sos_evidence').insert([{
+                            sos_id: targetSosId,
+                            user_id: 'police_command',
+                            evidence_type: type,
+                            storage_path: storagePath,
+                            file_name: fileName,
+                            captured_at: new Date().toISOString(),
+                            status: uploadSuccess ? 'UPLOADED' : 'LOCAL_SAVED'
+                        }]);
                     }
+                }
+
+                // Also save to local storage as safety backup
+                const localBlobUrl = URL.createObjectURL(file);
+                const localEvidenceRecord = {
+                    id: timestamp,
+                    type: type,
+                    url: localBlobUrl,
+                    fileName: fileName,
+                    storagePath: storagePath,
+                    cloudSynced: uploadSuccess,
+                    capturedAt: new Date().toISOString()
+                };
+                const existing = JSON.parse(localStorage.getItem('jagruthiCapturedEvidence') || '[]');
+                existing.unshift(localEvidenceRecord);
+                localStorage.setItem('jagruthiCapturedEvidence', JSON.stringify(existing));
+
+                // Switch pill tab
+                if (isPhoto) {
+                    const btnImgTab = document.querySelector('[data-evidence-tab="images"]');
+                    if (btnImgTab) btnImgTab.click();
                 } else {
-                    if (videoEmptyPlaceholder) {
-                        videoEmptyPlaceholder.style.display = 'flex';
-                        if (videoEmptyTitle) videoEmptyTitle.innerText = signErr?.message || "Storage file inaccessible";
-                    }
+                    const btnVidTab = document.querySelector('[data-evidence-tab="video"]');
+                    if (btnVidTab) btnVidTab.click();
                 }
-            } else {
-                if (videoEmptyPlaceholder) {
-                    videoEmptyPlaceholder.style.display = 'flex';
-                    const isUploading = evidenceRecords.some(e => e.evidence_type === 'video' && e.status === 'UPLOADING');
-                    if (videoEmptyTitle) videoEmptyTitle.innerText = isUploading ? "Video recording is uploading..." : "No video file attached";
-                }
+
+                // Reload evidence for this alert
+                await loadRealEvidenceForAlert(currentAlert);
+                alert("Officer evidence secured and attached to incident successfully!");
+            } catch (err) {
+                console.error("Officer evidence capture exception:", err);
+                alert("Could not complete evidence capture: " + err.message);
+            } finally {
+                officerEvidenceFileInput.value = '';
             }
-
-            // 2. AUDIO EVIDENCE
-            const audioRecord = evidenceRecords.find(e => e.evidence_type === 'audio' && e.status === 'UPLOADED');
-            if (audioRecord && audioRecord.storage_path) {
-                const { data: signedAudio, error: signAudioErr } = await supabase.storage
-                    .from('jagruthi-evidence')
-                    .createSignedUrl(audioRecord.storage_path, 3600);
-
-                if (signedAudio && signedAudio.signedUrl && !signAudioErr) {
-                    if (audioEmptyPlaceholder) audioEmptyPlaceholder.style.display = 'none';
-                    if (audioWaveformGraphic) audioWaveformGraphic.style.display = 'flex';
-                    if (audioPlayerRow) audioPlayerRow.style.display = 'flex';
-                    if (realEvdAudio) {
-                        realEvdAudio.onerror = () => {
-                            if (audioPlayerRow) audioPlayerRow.style.display = 'none';
-                            if (audioWaveformGraphic) audioWaveformGraphic.style.display = 'none';
-                            if (audioEmptyPlaceholder) audioEmptyPlaceholder.style.display = 'flex';
-                        };
-                        realEvdAudio.src = signedAudio.signedUrl;
-                        realEvdAudio.style.display = 'block';
-                    }
-                } else {
-                    if (audioEmptyPlaceholder) audioEmptyPlaceholder.style.display = 'flex';
-                }
-            } else {
-                if (audioEmptyPlaceholder) audioEmptyPlaceholder.style.display = 'flex';
-            }
-
-        } catch (e) {
-            console.error("Exception loading evidence files:", e);
-        }
+        });
     }
+
+    // Modal Close Buttons for Evidence Vault
+    const closeEvdBtn = document.getElementById('closeEvdBtn');
+    if (closeEvdBtn) closeEvdBtn.addEventListener('click', window.closeEvidenceModal);
+    const evdOverlay = document.getElementById('evdOverlay');
+    if (evdOverlay) evdOverlay.addEventListener('click', window.closeEvidenceModal);
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') window.closeEvidenceModal();
+    });
 
     // SECTION F: Nearby Resources (Police stations from users table)
     async function loadNearbyPoliceStations() {
@@ -3644,7 +4073,10 @@ document.addEventListener('DOMContentLoaded', () => {
             };
 
             Object.entries(tabMap).forEach(([k, el]) => {
-                if (el) el.style.display = (k === tabKey) ? 'block' : 'none';
+                if (el) {
+                    el.style.display = (k === tabKey) ? 'block' : 'none';
+                    el.classList.toggle('active', k === tabKey);
+                }
             });
         });
     });
@@ -3708,7 +4140,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 })
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'sos_evidence' }, async (payload) => {
                     console.log("Realtime: sos_evidence update:", payload);
-                    const currentAlert = realAlertsList.find(a => a.id === selectedAlertId);
+                    const currentAlert = realAlertsList.find(a => a.id === selectedAlertId) || realAlertsList[0];
                     if (currentAlert) {
                         await loadRealEvidenceForAlert(currentAlert);
                     }
@@ -3741,6 +4173,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     );
                 }
             } catch (err) {}
+        }
+        if ((e.key === 'jagruthiCapturedEvidence' || e.key === 'safeRouteEmergency') && e.newValue) {
+            const currentAlert = realAlertsList.find(a => a.id === selectedAlertId) || realAlertsList[0];
+            if (currentAlert) {
+                loadRealEvidenceForAlert(currentAlert);
+            }
         }
     });
 

@@ -1650,6 +1650,7 @@ body.police-body {
     grid-template-columns: 1fr 1fr;
     gap: 10px;
     height: 252px;
+    overflow-y: auto;
 }
 
 .captured-img-card {
@@ -1658,6 +1659,13 @@ body.police-body {
     overflow: hidden;
     height: 110px;
     background: #000;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.captured-img-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.4);
 }
 
 .captured-img-card img {

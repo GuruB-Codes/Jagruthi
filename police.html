@@ -437,7 +437,11 @@
                                 <i class="las la-video header-icon-dark"></i>
                                 <h3 class="panel-title">Live Evidence Stream</h3>
                             </div>
-                            <button class="panel-action-link" id="btnEvidenceFullscreen">View Full Screen <i class="las la-external-link-alt"></i></button>
+                            <div style="display:flex; gap:10px; align-items:center;">
+                                <button type="button" class="panel-action-link" id="btnOfficerCaptureEvidence" title="Capture / Upload Evidence Photo or Video"><i class="las la-camera"></i> Capture Evidence</button>
+                                <input type="file" id="officerEvidenceFileInput" accept="image/*,video/*" capture="environment" style="display:none;">
+                                <button type="button" class="panel-action-link" id="btnEvidenceFullscreen">View Full Screen <i class="las la-external-link-alt"></i></button>
+                            </div>
                         </div>
 
                         <!-- Pill Tabs -->
