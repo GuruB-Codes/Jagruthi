@@ -29,7 +29,7 @@ body {
     font-family: 'Outfit', sans-serif;
     min-height: 100vh;
     background-color: var(--bg-dark);
-    background-image: url('./login-bg.jpg');
+    background-image: url('./assets/images/login-bg.jpg');
     background-size: cover;
     background-position: center top;
     background-repeat: no-repeat;

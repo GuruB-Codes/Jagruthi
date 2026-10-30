@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Strict role check: unauthorized users redirect to login
     if (isLoggedIn !== 'true' || userRole !== 'police') {
-        window.location.href = 'login.html';
+        window.location.href = '../../login.html';
         return;
     }
 
@@ -141,7 +141,7 @@ document.addEventListener('DOMContentLoaded', () => {
         btnLogoutSession.addEventListener('click', () => {
             if (confirm("End officer session and log out?")) {
                 localStorage.clear();
-                window.location.href = 'login.html';
+                window.location.href = '../../login.html';
             }
         });
     }
@@ -1636,7 +1636,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     window.currentAlertEvidence.imageUrl = validImages[0].url;
                     capturedImagesGrid.innerHTML = validImages.map(it => `
                         <div class="captured-img-card" style="cursor:pointer;" title="Click to View Full Size" onclick="window.openEvidenceModal('image', '${it.url}', '${it.timeStr}')">
-                            <img src="${it.url}" alt="Snapshot ${it.index + 1}" loading="lazy" onerror="this.onerror=null; this.src='login-bg.jpg';">
+                            <img src="${it.url}" alt="Snapshot ${it.index + 1}" loading="lazy" onerror="this.onerror=null; this.src='../../assets/images/login-bg.jpg';">
                             <div class="img-meta-tag"><i class="las la-clock"></i> ${it.timeStr} • ${it.rec.file_name || 'Photo'}</div>
                         </div>
                     `).join('');

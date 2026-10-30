@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const isLoggedIn = localStorage.getItem('isLoggedIn');
     const userRole = localStorage.getItem('userRole');
     if (isLoggedIn !== 'true' || userRole !== 'admin') {
-        window.location.href = 'login.html';
+        window.location.href = '../../login.html';
         return;
     }
 

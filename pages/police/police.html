@@ -15,7 +15,7 @@
     <link rel="stylesheet" href="https://maxst.icons8.com/vue-static/landings/line-awesome/line-awesome/1.3.0/css/line-awesome.min.css">
     
     <!-- Base Styles & Police Redesign Styles -->
-    <link rel="stylesheet" href="./style.css">
+    <link rel="stylesheet" href="../../shared/common.css">
     <link rel="stylesheet" href="./police.css">
     
     <!-- Leaflet Map Library -->
@@ -207,7 +207,7 @@
 
                     <!-- Police Department Badge -->
                     <div class="police-crest-badge">
-                        <img src="assets/police/police-crest.jpg" alt="Karnataka Police Badge">
+                        <img src="../../assets/police/police-crest.jpg" alt="Karnataka Police Badge">
                     </div>
 
                     <!-- Officer Profile Info & Dropdown Trigger -->
@@ -227,7 +227,7 @@
                             <div class="dropdown-divider"></div>
                             <button class="dropdown-item" id="btnNavProfile"><i class="las la-id-badge"></i> Officer Profile</button>
                             <button class="dropdown-item" id="btnNavStation"><i class="las la-building"></i> Station Settings</button>
-                            <a href="patrol.html" class="dropdown-item" style="color: #1E60FF; font-weight: 600;"><i class="las la-satellite-dish"></i> Patrol Unit Tracker Mode</a>
+                            <a href="../patrol/patrol.html" class="dropdown-item" style="color: #1E60FF; font-weight: 600;"><i class="las la-satellite-dish"></i> Patrol Unit Tracker Mode</a>
                             <div class="dropdown-divider"></div>
                             <button class="dropdown-item text-danger" id="btnLogoutSession">
                                 <i class="las la-sign-out-alt"></i> Logout Session
@@ -1157,7 +1157,7 @@
 
     <!-- Core Database & Application Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./supabaseClient.js"></script>
+    <script src="../../services/supabaseClient.js"></script>
     <script src="./police.js"></script>
 </body>
 </html>

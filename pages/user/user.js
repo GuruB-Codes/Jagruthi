@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const isLoggedIn = localStorage.getItem('isLoggedIn');
     const userRole = localStorage.getItem('userRole');
     if (isLoggedIn !== 'true' || userRole !== 'user') {
-        window.location.href = 'login.html';
+        window.location.href = '../../login.html';
         return;
     }
     
@@ -1194,7 +1194,7 @@ document.addEventListener('DOMContentLoaded', () => {
        =================================================== */
     class PhoneRingtoneEngine {
         constructor() {
-            this.audioEl = new Audio('./assets/audio/fake_call_ringtone.mp3');
+            this.audioEl = new Audio('../../assets/audio/fake_call_ringtone.mp3');
             this.audioEl.loop = true;
             this.audioEl.preload = 'auto';
 

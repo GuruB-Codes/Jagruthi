@@ -24,10 +24,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Dashboard redirect map
     const dashboardMap = {
-        user: 'index.html',
-        emergency: 'emergency.html',
-        police: 'police.html',
-        admin: 'admin.html'
+        user: 'pages/user/index.html',
+        emergency: 'pages/emergency/emergency.html',
+        police: 'pages/police/police.html',
+        patrol: 'pages/patrol/patrol.html',
+        admin: 'pages/admin/admin.html'
     };
 
     /* =========================================

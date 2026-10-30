@@ -9,7 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- Icons -->
     <link rel="stylesheet" href="https://maxst.icons8.com/vue-static/landings/line-awesome/line-awesome/1.3.0/css/line-awesome.min.css">
-    <link rel="stylesheet" href="./style.css"> <!-- Base styles -->
+    <link rel="stylesheet" href="../../shared/common.css"> <!-- Base styles -->
     <link rel="stylesheet" href="./admin.css"> <!-- Admin specific overrides -->
     
     <!-- Leaflet Map -->
@@ -50,7 +50,7 @@
                 <div class="profile-badge badge-admin" id="adminInitialsBadge">AD</div>
 
                 <!-- Visible Logout -->
-                <button class="logout-btn-premium admin-logout" onclick="localStorage.clear(); window.location.href='login.html';" title="Logout">
+                <button class="logout-btn-premium admin-logout" onclick="localStorage.clear(); window.location.href='../../login.html';" title="Logout">
                     <i class="las la-sign-out-alt"></i>
                     <span>Logout</span>
                 </button>
@@ -334,7 +334,7 @@
                 <!-- Logout -->
                 <section class="card admin-card">
                     <h2 class="section-title text-admin-dark" style="font-size: 1.1rem; margin-bottom: 12px;"><i class="las la-cog"></i> Admin Session</h2>
-                    <button onclick="localStorage.clear(); window.location.href='login.html';" style="width: 100%; background: #fee2e2; color: #ef4444; border: 1px solid #fca5a5; padding: 14px; border-radius: var(--radius-sm); font-weight: 700; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <button onclick="localStorage.clear(); window.location.href='../../login.html';" style="width: 100%; background: #fee2e2; color: #ef4444; border: 1px solid #fca5a5; padding: 14px; border-radius: var(--radius-sm); font-weight: 700; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
                         <i class="las la-sign-out-alt" style="font-size: 1.3rem;"></i> Logout Administrator
                     </button>
                 </section>
@@ -401,7 +401,7 @@
 
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./supabaseClient.js"></script>
+    <script src="../../services/supabaseClient.js"></script>
     <script src="./admin.js"></script>
 </body>
 </html>
