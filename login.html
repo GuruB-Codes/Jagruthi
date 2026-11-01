@@ -5,130 +5,492 @@
     <meta charset="UTF-8">
     <meta name="viewport"
         content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Jagruthi — Women Safety System</title>
-    <meta name="description" content="Jagruthi - Women Safety System. Safer Women, Stronger Communities.">
-    <!-- Google Fonts -->
+    <title>Jagruthi — Safer Journeys Together</title>
+    <meta name="description" content="Jagruthi Women Safety System - Safer Journeys Together. Select your role to continue.">
+    <!-- Google Fonts: Playfair Display, Outfit, Plus Jakarta Sans -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- Line Awesome Icons -->
     <link rel="stylesheet"
         href="https://maxst.icons8.com/vue-static/landings/line-awesome/line-awesome/1.3.0/css/line-awesome.min.css">
-    <link rel="stylesheet" href="./login.css">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Tailwind CSS with scoped preflight -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            corePlugins: {
+                preflight: false,
+            },
+            theme: {
+                extend: {
+                    fontFamily: {
+                        serif: ['"Playfair Display"', 'Georgia', 'serif'],
+                        sans: ['"Plus Jakarta Sans"', '"Outfit"', 'sans-serif'],
+                        display: ['"Outfit"', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            maroon: '#5d1033',
+                            burgundy: '#741541',
+                            plum: '#28112b',
+                            berry: '#c81e64',
+                            pink: '#db2777',
+                            softpink: '#fae4ec',
+                            lightbg: '#fdf7f9'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="./login.css?v=3.4.0">
 </head>
 
 <body>
 
-    <!-- Background Layer & Atmospheric Overlays -->
-    <div class="bg-backdrop" aria-hidden="true">
-        <div class="bg-overlay"></div>
-        
-        <!-- Left Side Vertical Text Pillar -->
-        <div class="side-pillar pillar-left">
-            <span class="pillar-line">SAFETY</span>
-            <span class="pillar-line">SUPPORT</span>
-            <span class="pillar-line">AWARENESS</span>
-            <span class="pillar-line">STRONGER</span>
-            <span class="pillar-line">WOMEN</span>
-            <span class="pillar-dash">—</span>
-        </div>
+    <!-- Main Page Container -->
+    <div class="login-container">
 
-        <!-- Right Side Vertical Text Pillar -->
-        <div class="side-pillar pillar-right">
-            <span class="pillar-line">A</span>
-            <span class="pillar-line">SAFER</span>
-            <span class="pillar-line">TOMORROW</span>
-            <span class="pillar-line">TOGETHER</span>
-            <span class="pillar-dash">—</span>
-        </div>
-    </div>
+        <!-- =======================================================
+             SCREEN 1: CHOOSE YOUR ROLE (Landing Screen)
+             ======================================================= -->
+        <section class="screen-view active" id="roleSelectScreen">
+            
+            <!-- Branding Header -->
+            <header class="app-brand-hero">
+                <div class="brand-lotus-icon">
+                    <img src="./assets/icons/logo.png" alt="Jagruthi Logo" class="brand-logo-img">
+                </div>
+                <h1 class="brand-hero-title">JAGRUTHI</h1>
+                <p class="brand-hero-sub">Safer Journeys Together</p>
+            </header>
 
-    <!-- Main Auth Container -->
-    <main class="auth-container">
+            <!-- Role Selector Section -->
+            <div class="role-selector-header">
+                <h2 class="role-selector-title">Choose Your Role</h2>
+                <p class="role-selector-sub">Select your role to continue</p>
+            </div>
 
-        <!-- Branding Header -->
-        <header class="auth-brand">
-            <div class="brand-icon-wrapper">
-                <div class="brand-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shield-icon-svg">
-                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            <!-- Role Selection Cards List -->
+            <div class="role-cards-list">
+                
+                <!-- 1. Women (User) -->
+                <button type="button" class="role-card role-card-women role-btn active" data-role="user" id="roleUser" aria-label="Role Women">
+                    <div class="role-card-avatar avatar-pink">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                    </div>
+                    <div class="role-card-info">
+                        <strong class="role-card-title">Women</strong>
+                        <span class="role-card-subtitle">Stay Safe, Always</span>
+                    </div>
+                    <div class="role-card-arrow">
+                        <i class="las la-angle-right"></i>
+                    </div>
+                </button>
+
+                <!-- 2. Parent / Emergency Contact -->
+                <button type="button" class="role-card role-card-emergency role-btn" data-role="emergency" id="roleEmergency" aria-label="Role Parent Emergency Contact">
+                    <div class="role-card-avatar avatar-blue">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        </svg>
+                    </div>
+                    <div class="role-card-info">
+                        <strong class="role-card-title">Parent / Emergency Contact</strong>
+                        <span class="role-card-subtitle">Support &amp; Stay Informed</span>
+                    </div>
+                    <div class="role-card-arrow">
+                        <i class="las la-angle-right"></i>
+                    </div>
+                </button>
+
+                <!-- 3. Police -->
+                <button type="button" class="role-card role-card-police role-btn" data-role="police" id="rolePolice" aria-label="Role Police">
+                    <div class="role-card-avatar avatar-green">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 2l7 3v6c0 5.25-3.5 10-7 11-3.5-1-7-5.75-7-11V5l7-3z"></path>
+                            <circle cx="12" cy="11" r="2.5"></circle>
+                        </svg>
+                    </div>
+                    <div class="role-card-info">
+                        <strong class="role-card-title">Police</strong>
+                        <span class="role-card-subtitle">Respond &amp; Protect</span>
+                    </div>
+                    <div class="role-card-arrow">
+                        <i class="las la-angle-right"></i>
+                    </div>
+                </button>
+
+                <!-- 4. Admin -->
+                <button type="button" class="role-card role-card-admin role-btn" data-role="admin" id="roleAdmin" aria-label="Role Admin">
+                    <div class="role-card-avatar avatar-orange">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="3"></circle>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                        </svg>
+                    </div>
+                    <div class="role-card-info">
+                        <strong class="role-card-title">Admin</strong>
+                        <span class="role-card-subtitle">Manage &amp; Monitor</span>
+                    </div>
+                    <div class="role-card-arrow">
+                        <i class="las la-angle-right"></i>
+                    </div>
+                </button>
+
+                <!-- 5. Patrol -->
+                <button type="button" class="role-card role-card-patrol role-btn" data-role="patrol" id="rolePatrol" aria-label="Role Patrol">
+                    <div class="role-card-avatar avatar-purple">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="2" y="10" width="20" height="9" rx="2"></rect>
+                            <path d="M5 10l2-5h10l2 5"></path>
+                            <circle cx="7" cy="15" r="2"></circle>
+                            <circle cx="17" cy="15" r="2"></circle>
+                            <line x1="12" y1="2" x2="12" y2="5"></line>
+                        </svg>
+                    </div>
+                    <div class="role-card-info">
+                        <strong class="role-card-title">Patrol</strong>
+                        <span class="role-card-subtitle">On-Ground Assistance</span>
+                    </div>
+                    <div class="role-card-arrow">
+                        <i class="las la-angle-right"></i>
+                    </div>
+                </button>
+
+            </div>
+
+            <!-- Role Selector Footer -->
+            <footer class="role-select-footer">
+                <span class="footer-tagline">Together for a Safer Tomorrow</span>
+                <!-- Soft Decorative Bottom Wave -->
+                <div class="screen-bottom-wave wave-pink" aria-hidden="true">
+                    <svg viewBox="0 0 500 120" preserveAspectRatio="none">
+                        <path d="M0,40 C150,90 350,10 500,60 L500,120 L0,120 Z" fill="rgba(255, 182, 193, 0.35)"></path>
+                        <path d="M0,60 C200,20 300,100 500,40 L500,120 L0,120 Z" fill="rgba(255, 182, 193, 0.45)"></path>
                     </svg>
                 </div>
-            </div>
-            <h1 class="brand-title">Jagruthi</h1>
-            <p class="brand-subtitle">Women Safety System</p>
-            <div class="brand-motto">
-                <span>Safer Women</span>
-                <span class="motto-dot"></span>
-                <span>Stronger Communities</span>
-            </div>
-        </header>
+            </footer>
 
-        <!-- Auth Glass Card -->
-        <div class="auth-card">
+        </section>
 
-            <!-- Role Selection -->
-            <div class="role-section">
-                <h2 class="section-label">Select Your Role</h2>
-                <div class="role-grid">
-                    <button class="role-btn active" data-role="user" id="roleUser" type="button" aria-label="Role User">
-                        <div class="role-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                                <circle cx="12" cy="7" r="4"></circle>
-                            </svg>
-                        </div>
-                        <span>User</span>
-                    </button>
-                    <button class="role-btn" data-role="emergency" id="roleEmergency" type="button" aria-label="Role Contact">
-                        <div class="role-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                                <circle cx="9" cy="7" r="4"></circle>
-                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                            </svg>
-                        </div>
-                        <span>Contact</span>
-                    </button>
-                    <button class="role-btn" data-role="police" id="rolePolice" type="button" aria-label="Role Police">
-                        <div class="role-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M12 2l7 3v6c0 5.25-3.5 10-7 11-3.5-1-7-5.75-7-11V5l7-3z"></path>
-                                <circle cx="12" cy="11" r="2.5"></circle>
-                            </svg>
-                        </div>
-                        <span>Police</span>
-                    </button>
-                    <button class="role-btn" data-role="admin" id="roleAdmin" type="button" aria-label="Role Admin">
-                        <div class="role-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <circle cx="12" cy="12" r="3"></circle>
-                                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-                            </svg>
-                        </div>
-                        <span>Admin</span>
-                    </button>
+
+        <!-- =======================================================
+             SCREEN 1.5: WOMEN USER ONBOARDING (Interactive Carousel)
+             ======================================================= -->
+        <section class="screen-view hidden" id="userOnboardingScreen">
+            
+            <!-- Floating Back Button to Role Selection -->
+            <button type="button" class="btn-back-nav absolute top-5 left-4 z-40 w-9 h-9 rounded-full bg-white/85 backdrop-blur-md shadow-md flex items-center justify-center text-slate-700 hover:text-pink-600 transition" id="btnBackFromOnboarding" aria-label="Back to role selection">
+                <i class="las la-angle-left text-lg"></i>
+            </button>
+
+            <!-- TOP SECTION: Floral Emblem & Brand Logo -->
+            <div class="pt-8 px-6 flex flex-col items-center z-20 text-center select-none shrink-0">
+                <!-- Botanical Woman Silhouette Emblem / Logo Image -->
+                <div class="relative w-16 h-16 mb-1.5 flex items-center justify-center transition-transform hover:scale-105 duration-300">
+                    
+                    <!-- Added Logo Image Tag (fallback to SVG if image fails) -->
+                    <img 
+                        src="./assets/icons/logo.png" 
+                        alt="Jagruthi Logo" 
+                        class="w-full h-full object-contain drop-shadow-[0_4px_12px_rgba(200,30,100,0.18)]"
+                        onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"
+                    />
+
+                    <svg viewBox="0 0 160 160" class="w-full h-full drop-shadow-[0_4px_12px_rgba(200,30,100,0.18)]" style="display:none;">
+                        <defs>
+                            <linearGradient id="petalGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stop-color="#ff6098" />
+                                <stop offset="60%" stop-color="#cf1b66" />
+                                <stop offset="100%" stop-color="#7e103e" />
+                            </linearGradient>
+                            <linearGradient id="profileGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stop-color="#a81250" />
+                                <stop offset="60%" stop-color="#640a32" />
+                            </linearGradient>
+                        </defs>
+
+                        <!-- Background soft glow leaf -->
+                        <path d="M72 15 C88 28, 98 56, 85 85 C68 85, 48 64, 52 38 C56 22, 65 16, 72 15 Z" fill="url(#petalGrad1)" opacity="0.9"/>
+                        
+                        <!-- Side left petal -->
+                        <path d="M48 48 C32 60, 24 82, 38 98 C50 96, 62 82, 65 68 C62 55, 54 48, 48 48 Z" fill="#eb347c" opacity="0.85"/>
+                        
+                        <!-- Bottom small left petal -->
+                        <path d="M54 94 C44 98, 40 108, 46 116 C55 118, 66 110, 68 100 C62 97, 57 95, 54 94 Z" fill="#bd1b5b"/>
+                        
+                        <!-- Woman Profile silhouette merging with petals -->
+                        <path d="M86 42 C89 42, 92 46, 95 50 C98 54, 102 54, 106 58 C109 61, 106 66, 102 68 C100 70, 102 73, 104 76 C105 78, 103 80, 100 81 C96 82, 92 86, 94 92 C96 98, 92 108, 80 114 C74 117, 72 122, 72 126 C78 123, 85 116, 90 108 C97 96, 98 88, 102 85 C107 82, 114 74, 110 65 C107 58, 108 52, 102 44 C95 34, 88 32, 86 42 Z" fill="url(#profileGrad)"/>
+
+                        <!-- Elegant throat & hair flow -->
+                        <path d="M82 66 C75 75, 74 95, 86 112 C82 108, 77 96, 78 86 C80 78, 76 72, 82 66 Z" fill="#870f3f"/>
+
+                        <!-- Small delicate white flower accent inside petal -->
+                        <path d="M60 84 Q65 82 70 85 Q65 88 60 84 Z" fill="#ffffff" opacity="0.95"/>
+                        <circle cx="65" cy="85" r="1.5" fill="#fbcfe8"/>
+                    </svg>
+                </div>
+
+                <!-- App Title -->
+                <h1 class="text-3xl font-serif font-bold text-[#5e1136] tracking-tight">Jagruthi</h1>
+
+                <!-- Tagline -->
+                <div class="mt-1 space-y-0.5">
+                    <p class="text-[10px] tracking-[0.24em] font-semibold text-[#801748] uppercase">Safer Steps</p>
+                    <p class="text-[9px] tracking-[0.26em] font-semibold text-[#9e1c59] uppercase">Brighter Tomorrow</p>
                 </div>
             </div>
 
-            <!-- Error/Success Messages -->
+            <!-- CENTER SECTION: 100% Edge-to-Edge Full-Width Girl Illustration -->
+            <div class="absolute inset-x-0 top-[100px] bottom-[230px] z-10 overflow-hidden pointer-events-none">
+                
+                <!-- Top Vignette Blend to seamlessly fuse background -->
+                <div class="absolute inset-0 bg-gradient-to-b from-[#fff6f9] via-transparent to-transparent h-14 z-10 pointer-events-none"></div>
+
+                <!-- Full-Width Character Image positioned deeper to sit flush under the deepened wave -->
+                <img 
+                    id="heroImage"
+                    src="./assets/images/user-backg.png" 
+                    alt="Jagruthi Safety illustration" 
+                    class="w-full h-full object-cover object-[center_32%] filter contrast-[1.02]"
+                    onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80';"
+                />
+            </div>
+
+            <!-- BOTTOM SECTION: Organic Fluid Wave Container (Deep Pronounced Curve, zero gap) -->
+            <div class="relative z-30 w-full flex flex-col justify-end">
+                
+                <!-- Multi-layered Organic Wave SVG Header with pronounced sweeping curves -->
+                <div class="w-full h-[70px] overflow-visible -mb-[2px] relative pointer-events-none drop-shadow-[0_-10px_20px_rgba(200,30,100,0.08)]">
+                    <svg viewBox="0 0 400 90" preserveAspectRatio="none" class="w-full h-full block">
+                        <!-- Back Fluid Accent Wave (Soft Translucent Flow) -->
+                        <path d="M 0,35 C 45,10 95,20 145,52 C 195,84 250,55 315,22 C 350,5 380,8 400,20 L 400,90 L 0,90 Z" fill="#ffffff" fill-opacity="0.45"/>
+                        <!-- Foreground Pronounced Organic Swoop (Dips deep on left, arches high right-of-center) -->
+                        <path d="M 0,16 C 50,42 95,78 155,75 C 220,72 265,12 335,16 C 365,18 385,32 400,45 L 400,90 L 0,90 Z" fill="#ffffff"/>
+                    </svg>
+                </div>
+
+                <!-- Card Body Content with Continuous Pink-White Gradient & snug padding -->
+                <div class="bg-gradient-to-b from-[#ffffff] via-[#fff7f9] to-[#ffedf3] px-8 pb-7 pt-0">
+                    
+                    <!-- Slider Carousel Content Container -->
+                    <div id="sliderContent" class="text-center min-h-[110px] flex flex-col justify-center transition-all duration-300">
+                        
+                        <!-- Slide 1 Content -->
+                        <div id="slide-0" class="slide-item transition-all duration-300">
+                            <h2 class="text-[26px] font-serif font-bold text-[#1a102a] leading-tight">
+                                Your Safety <br>
+                                <span class="text-[#cf1a64] font-serif font-extrabold tracking-tight">Our Priority</span>
+                            </h2>
+                            <p class="mt-1.5 text-[13px] leading-snug text-[#4a3a46]/85 font-medium px-2">
+                                Real-time protection, smart alerts and instant support &mdash; wherever you go.
+                            </p>
+                        </div>
+
+                        <!-- Slide 2 Content -->
+                        <div id="slide-1" class="slide-item hidden opacity-0 transition-all duration-300">
+                            <h2 class="text-[26px] font-serif font-bold text-[#1a102a] leading-tight">
+                                Instant SOS <br>
+                                <span class="text-[#cf1a64] font-serif font-extrabold tracking-tight">One-Tap Alert</span>
+                            </h2>
+                            <p class="mt-1.5 text-[13px] leading-snug text-[#4a3a46]/85 font-medium px-2">
+                                Reach trusted emergency contacts and nearest police responders in under 3 seconds.
+                            </p>
+                        </div>
+
+                        <!-- Slide 3 Content -->
+                        <div id="slide-2" class="slide-item hidden opacity-0 transition-all duration-300">
+                            <h2 class="text-[26px] font-serif font-bold text-[#1a102a] leading-tight">
+                                Safe Routes <br>
+                                <span class="text-[#cf1a64] font-serif font-extrabold tracking-tight">Smart Navigation</span>
+                            </h2>
+                            <p class="mt-1.5 text-[13px] leading-snug text-[#4a3a46]/85 font-medium px-2">
+                                Crowdsourced street safety scores, well-lit pathways and verified travel companions.
+                            </p>
+                        </div>
+
+                    </div>
+
+                    <!-- Carousel Pagination Dots -->
+                    <div class="flex items-center justify-center gap-2 my-3.5">
+                        <button type="button" onclick="setSlide(0)" id="dot-0" aria-label="Go to slide 1" class="h-2 w-6 rounded-full bg-[#af1352] transition-all duration-300 focus:outline-none"></button>
+                        <button type="button" onclick="setSlide(1)" id="dot-1" aria-label="Go to slide 2" class="h-2 w-2 rounded-full bg-[#f3a6c4] hover:bg-[#eb719f] transition-all duration-300 focus:outline-none"></button>
+                        <button type="button" onclick="setSlide(2)" id="dot-2" aria-label="Go to slide 3" class="h-2 w-2 rounded-full bg-[#f3a6c4] hover:bg-[#eb719f] transition-all duration-300 focus:outline-none"></button>
+                    </div>
+
+                    <!-- Call to Action Buttons -->
+                    <div class="mt-2">
+                        <!-- Primary Get Started Button -->
+                        <button type="button" onclick="handleGetStarted()" class="btn-gradient w-full py-3.5 px-6 rounded-full text-white font-semibold text-[15px] tracking-wide flex items-center justify-center gap-2 group transition duration-200 cursor-pointer">
+                            <span>Get Started</span>
+                            <i data-lucide="arrow-right" class="w-4 h-4 transition-transform group-hover:translate-x-1"></i>
+                        </button>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- Notification Toast Modal -->
+            <div id="toastNotice" class="absolute top-5 left-4 right-4 bg-white/95 backdrop-blur-md p-3.5 rounded-2xl shadow-xl border border-pink-100 flex items-center gap-3 transform -translate-y-24 opacity-0 transition-all duration-300 z-50 pointer-events-none">
+                <div class="w-9 h-9 rounded-full bg-pink-100 text-[#af1352] flex items-center justify-center shrink-0">
+                    <i data-lucide="shield-check" class="w-5 h-5"></i>
+                </div>
+                <div class="flex-1">
+                    <h4 id="toastTitle" class="text-xs font-bold text-slate-800">Welcome to Jagruthi</h4>
+                    <p id="toastMessage" class="text-[11px] text-slate-500">Preparing secure environment...</p>
+                </div>
+            </div>
+
+        </section>
+
+
+        <!-- =======================================================
+             SCREEN 1.6: PARENT / EMERGENCY CONTACT ONBOARDING
+             ======================================================= -->
+        <section class="screen-view hidden" id="parentOnboardingScreen">
+            
+            <div class="dashboard-app">
+                <!-- Floating Back Button to Role Selection -->
+                <button type="button" class="btn-back-nav absolute top-5 left-4 z-40 w-9 h-9 rounded-full bg-white/85 backdrop-blur-md shadow-md flex items-center justify-center text-slate-700 hover:text-pink-600 transition" id="btnBackFromParentOnboarding" aria-label="Back to role selection">
+                    <i class="las la-angle-left text-lg"></i>
+                </button>
+
+                <div class="top-blend-gradient"></div>
+
+                <header class="dashboard-header">
+                    <img class="brand-icon" src="./assets/icons/logo.png" alt="Jagruthi Flower and Silhouette Logo" />
+                    <h1 class="brand-name">Jagruthi</h1>
+                    <h2 class="brand-title">Parent Dashboard</h2>
+                    <p class="brand-tagline">KEEP THEM SAFE<br>ALWAYS CONNECTED</p>
+                </header>
+
+                <div class="illustration-layer">
+                    <img src="./assets/images/illustration.png" alt="Seamless illustration of Jagruthi Guardian with daughter" />
+                </div>
+
+                <div class="bottom-wrapper">
+                    <svg class="curved-wave-shape" viewBox="0 0 380 32" fill="none" preserveAspectRatio="none">
+                        <path d="M0 32C110 5 270 5 380 32H0Z" fill="#ffffff"/>
+                    </svg>
+
+                    <div class="bottom-content-panel">
+                        <div class="feature-grid">
+                            <button type="button" class="feature-card" onclick="onFeature('Live Location')">
+                                <div class="icon-wrapper">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 0 1 0-5 2.5 2.5 0 0 1 0 5z"/>
+                                    </svg>
+                                </div>
+                                <span>Live<br>Location</span>
+                            </button>
+
+                            <button type="button" class="feature-card" onclick="onFeature('Instant Alerts')">
+                                <div class="icon-wrapper">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M12 22a2 2 0 0 0 2-2h-4a2 2 0 0 0 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/>
+                                    </svg>
+                                </div>
+                                <span>Instant<br>Alerts</span>
+                            </button>
+
+                            <button type="button" class="feature-card" onclick="onFeature('Emergency Support')">
+                                <div class="icon-wrapper">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+                                    </svg>
+                                </div>
+                                <span>Emergency<br>Support</span>
+                            </button>
+                        </div>
+
+                        <div class="actions">
+                            <button type="button" class="btn-primary" onclick="onGetStarted()">
+                                <span>Get Started</span>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                    <polyline points="12 5 19 12 12 19"></polyline>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- =======================================================
+             SCREEN 2: ROLE AUTHENTICATION (LOGIN & REGISTRATION)
+             ======================================================= -->
+        <section class="screen-view hidden theme-women" id="authScreen">
+            
+            <!-- Top Navigation Bar -->
+            <div class="auth-top-bar">
+                <button type="button" class="btn-back-nav" id="btnBackToRoles" aria-label="Back to role selection">
+                    <i class="las la-angle-left"></i>
+                </button>
+                <div class="active-role-chip" id="activeRoleChip" role="button" tabindex="0" title="Switch role">
+                    <span class="role-chip-dot"></span>
+                    <span class="role-chip-text" id="roleChipText">Women</span>
+                    <i class="las la-angle-down chip-dropdown-icon"></i>
+                </div>
+            </div>
+
+            <!-- Centered Dynamic Role Avatar & Title -->
+            <div class="auth-hero-header">
+                <div class="auth-hero-avatar" id="authRoleAvatar">
+                    <!-- Injected by JS: woman, parent, police, admin, patrol -->
+                    <div class="hero-avatar-icon" id="heroAvatarIcon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                    </div>
+                </div>
+                <h1 class="auth-hero-title" id="authTitle">Women Login</h1>
+                <p class="auth-hero-sub" id="authSubtitle">Stay Safe, Stay Empowered</p>
+            </div>
+
+            <!-- Error/Success Messages Box -->
             <div class="message-box hidden" id="messageBox" role="alert">
                 <i class="las la-exclamation-circle"></i>
                 <span id="messageText"></span>
             </div>
 
-            <!-- LOGIN FORM -->
+            <!-- Hidden Tab Switcher hooks for script compatibility -->
+            <div class="tab-switcher" style="display:none;" aria-hidden="true">
+                <button type="button" id="tabLogin" class="tab-btn active"></button>
+                <button type="button" id="tabRegister" class="tab-btn"></button>
+                <div id="tabIndicator" class="tab-indicator"></div>
+            </div>
+
+            <!-- ================= LOGIN FORM ================= -->
             <form class="auth-form" id="loginForm">
-                <div class="input-field">
+                
+                <!-- Phone Number -->
+                <div class="input-field" id="wrapLoginPhone">
                     <div class="field-icon">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                            <rect x="3" y="5" width="18" height="14" rx="2"></rect>
+                            <polyline points="3 7 12 13 21 7"></polyline>
                         </svg>
                     </div>
-                    <input type="tel" id="loginPhone" placeholder="Phone Number" required autocomplete="tel">
+                    <input type="tel" id="loginPhone" placeholder="Email / Phone" required autocomplete="tel">
+                    <span class="field-validation-icon" id="loginPhoneValid" aria-hidden="true">
+                        <i class="las la-check-circle"></i>
+                    </span>
                 </div>
+
+                <!-- Password -->
                 <div class="input-field">
                     <div class="field-icon">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -136,35 +498,42 @@
                             <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
                         </svg>
                     </div>
-                    <input type="password" id="loginPassword" placeholder="Password" required
-                        autocomplete="current-password">
+                    <input type="password" id="loginPassword" placeholder="Password" required autocomplete="current-password">
                     <button type="button" class="toggle-pass" id="toggleLoginPass" aria-label="Toggle password visibility">
                         <i class="las la-eye"></i>
                     </button>
                 </div>
-                
-                <div class="form-options">
-                    <a href="#" class="forgot-link">Forgot Password?</a>
+
+                <!-- Options Row: Remember Me & Forgot Password -->
+                <div class="auth-options-row">
+                    <label class="remember-me-label">
+                        <input type="checkbox" id="rememberMe">
+                        <span>Remember me</span>
+                    </label>
+                    <a href="#" class="forgot-link">Forgot password?</a>
                 </div>
 
-                <button type="submit" class="submit-btn" id="loginBtn">
-                    <div class="btn-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
-                            <polyline points="10 17 15 12 10 7"></polyline>
-                            <line x1="15" y1="12" x2="3" y2="12"></line>
-                        </svg>
-                    </div>
+                <!-- Submit Button -->
+                <button type="submit" class="auth-action-btn" id="loginBtn">
                     <span>Login</span>
                 </button>
 
-                <p class="auth-switch-text">
-                    Don't have an account? <a href="#" id="linkToRegister" class="auth-switch-link">Register</a>
+                <!-- OR Divider -->
+                <div class="auth-divider">
+                    <span>OR</span>
+                </div>
+
+                <!-- Switch to Register -->
+                <p class="auth-switch-prompt">
+                    Don't have an account? <a href="#" id="linkToRegister" class="switch-link">Sign Up</a>
                 </p>
+
             </form>
 
-            <!-- REGISTRATION FORM -->
+            <!-- ================= REGISTRATION FORM ================= -->
             <form class="auth-form hidden" id="registerForm">
+                
+                <!-- Full Name -->
                 <div class="input-field">
                     <div class="field-icon">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -174,23 +543,35 @@
                     </div>
                     <input type="text" id="regName" placeholder="Full Name" required>
                 </div>
-                <div class="input-field">
+
+                <!-- Email -->
+                <div class="input-field" id="wrapRegEmail">
+                    <div class="field-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="5" width="18" height="14" rx="2"></rect>
+                            <polyline points="3 7 12 13 21 7"></polyline>
+                        </svg>
+                    </div>
+                    <input type="email" id="regEmail" placeholder="Email" required>
+                    <span class="field-validation-icon" id="regEmailValid" aria-hidden="true">
+                        <i class="las la-check-circle"></i>
+                    </span>
+                </div>
+
+                <!-- Phone -->
+                <div class="input-field" id="wrapRegPhone">
                     <div class="field-icon">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
                         </svg>
                     </div>
                     <input type="tel" id="regPhone" placeholder="Phone Number" required>
+                    <span class="field-validation-icon" id="regPhoneValid" aria-hidden="true">
+                        <i class="las la-check-circle"></i>
+                    </span>
                 </div>
-                <div class="input-field">
-                    <div class="field-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                            <polyline points="22,6 12,13 2,6"></polyline>
-                        </svg>
-                    </div>
-                    <input type="email" id="regEmail" placeholder="Email Address" required>
-                </div>
+
+                <!-- Password -->
                 <div class="input-field">
                     <div class="field-icon">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -203,6 +584,18 @@
                         <i class="las la-eye"></i>
                     </button>
                 </div>
+
+                <!-- Password Strength Meter (Interactive) -->
+                <div class="pass-meter-wrap hidden" id="passMeterWrap">
+                    <div class="pass-meter-bars">
+                        <span class="bar bar-1"></span>
+                        <span class="bar bar-2"></span>
+                        <span class="bar bar-3"></span>
+                    </div>
+                    <span class="pass-meter-label" id="passMeterLabel">Password strength</span>
+                </div>
+
+                <!-- Confirm Password -->
                 <div class="input-field">
                     <div class="field-icon">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -213,9 +606,16 @@
                     <input type="password" id="regConfirmPassword" placeholder="Confirm Password" required>
                 </div>
 
-                <!-- Dynamic Role Fields -->
+                <!-- Password Match Status (Interactive) -->
+                <div class="pass-match-wrap hidden" id="passMatchWrap">
+                    <i class="las la-check-circle" id="passMatchIcon"></i>
+                    <span id="passMatchLabel">Passwords match</span>
+                </div>
+
+                <!-- Role Specific Dynamic Fields -->
                 <div class="role-fields" id="roleFields">
-                    <!-- User Fields (default) -->
+                    
+                    <!-- 1. Women / User Fields -->
                     <div class="dynamic-fields" id="fieldsUser">
                         <div class="input-field">
                             <div class="field-icon">
@@ -235,7 +635,8 @@
                             <input type="text" id="regAddress" placeholder="Address (Optional)">
                         </div>
                     </div>
-                    <!-- Emergency Contact Fields -->
+
+                    <!-- 2. Emergency Contact Fields -->
                     <div class="dynamic-fields hidden" id="fieldsEmergency">
                         <div class="input-field">
                             <div class="field-icon">
@@ -246,7 +647,8 @@
                             <input type="text" id="regRelationship" placeholder="Relationship to User">
                         </div>
                     </div>
-                    <!-- Police Fields -->
+
+                    <!-- 3. Police Fields -->
                     <div class="dynamic-fields hidden" id="fieldsPolice">
                         <div class="input-field">
                             <div class="field-icon">
@@ -268,7 +670,8 @@
                             <input type="text" id="regOfficerId" placeholder="Officer ID">
                         </div>
                     </div>
-                    <!-- Admin Fields -->
+
+                    <!-- 4. Admin Fields -->
                     <div class="dynamic-fields hidden" id="fieldsAdmin">
                         <div class="input-field">
                             <div class="field-icon">
@@ -291,36 +694,62 @@
                             <input type="password" id="regSecurityCode" placeholder="Security Code">
                         </div>
                     </div>
+
+                    <!-- 5. Patrol Fields -->
+                    <div class="dynamic-fields hidden" id="fieldsPatrol">
+                        <div class="input-field">
+                            <div class="field-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                                    <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                                </svg>
+                            </div>
+                            <input type="text" id="regPatrolStation" placeholder="Police Station / Unit">
+                        </div>
+                        <div class="input-field">
+                            <div class="field-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                                    <line x1="8" y1="21" x2="16" y2="21"></line>
+                                    <line x1="12" y1="17" x2="12" y2="21"></line>
+                                </svg>
+                            </div>
+                            <input type="text" id="regPatrolOfficerId" placeholder="Officer / Patrol ID">
+                        </div>
+                    </div>
+
                 </div>
 
-                <button type="submit" class="submit-btn submit-register" id="registerBtn">
-                    <div class="btn-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                            <circle cx="8.5" cy="7" r="4"></circle>
-                            <line x1="20" y1="8" x2="20" y2="14"></line>
-                            <line x1="23" y1="11" x2="17" y2="11"></line>
-                        </svg>
-                    </div>
+                <!-- Submit Button -->
+                <button type="submit" class="auth-action-btn" id="registerBtn">
                     <span>Create Account</span>
                 </button>
 
-                <p class="auth-switch-text">
-                    Already have an account? <a href="#" id="linkToLogin" class="auth-switch-link">Login</a>
+                <!-- Switch to Login -->
+                <p class="auth-switch-prompt">
+                    Already have an account? <a href="#" id="linkToLogin" class="switch-link">Login</a>
                 </p>
+
             </form>
 
-        </div>
+            <!-- Dynamic Thematic Role Illustration (Centered Below Form, Matches Mockup) -->
+            <div class="auth-bottom-illustration" id="authBottomIllustration" aria-hidden="true"></div>
 
-        <!-- Footer -->
-        <footer class="auth-footer">
-            <p>&copy; 2026 Jagruthi Women Safety &bull; All Rights Reserved</p>
-        </footer>
-    </main>
+            <!-- Bottom Background Curve Graphic -->
+            <div class="auth-screen-wave" aria-hidden="true">
+                <svg viewBox="0 0 500 120" preserveAspectRatio="none">
+                    <path class="dynamic-wave-path" d="M0,50 C180,95 340,15 500,65 L500,120 L0,120 Z"></path>
+                </svg>
+            </div>
 
+        </section>
+
+    </div>
+
+    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./services/supabaseClient.js"></script>
-    <script src="./login.js"></script>
+    <script src="./login.js?v=3.2.9"></script>
 </body>
 
 </html>

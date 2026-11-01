@@ -1,10 +1,10 @@
 /* ===================================================
    JAGRUTHI WOMEN SAFETY - SERVICE WORKER (PWA)
-   Version: 3.2.0 (Architecture Migration)
+   Version: 3.4.0 (Cleaned & Arranged Assets Structure)
    Provides offline capability, caching & installability
    =================================================== */
 
-const CACHE_NAME = 'jagruthi-pwa-v3.2.0';
+const CACHE_NAME = 'jagruthi-pwa-v3.4.0';
 
 const PRECACHE_ASSETS = [
     './',
@@ -20,6 +20,9 @@ const PRECACHE_ASSETS = [
     './services/mediaService.js',
     './pwaManager.js',
     './manifest.json',
+    './assets/icons/logo.png',
+    './assets/images/illustration.png',
+    './assets/images/user-backg.png',
     './assets/images/login-bg.jpg',
     './assets/audio/fake_call_ringtone.mp3',
     './assets/audio/ringtone.wav',
