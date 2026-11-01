@@ -45,7 +45,7 @@
             }
         }
     </script>
-    <link rel="stylesheet" href="./login.css?v=3.4.0">
+    <link rel="stylesheet" href="./login.css?v=3.4.1">
 </head>
 
 <body>
@@ -425,6 +425,114 @@
                     </div>
                 </div>
             </div>
+        </section>
+
+
+        <!-- =======================================================
+             SCREEN 1.7: PATROL ONBOARDING (Patrol Monitoring)
+             ======================================================= -->
+        <section class="screen-view hidden" id="patrolOnboardingScreen">
+            <main class="dashboard-app">
+
+                <!-- Floating Back Button to Role Selection -->
+                <button type="button" class="btn-back-nav absolute top-5 left-4 z-40 w-9 h-9 rounded-full bg-white/85 backdrop-blur-md shadow-md flex items-center justify-center text-slate-700 hover:text-pink-600 transition" id="btnBackFromPatrolOnboarding" aria-label="Back to role selection">
+                    <i class="las la-angle-left text-lg"></i>
+                </button>
+
+                <!-- Top Branding & Typography -->
+                <header class="dashboard-header">
+                    <img class="brand-icon" src="./assets/icons/logo.png" alt="Jagruthi Logo" onerror="this.onerror=null; this.src='assets/icons/logo.png';" />
+                    <h1 class="brand-name">Jagruthi</h1>
+                    <p class="brand-tagline">SAFER STEPS<br>BRIGHTER TOMORROW</p>
+                </header>
+
+                <!-- Seamless Illustration Layer -->
+                <div class="illustration-layer">
+                    <img src="./assets/images/patrol.png" alt="Jagruthi Patrol Officer with car and location marker" onerror="this.onerror=null; this.src='assets/images/patrol.png';" />
+                </div>
+
+                <!-- Bottom Curved Card with Layered Shadow Curve -->
+                <section class="bottom-wrapper">
+                    <svg class="curved-wave-shape" viewBox="0 0 375 70" fill="none" preserveAspectRatio="none">
+                        <defs>
+                            <!-- Soft ambient shadow gradient -->
+                            <linearGradient id="patrolWaveShadowGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" stop-color="#ffffff" stop-opacity="0.3" />
+                                <stop offset="60%" stop-color="#ffffff" stop-opacity="0.65" />
+                                <stop offset="100%" stop-color="#ffffff" stop-opacity="0.9" />
+                            </linearGradient>
+
+                            <!-- Drop shadow filter for the front wave edge -->
+                            <filter id="patrolSoftDepth" x="-10%" y="-30%" width="120%" height="160%">
+                                <feDropShadow dx="0" dy="-4" stdDeviation="6" flood-color="#a61356" flood-opacity="0.12" />
+                            </filter>
+                        </defs>
+
+                        <!-- Back Curve: Ambient "Shadow" wave layer -->
+                        <path 
+                            d="M0,18 C70,2 145,28 235,10 C290,-3 335,4 375,14 L375,70 L0,70 Z" 
+                            fill="url(#patrolWaveShadowGrad)" 
+                        />
+
+                        <!-- Front Curve: Smooth primary white sheet -->
+                        <path 
+                            d="M0,32 C75,54 165,50 240,24 C290,6 340,14 375,26 L375,70 L0,70 Z" 
+                            fill="#ffffff" 
+                            filter="url(#patrolSoftDepth)" 
+                        />
+                    </svg>
+
+                    <div class="bottom-content-panel">
+                        <!-- 3-Slide Viewport -->
+                        <div class="slider-viewport" id="patrolSliderViewport">
+                            <div class="slider-track" id="patrolSliderTrack">
+                                <!-- Slide 1 -->
+                                <div class="text-slide">
+                                    <h2 class="slide-title">Patrol<br>Monitoring</h2>
+                                    <p class="slide-description">
+                                        Track locations, receive alerts and respond quickly to incidents.
+                                    </p>
+                                </div>
+
+                                <!-- Slide 2 -->
+                                <div class="text-slide">
+                                    <h2 class="slide-title">Rapid<br>Response</h2>
+                                    <p class="slide-description">
+                                        Direct emergency dispatch with automated route optimization.
+                                    </p>
+                                </div>
+
+                                <!-- Slide 3 -->
+                                <div class="text-slide">
+                                    <h2 class="slide-title">Safe<br>Corridors</h2>
+                                    <p class="slide-description">
+                                        Verified safe transit checkpoints monitored 24/7 by active teams.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Pagination Dots -->
+                        <div class="pagination-dots">
+                            <div class="dot active" onclick="handlePatrolManualSelect(0)"></div>
+                            <div class="dot" onclick="handlePatrolManualSelect(1)"></div>
+                            <div class="dot" onclick="handlePatrolManualSelect(2)"></div>
+                        </div>
+
+                        <!-- Primary Action Button -->
+                        <div class="actions">
+                            <button type="button" class="btn-primary" onclick="handlePatrolStart()">
+                                <span>Get Started</span>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                    <polyline points="12 5 19 12 12 19"></polyline>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+            </main>
         </section>
 
 

@@ -424,6 +424,226 @@ body::-webkit-scrollbar {
 .btn-parent-primary { width: 100%; height: 50px; border-radius: 25px; background: linear-gradient(90deg, #ea2a76 0%, #90114f 100%); border: none; color: #fff; font-size: 15.5px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; box-shadow: 0 8px 22px rgba(189, 21, 95, 0.32); }
 
 /* =======================================================
+   PATROL WELCOME ONBOARDING SCREEN
+   ======================================================= */
+#patrolOnboardingScreen {
+    position: relative;
+    width: 100%;
+    min-height: 100vh;
+    min-height: 100dvh;
+    background-color: #fff4f7;
+    padding: 0 !important;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+}
+
+#patrolOnboardingScreen.hidden {
+    display: none !important;
+}
+
+#patrolOnboardingScreen .dashboard-app {
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    background-color: #fff4f7;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+/* Continuous Illustration Layer */
+#patrolOnboardingScreen .illustration-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 72%;
+    z-index: 1;
+    overflow: hidden;
+}
+
+#patrolOnboardingScreen .illustration-layer img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center top;
+    display: block;
+}
+
+/* Header & Branding */
+#patrolOnboardingScreen .dashboard-header {
+    position: relative;
+    z-index: 10;
+    width: 100%;
+    padding-top: clamp(22px, 4.5vh, 48px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    pointer-events: none;
+}
+
+#patrolOnboardingScreen .brand-icon {
+    width: clamp(72px, 11vw, 92px);
+    height: auto;
+    margin-bottom: -2px;
+}
+
+#patrolOnboardingScreen .brand-name {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(30px, 4.5vw, 40px);
+    font-weight: 800;
+    color: #700f40;
+    letter-spacing: -0.6px;
+    line-height: 1.05;
+}
+
+#patrolOnboardingScreen .brand-tagline {
+    font-size: clamp(8px, 1.2vw, 10px);
+    font-weight: 800;
+    letter-spacing: 2.2px;
+    color: #82566f;
+    margin-top: 6px;
+    text-transform: uppercase;
+}
+
+/* Bottom Panel Container */
+#patrolOnboardingScreen .bottom-wrapper {
+    position: relative;
+    z-index: 15;
+    width: 100%;
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Multi-layered Wave Curve */
+#patrolOnboardingScreen .curved-wave-shape {
+    width: 100%;
+    height: clamp(55px, 8vh, 85px);
+    margin-bottom: -1px;
+    display: block;
+    pointer-events: none;
+}
+
+#patrolOnboardingScreen .bottom-content-panel {
+    background: #ffffff;
+    padding: 0 clamp(16px, 5vw, 32px) clamp(24px, 4vh, 38px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+/* Smooth Text Slider */
+#patrolOnboardingScreen .slider-viewport {
+    width: 100%;
+    max-width: 480px;
+    overflow: hidden;
+    position: relative;
+}
+
+#patrolOnboardingScreen .slider-track {
+    display: flex;
+    width: 100%;
+    transition: transform 0.65s cubic-bezier(0.25, 1, 0.5, 1);
+    will-change: transform;
+}
+
+#patrolOnboardingScreen .text-slide {
+    flex: 0 0 100%;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0 8px;
+    user-select: none;
+}
+
+#patrolOnboardingScreen .slide-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(26px, 3.8vw, 34px);
+    font-weight: 800;
+    color: #700f40;
+    line-height: 1.15;
+    min-height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#patrolOnboardingScreen .slide-description {
+    font-size: clamp(13px, 1.8vw, 15px);
+    line-height: 1.45;
+    color: #635760;
+    max-width: 320px;
+    margin-top: 6px;
+    font-weight: 500;
+    min-height: 40px;
+}
+
+/* Pagination Dots */
+#patrolOnboardingScreen .pagination-dots {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin: clamp(14px, 2.2vh, 22px) 0 clamp(16px, 2.5vh, 26px);
+}
+
+#patrolOnboardingScreen .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background-color: #f7d7e4;
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+#patrolOnboardingScreen .dot.active {
+    width: 20px;
+    height: 7px;
+    border-radius: 4px;
+    background-color: #ba135d;
+}
+
+/* Action Button */
+#patrolOnboardingScreen .actions {
+    width: 100%;
+    max-width: 440px;
+}
+
+#patrolOnboardingScreen .btn-primary {
+    width: 100%;
+    height: clamp(48px, 6vh, 56px);
+    border-radius: 30px;
+    background: linear-gradient(90deg, #ea2a76 0%, #90114f 100%);
+    border: none;
+    color: #fff;
+    font-size: clamp(15px, 2vw, 17px);
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    cursor: pointer;
+    box-shadow: 0 8px 24px rgba(189, 21, 95, 0.35);
+    transition: opacity 0.2s ease, transform 0.1s ease;
+}
+
+#patrolOnboardingScreen .btn-primary:active {
+    transform: scale(0.98);
+    opacity: 0.92;
+}
+
+/* =======================================================
    SCREEN 1: CHOOSE YOUR ROLE
    ======================================================= */
 .app-brand-hero {

@@ -1,10 +1,10 @@
 /* ===================================================
    JAGRUTHI WOMEN SAFETY - SERVICE WORKER (PWA)
-   Version: 3.4.0 (Cleaned & Arranged Assets Structure)
+   Version: 3.4.1 (Patrol Onboarding Dashboard Added)
    Provides offline capability, caching & installability
    =================================================== */
 
-const CACHE_NAME = 'jagruthi-pwa-v3.4.0';
+const CACHE_NAME = 'jagruthi-pwa-v3.4.1';
 
 const PRECACHE_ASSETS = [
     './',
@@ -23,6 +23,7 @@ const PRECACHE_ASSETS = [
     './assets/icons/logo.png',
     './assets/images/illustration.png',
     './assets/images/user-backg.png',
+    './assets/images/patrol.png',
     './assets/images/login-bg.jpg',
     './assets/audio/fake_call_ringtone.mp3',
     './assets/audio/ringtone.wav',

@@ -6,10 +6,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const roleSelectScreen = document.getElementById('roleSelectScreen');
     const userOnboardingScreen = document.getElementById('userOnboardingScreen');
     const parentOnboardingScreen = document.getElementById('parentOnboardingScreen');
+    const patrolOnboardingScreen = document.getElementById('patrolOnboardingScreen');
     const authScreen = document.getElementById('authScreen');
     const btnBackToRoles = document.getElementById('btnBackToRoles');
     const btnBackFromOnboarding = document.getElementById('btnBackFromOnboarding');
     const btnBackFromParentOnboarding = document.getElementById('btnBackFromParentOnboarding');
+    const btnBackFromPatrolOnboarding = document.getElementById('btnBackFromPatrolOnboarding');
 
     const authRoleAvatar = document.getElementById('authRoleAvatar');
     const heroAvatarIcon = document.getElementById('heroAvatarIcon');
@@ -197,6 +199,9 @@ document.addEventListener('DOMContentLoaded', () => {
             } else if (role === 'emergency') {
                 // Show Onboarding Screen for Parent / Emergency Role
                 showParentOnboardingScreen();
+            } else if (role === 'patrol') {
+                // Show Onboarding Screen for Patrol Role
+                showPatrolOnboardingScreen();
             } else {
                 // Other roles go directly to Auth Screen
                 switchTab('login');
@@ -204,6 +209,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     roleSelectScreen.classList.add('hidden');
                     if (userOnboardingScreen) userOnboardingScreen.classList.add('hidden');
                     if (parentOnboardingScreen) parentOnboardingScreen.classList.add('hidden');
+                    if (patrolOnboardingScreen) patrolOnboardingScreen.classList.add('hidden');
                     authScreen.classList.remove('hidden', 'screen-slide-left');
                     authScreen.classList.add('screen-slide-right');
                 }
@@ -222,6 +228,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!userOnboardingScreen || !roleSelectScreen) return;
         roleSelectScreen.classList.add('hidden');
         if (parentOnboardingScreen) parentOnboardingScreen.classList.add('hidden');
+        if (patrolOnboardingScreen) patrolOnboardingScreen.classList.add('hidden');
         if (authScreen) authScreen.classList.add('hidden');
         userOnboardingScreen.classList.remove('hidden', 'screen-slide-left');
         userOnboardingScreen.classList.add('screen-slide-right');
@@ -238,9 +245,21 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!parentOnboardingScreen || !roleSelectScreen) return;
         roleSelectScreen.classList.add('hidden');
         if (userOnboardingScreen) userOnboardingScreen.classList.add('hidden');
+        if (patrolOnboardingScreen) patrolOnboardingScreen.classList.add('hidden');
         if (authScreen) authScreen.classList.add('hidden');
         parentOnboardingScreen.classList.remove('hidden', 'screen-slide-left');
         parentOnboardingScreen.classList.add('screen-slide-right');
+    }
+
+    function showPatrolOnboardingScreen() {
+        if (!patrolOnboardingScreen || !roleSelectScreen) return;
+        roleSelectScreen.classList.add('hidden');
+        if (userOnboardingScreen) userOnboardingScreen.classList.add('hidden');
+        if (parentOnboardingScreen) parentOnboardingScreen.classList.add('hidden');
+        if (authScreen) authScreen.classList.add('hidden');
+        patrolOnboardingScreen.classList.remove('hidden', 'screen-slide-left');
+        patrolOnboardingScreen.classList.add('screen-slide-right');
+        startPatrolAutoScroll();
     }
 
     // Back Button from User Onboarding Screen to Role Picker
@@ -260,6 +279,18 @@ document.addEventListener('DOMContentLoaded', () => {
         btnBackFromParentOnboarding.addEventListener('click', () => {
             if (parentOnboardingScreen && roleSelectScreen) {
                 parentOnboardingScreen.classList.add('hidden');
+                roleSelectScreen.classList.remove('hidden', 'screen-slide-right');
+                roleSelectScreen.classList.add('screen-slide-left');
+            }
+        });
+    }
+
+    // Back Button from Patrol Onboarding Screen to Role Picker
+    if (btnBackFromPatrolOnboarding) {
+        btnBackFromPatrolOnboarding.addEventListener('click', () => {
+            stopPatrolAutoScroll();
+            if (patrolOnboardingScreen && roleSelectScreen) {
+                patrolOnboardingScreen.classList.add('hidden');
                 roleSelectScreen.classList.remove('hidden', 'screen-slide-right');
                 roleSelectScreen.classList.add('screen-slide-left');
             }
@@ -294,6 +325,93 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.onParentGetStarted = window.onGetStarted;
     window.onParentFeature = window.onFeature;
+
+    /* =========================================
+       2.2 PATROL ONBOARDING SLIDER & ACTIONS
+       ========================================= */
+    const patrolTrack = document.getElementById('patrolSliderTrack');
+    const patrolViewport = document.getElementById('patrolSliderViewport');
+    const patrolDots = document.querySelectorAll('#patrolOnboardingScreen .pagination-dots .dot');
+    const totalPatrolSlides = 3;
+    let currentPatrolIndex = 0;
+    let patrolAutoScrollInterval = null;
+    const PATROL_SCROLL_DELAY = 5000;
+
+    function goToPatrolSlide(index) {
+        currentPatrolIndex = index;
+        if (patrolTrack) {
+            patrolTrack.style.transform = `translateX(-${currentPatrolIndex * 100}%)`;
+        }
+        patrolDots.forEach((dot, i) => {
+            dot.classList.toggle('active', i === currentPatrolIndex);
+        });
+    }
+
+    function startPatrolAutoScroll() {
+        stopPatrolAutoScroll();
+        patrolAutoScrollInterval = setInterval(() => {
+            const nextIndex = (currentPatrolIndex + 1) % totalPatrolSlides;
+            goToPatrolSlide(nextIndex);
+        }, PATROL_SCROLL_DELAY);
+    }
+
+    function stopPatrolAutoScroll() {
+        if (patrolAutoScrollInterval) {
+            clearInterval(patrolAutoScrollInterval);
+            patrolAutoScrollInterval = null;
+        }
+    }
+
+    window.handlePatrolManualSelect = function(index) {
+        goToPatrolSlide(index);
+        startPatrolAutoScroll();
+    };
+
+    window.handleManualSelect = window.handlePatrolManualSelect;
+
+    window.handlePatrolStart = function() {
+        stopPatrolAutoScroll();
+        if (window.showNotification) {
+            window.showNotification("Patrol Service", "Opening patrol login portal...");
+        }
+        setTimeout(() => {
+            if (patrolOnboardingScreen && authScreen) {
+                patrolOnboardingScreen.classList.add('hidden');
+                authScreen.classList.remove('hidden', 'screen-slide-left');
+                authScreen.classList.add('screen-slide-right');
+                switchTab('login');
+            }
+        }, 250);
+    };
+
+    window.handleStart = window.handlePatrolStart;
+
+    // Touch Swipe Support for Patrol
+    if (patrolViewport) {
+        let pTouchStartX = 0;
+        let pTouchEndX = 0;
+
+        patrolViewport.addEventListener('touchstart', (e) => {
+            stopPatrolAutoScroll();
+            pTouchStartX = e.changedTouches[0].screenX;
+        }, { passive: true });
+
+        patrolViewport.addEventListener('touchend', (e) => {
+            pTouchEndX = e.changedTouches[0].screenX;
+            const diff = pTouchStartX - pTouchEndX;
+            if (Math.abs(diff) > 40) {
+                if (diff > 0) {
+                    goToPatrolSlide((currentPatrolIndex + 1) % totalPatrolSlides);
+                } else {
+                    goToPatrolSlide((currentPatrolIndex - 1 + totalPatrolSlides) % totalPatrolSlides);
+                }
+            }
+            startPatrolAutoScroll();
+        }, { passive: true });
+
+        patrolViewport.addEventListener('mouseenter', stopPatrolAutoScroll);
+        patrolViewport.addEventListener('mouseleave', startPatrolAutoScroll);
+    }
 
     /* =========================================
        2.1 ONBOARDING CAROUSEL SLIDER & ACTIONS
@@ -438,6 +556,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     authScreen.classList.add('hidden');
                     parentOnboardingScreen.classList.remove('hidden', 'screen-slide-right');
                     parentOnboardingScreen.classList.add('screen-slide-left');
+                } else if (selectedRole === 'patrol' && patrolOnboardingScreen) {
+                    // Return to Patrol Onboarding Screen
+                    authScreen.classList.add('hidden');
+                    patrolOnboardingScreen.classList.remove('hidden', 'screen-slide-right');
+                    patrolOnboardingScreen.classList.add('screen-slide-left');
+                    startPatrolAutoScroll();
                 } else {
                     // Return to Role Selection Screen
                     if (authScreen && roleSelectScreen) {
@@ -455,10 +579,12 @@ document.addEventListener('DOMContentLoaded', () => {
         activeRoleChip.addEventListener('click', () => {
             hideMessage();
             pauseTimer();
+            stopPatrolAutoScroll();
             if (authScreen && roleSelectScreen) {
                 authScreen.classList.add('hidden');
                 if (userOnboardingScreen) userOnboardingScreen.classList.add('hidden');
                 if (parentOnboardingScreen) parentOnboardingScreen.classList.add('hidden');
+                if (patrolOnboardingScreen) patrolOnboardingScreen.classList.add('hidden');
                 roleSelectScreen.classList.remove('hidden', 'screen-slide-right');
                 roleSelectScreen.classList.add('screen-slide-left');
             }
