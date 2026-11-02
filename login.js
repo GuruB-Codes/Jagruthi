@@ -4,14 +4,17 @@ document.addEventListener('DOMContentLoaded', () => {
        1. ELEMENT REFERENCES
        ========================================= */
     const roleSelectScreen = document.getElementById('roleSelectScreen');
+    const loginContainer = document.querySelector('.login-container');
     const userOnboardingScreen = document.getElementById('userOnboardingScreen');
     const parentOnboardingScreen = document.getElementById('parentOnboardingScreen');
     const patrolOnboardingScreen = document.getElementById('patrolOnboardingScreen');
+    const policeOnboardingScreen = document.getElementById('policeOnboardingScreen');
     const authScreen = document.getElementById('authScreen');
     const btnBackToRoles = document.getElementById('btnBackToRoles');
     const btnBackFromOnboarding = document.getElementById('btnBackFromOnboarding');
     const btnBackFromParentOnboarding = document.getElementById('btnBackFromParentOnboarding');
     const btnBackFromPatrolOnboarding = document.getElementById('btnBackFromPatrolOnboarding');
+    const btnBackFromPoliceOnboarding = document.getElementById('btnBackFromPoliceOnboarding');
 
     const authRoleAvatar = document.getElementById('authRoleAvatar');
     const heroAvatarIcon = document.getElementById('heroAvatarIcon');
@@ -44,8 +47,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const passMatchIcon = document.getElementById('passMatchIcon');
     const passMatchLabel = document.getElementById('passMatchLabel');
 
-    const roleCards = document.querySelectorAll('.role-card');
-    let selectedRole = 'user'; // Default role
+    const roleCards = document.querySelectorAll('.role-grid-card, .role-card, .role-btn');
+    let selectedRole = null; // Default role
     let currentAuthMode = 'login'; // 'login' or 'register'
 
     // Role Metadata for UI Presentation & Exact Bottom Illustrations (Matches User Mockup Spec)
@@ -177,58 +180,111 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     /* =========================================
+    /* =========================================
        2. ROLE SELECTION & NAVIGATION
        ========================================= */
+    function proceedWithRole(role) {
+        if (!role || !roleMeta[role]) role = selectedRole || 'user';
+        selectedRole = role;
+        sessionStorage.setItem('jagruthi_selected_role', role);
+        applyRoleTheme(role);
+
+        if (role === 'user') {
+            showOnboardingScreen();
+        } else if (role === 'emergency') {
+            showParentOnboardingScreen();
+        } else if (role === 'patrol') {
+            showPatrolOnboardingScreen();
+        } else if (role === 'police') {
+            showPoliceOnboardingScreen();
+        } else {
+            // Admin / other roles go directly to Auth Screen
+            switchTab('login');
+            if (roleSelectScreen && authScreen) {
+                roleSelectScreen.classList.add('hidden');
+                if (userOnboardingScreen) userOnboardingScreen.classList.add('hidden');
+                if (parentOnboardingScreen) parentOnboardingScreen.classList.add('hidden');
+                if (patrolOnboardingScreen) patrolOnboardingScreen.classList.add('hidden');
+                if (policeOnboardingScreen) policeOnboardingScreen.classList.add('hidden');
+                authScreen.classList.remove('hidden', 'screen-slide-left');
+                authScreen.classList.add('screen-slide-right');
+            }
+        }
+    }
+
     roleCards.forEach(card => {
+        // Single Click: Select and highlight the role card (no immediate redirection)
         card.addEventListener('click', () => {
             const role = card.dataset.role;
             if (!role || !roleMeta[role]) return;
 
             selectedRole = role;
 
-            // Highlight selected in list
+            // Highlight selected card and display checkmark badge
             roleCards.forEach(c => c.classList.remove('active'));
             card.classList.add('active');
 
-            // Configure Auth Screen for Selected Role
+            // Configure Theme & Storage
             applyRoleTheme(selectedRole);
+            sessionStorage.setItem('jagruthi_selected_role', selectedRole);
+        });
 
-            if (role === 'user') {
-                // Show Onboarding Screen for User (Women) Role
-                showOnboardingScreen();
-            } else if (role === 'emergency') {
-                // Show Onboarding Screen for Parent / Emergency Role
-                showParentOnboardingScreen();
-            } else if (role === 'patrol') {
-                // Show Onboarding Screen for Patrol Role
-                showPatrolOnboardingScreen();
-            } else {
-                // Other roles go directly to Auth Screen
-                switchTab('login');
-                if (roleSelectScreen && authScreen) {
-                    roleSelectScreen.classList.add('hidden');
-                    if (userOnboardingScreen) userOnboardingScreen.classList.add('hidden');
-                    if (parentOnboardingScreen) parentOnboardingScreen.classList.add('hidden');
-                    if (patrolOnboardingScreen) patrolOnboardingScreen.classList.add('hidden');
-                    authScreen.classList.remove('hidden', 'screen-slide-left');
-                    authScreen.classList.add('screen-slide-right');
-                }
+        // Keyboard accessibility: Enter or Space selects role card
+        card.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                card.click();
             }
+        });
+
+        // Double-click shortcut: instantly select and proceed
+        card.addEventListener('dblclick', () => {
+            const role = card.dataset.role;
+            if (!role || !roleMeta[role]) return;
+            selectedRole = role;
+            roleCards.forEach(c => c.classList.remove('active'));
+            card.classList.add('active');
+            applyRoleTheme(selectedRole);
+            sessionStorage.setItem('jagruthi_selected_role', selectedRole);
+            proceedWithRole(selectedRole);
         });
     });
 
-    // Initialize Default Role Theme immediately on DOM ready
-    applyRoleTheme(selectedRole);
+
+
+    // Continue Button Handler (Fallback / Alternative action)
+    const btnRoleContinue = document.getElementById('btnRoleContinue');
+    if (btnRoleContinue) {
+        btnRoleContinue.addEventListener('click', () => {
+            if (!selectedRole) {
+                const grid = document.querySelector('.role-cards-grid');
+                if (grid) {
+                    grid.classList.add('shake-attention');
+                    setTimeout(() => grid.classList.remove('shake-attention'), 500);
+                }
+                return;
+            }
+            proceedWithRole(selectedRole);
+        });
+    }
+
+    // Clear any default active state on role cards on initial load
+    roleCards.forEach(c => c.classList.remove('active'));
 
     if (window.lucide && typeof window.lucide.createIcons === 'function') {
         window.lucide.createIcons();
     }
 
     function showOnboardingScreen() {
+        window.scrollTo(0, 0);
+        if (loginContainer) loginContainer.scrollTop = 0;
         if (!userOnboardingScreen || !roleSelectScreen) return;
+        document.body.classList.remove('police-portal-mode');
+        if (loginContainer) loginContainer.classList.remove('police-portal-mode');
         roleSelectScreen.classList.add('hidden');
         if (parentOnboardingScreen) parentOnboardingScreen.classList.add('hidden');
         if (patrolOnboardingScreen) patrolOnboardingScreen.classList.add('hidden');
+        if (policeOnboardingScreen) policeOnboardingScreen.classList.add('hidden');
         if (authScreen) authScreen.classList.add('hidden');
         userOnboardingScreen.classList.remove('hidden', 'screen-slide-left');
         userOnboardingScreen.classList.add('screen-slide-right');
@@ -242,24 +298,49 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function showParentOnboardingScreen() {
+        window.scrollTo(0, 0);
+        if (loginContainer) loginContainer.scrollTop = 0;
         if (!parentOnboardingScreen || !roleSelectScreen) return;
+        document.body.classList.remove('police-portal-mode');
+        if (loginContainer) loginContainer.classList.remove('police-portal-mode');
         roleSelectScreen.classList.add('hidden');
         if (userOnboardingScreen) userOnboardingScreen.classList.add('hidden');
         if (patrolOnboardingScreen) patrolOnboardingScreen.classList.add('hidden');
+        if (policeOnboardingScreen) policeOnboardingScreen.classList.add('hidden');
         if (authScreen) authScreen.classList.add('hidden');
         parentOnboardingScreen.classList.remove('hidden', 'screen-slide-left');
         parentOnboardingScreen.classList.add('screen-slide-right');
     }
 
     function showPatrolOnboardingScreen() {
+        window.scrollTo(0, 0);
+        if (loginContainer) loginContainer.scrollTop = 0;
         if (!patrolOnboardingScreen || !roleSelectScreen) return;
+        document.body.classList.remove('police-portal-mode');
+        if (loginContainer) loginContainer.classList.remove('police-portal-mode');
         roleSelectScreen.classList.add('hidden');
         if (userOnboardingScreen) userOnboardingScreen.classList.add('hidden');
         if (parentOnboardingScreen) parentOnboardingScreen.classList.add('hidden');
+        if (policeOnboardingScreen) policeOnboardingScreen.classList.add('hidden');
         if (authScreen) authScreen.classList.add('hidden');
         patrolOnboardingScreen.classList.remove('hidden', 'screen-slide-left');
         patrolOnboardingScreen.classList.add('screen-slide-right');
         startPatrolAutoScroll();
+    }
+
+    function showPoliceOnboardingScreen() {
+        window.scrollTo(0, 0);
+        if (loginContainer) loginContainer.scrollTop = 0;
+        if (!policeOnboardingScreen || !roleSelectScreen) return;
+        document.body.classList.add('police-portal-mode');
+        if (loginContainer) loginContainer.classList.add('police-portal-mode');
+        roleSelectScreen.classList.add('hidden');
+        if (userOnboardingScreen) userOnboardingScreen.classList.add('hidden');
+        if (parentOnboardingScreen) parentOnboardingScreen.classList.add('hidden');
+        if (patrolOnboardingScreen) patrolOnboardingScreen.classList.add('hidden');
+        if (authScreen) authScreen.classList.add('hidden');
+        policeOnboardingScreen.classList.remove('hidden', 'screen-slide-left');
+        policeOnboardingScreen.classList.add('screen-slide-right');
     }
 
     // Back Button from User Onboarding Screen to Role Picker
@@ -270,6 +351,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 userOnboardingScreen.classList.add('hidden');
                 roleSelectScreen.classList.remove('hidden', 'screen-slide-right');
                 roleSelectScreen.classList.add('screen-slide-left');
+                roleCards.forEach(c => c.classList.remove('active'));
+                selectedRole = null;
+                
             }
         });
     }
@@ -281,6 +365,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 parentOnboardingScreen.classList.add('hidden');
                 roleSelectScreen.classList.remove('hidden', 'screen-slide-right');
                 roleSelectScreen.classList.add('screen-slide-left');
+                roleCards.forEach(c => c.classList.remove('active'));
+                selectedRole = null;
+                
             }
         });
     }
@@ -293,6 +380,25 @@ document.addEventListener('DOMContentLoaded', () => {
                 patrolOnboardingScreen.classList.add('hidden');
                 roleSelectScreen.classList.remove('hidden', 'screen-slide-right');
                 roleSelectScreen.classList.add('screen-slide-left');
+                roleCards.forEach(c => c.classList.remove('active'));
+                selectedRole = null;
+                
+            }
+        });
+    }
+
+    // Back Button from Police Onboarding Screen to Role Picker
+    if (btnBackFromPoliceOnboarding) {
+        btnBackFromPoliceOnboarding.addEventListener('click', () => {
+            document.body.classList.remove('police-portal-mode');
+            if (loginContainer) loginContainer.classList.remove('police-portal-mode');
+            if (policeOnboardingScreen && roleSelectScreen) {
+                policeOnboardingScreen.classList.add('hidden');
+                roleSelectScreen.classList.remove('hidden', 'screen-slide-right');
+                roleSelectScreen.classList.add('screen-slide-left');
+                roleCards.forEach(c => c.classList.remove('active'));
+                selectedRole = null;
+                
             }
         });
     }
@@ -412,6 +518,27 @@ document.addEventListener('DOMContentLoaded', () => {
         patrolViewport.addEventListener('mouseenter', stopPatrolAutoScroll);
         patrolViewport.addEventListener('mouseleave', startPatrolAutoScroll);
     }
+
+    /* =========================================
+       2.3 POLICE ONBOARDING ACTIONS
+       ========================================= */
+    window.handlePoliceStart = function() {
+        if (window.showNotification) {
+            window.showNotification("Police Department", "Opening police portal login...");
+        }
+        setTimeout(() => {
+            document.body.classList.remove('police-portal-mode');
+            if (loginContainer) loginContainer.classList.remove('police-portal-mode');
+            if (policeOnboardingScreen && authScreen) {
+                policeOnboardingScreen.classList.add('hidden');
+                authScreen.classList.remove('hidden', 'screen-slide-left');
+                authScreen.classList.add('screen-slide-right');
+                switchTab('login');
+            }
+        }, 250);
+    };
+
+    window.handlePoliceSignIn = window.handlePoliceStart;
 
     /* =========================================
        2.1 ONBOARDING CAROUSEL SLIDER & ACTIONS
@@ -562,8 +689,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     patrolOnboardingScreen.classList.remove('hidden', 'screen-slide-right');
                     patrolOnboardingScreen.classList.add('screen-slide-left');
                     startPatrolAutoScroll();
+                } else if (selectedRole === 'police' && policeOnboardingScreen) {
+                    // Return to Police Onboarding Screen (Desktop Mode)
+                    document.body.classList.add('police-portal-mode');
+                    if (loginContainer) loginContainer.classList.add('police-portal-mode');
+                    authScreen.classList.add('hidden');
+                    policeOnboardingScreen.classList.remove('hidden', 'screen-slide-right');
+                    policeOnboardingScreen.classList.add('screen-slide-left');
                 } else {
                     // Return to Role Selection Screen
+                    document.body.classList.remove('police-portal-mode');
+                    if (loginContainer) loginContainer.classList.remove('police-portal-mode');
                     if (authScreen && roleSelectScreen) {
                         authScreen.classList.add('hidden');
                         roleSelectScreen.classList.remove('hidden', 'screen-slide-right');
@@ -580,11 +716,14 @@ document.addEventListener('DOMContentLoaded', () => {
             hideMessage();
             pauseTimer();
             stopPatrolAutoScroll();
+            document.body.classList.remove('police-portal-mode');
+            if (loginContainer) loginContainer.classList.remove('police-portal-mode');
             if (authScreen && roleSelectScreen) {
                 authScreen.classList.add('hidden');
                 if (userOnboardingScreen) userOnboardingScreen.classList.add('hidden');
                 if (parentOnboardingScreen) parentOnboardingScreen.classList.add('hidden');
                 if (patrolOnboardingScreen) patrolOnboardingScreen.classList.add('hidden');
+                if (policeOnboardingScreen) policeOnboardingScreen.classList.add('hidden');
                 roleSelectScreen.classList.remove('hidden', 'screen-slide-right');
                 roleSelectScreen.classList.add('screen-slide-left');
             }
