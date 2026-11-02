@@ -656,9 +656,8 @@ body::-webkit-scrollbar {
 }
 
 /* =======================================================
-   SCREEN 1.8: POLICE PORTAL WELCOME ONBOARDING (Desktop Portal Mode)
+   SCREEN 1.8: POLICE PORTAL WELCOME ONBOARDING
    ======================================================= */
-.login-container.police-portal-mode,
 .login-container:has(#policeOnboardingScreen:not(.hidden)) {
     max-width: 100vw !important;
     width: 100vw !important;
@@ -672,8 +671,7 @@ body::-webkit-scrollbar {
     overflow-x: hidden !important;
 }
 
-body:has(#policeOnboardingScreen:not(.hidden)),
-body.police-portal-mode {
+body:has(#policeOnboardingScreen:not(.hidden)) {
     background-color: #fdf5f8 !important;
     display: block !important;
     width: 100vw !important;
@@ -1526,6 +1524,12 @@ body.police-portal-mode {
 #authScreen.theme-emergency .auth-hero-img {
     object-fit: cover;
     object-position: center 68%;
+}
+
+/* Police Mode (theme-police): Center the officer illustration so cap, face, uniform, and badge are centered in mobile frame */
+#authScreen.theme-police .auth-hero-img {
+    object-fit: cover;
+    object-position: 87% 20%;
 }
 
 /* =======================================================
