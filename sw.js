@@ -1,10 +1,10 @@
 /* ===================================================
    JAGRUTHI WOMEN SAFETY - SERVICE WORKER (PWA)
-   Version: 3.7.1 (Direct Police Login to Dashboard & Clean Mobile Framing)
+   Version: 3.7.2 (PWA Mobile Download & Installation Ready)
    Provides offline capability, caching & installability
    =================================================== */
 
-const CACHE_NAME = 'jagruthi-pwa-v3.7.1';
+const CACHE_NAME = 'jagruthi-pwa-v3.7.2';
 
 const PRECACHE_ASSETS = [
     './',
@@ -27,7 +27,6 @@ const PRECACHE_ASSETS = [
     './assets/images/police.png',
     './assets/images/login-bg.jpg',
     './assets/audio/fake_call_ringtone.mp3',
-    './assets/audio/ringtone.wav',
     './assets/icons/empowered-shield.png',
     './assets/icons/Empowered Profile Shield Icon.png',
     './assets/icons/icon-192.png',

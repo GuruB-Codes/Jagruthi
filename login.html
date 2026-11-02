@@ -7,6 +7,17 @@
         content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Jagruthi — Safer Journeys Together</title>
     <meta name="description" content="Jagruthi Women Safety System - Safer Journeys Together. Select your role to continue.">
+
+    <!-- Progressive Web App (PWA) Manifest & Mobile Meta Tags -->
+    <link rel="manifest" href="./manifest.json?v=3.7.2">
+    <meta name="theme-color" content="#7c0e44">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Jagruthi">
+    <link rel="apple-touch-icon" href="./assets/icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="./assets/icons/icon-192.png">
+    <link rel="icon" type="image/png" sizes="64x64" href="./assets/icons/favicon.png">
     <!-- Google Fonts: Playfair Display, Outfit, Plus Jakarta Sans -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -60,7 +71,16 @@
             
             <!-- Branding & Illustration Hero Header -->
             <!-- Branding Header (Logo and App Name Only) -->
-            <header class="role-brand-header">
+            <header class="role-brand-header relative">
+                <!-- Mobile PWA Download / Install Header Button -->
+                <button type="button" class="btn-pwa-header-download btn-pwa-install-trigger" id="btnHeaderInstall" aria-label="Download Jagruthi App" title="Download & Install Jagruthi">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    <span>Install App</span>
+                </button>
                 <div class="role-brand-center">
                     <div class="brand-logo-glow">
                         <img src="./assets/icons/logo.png" alt="Jagruthi Logo" class="role-brand-logo" onerror="this.onerror=null; this.src='assets/icons/logo.png';" />
@@ -1056,10 +1076,33 @@
 
     </div>
 
+    <!-- PWA Install Floating Banner -->
+    <div class="pwa-install-banner hidden" id="pwaInstallBanner" role="alert">
+        <div class="pwa-banner-left">
+            <img src="./assets/icons/icon-192.png" alt="Jagruthi App Icon" class="pwa-app-icon">
+            <div class="pwa-banner-text">
+                <strong>Download Jagruthi App</strong>
+                <span>Install on your phone for quick SOS &amp; offline protection</span>
+            </div>
+        </div>
+        <div class="pwa-banner-actions">
+            <button type="button" class="btn-pwa-install btn-pwa-install-trigger" id="btnPwaInstall">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                <span>Install</span>
+            </button>
+            <button type="button" class="btn-pwa-dismiss" id="btnPwaDismiss" aria-label="Dismiss banner">&times;</button>
+        </div>
+    </div>
+
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./services/supabaseClient.js"></script>
-    <script src="./login.js?v=3.7.1"></script>
+    <script src="./pwaManager.js?v=3.7.2"></script>
+    <script src="./login.js?v=3.7.2"></script>
 </body>
 
 </html>

@@ -8,8 +8,8 @@
   "display": "standalone",
   "display_override": ["standalone", "minimal-ui"],
   "orientation": "portrait",
-  "background_color": "#0f172a",
-  "theme_color": "#dc2626",
+  "background_color": "#ffffff",
+  "theme_color": "#7c0e44",
   "lang": "en",
   "dir": "ltr",
   "categories": ["safety", "utilities", "lifestyle"],
@@ -37,6 +37,22 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "./assets/images/user-backg.png",
+      "sizes": "800x1200",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Jagruthi Women Safety Portal"
+    },
+    {
+      "src": "./assets/images/illustration.png",
+      "sizes": "800x1200",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Jagruthi Guardian Connection"
     }
   ],
   "shortcuts": [
