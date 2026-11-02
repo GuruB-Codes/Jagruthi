@@ -77,9 +77,9 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         emergency: {
             themeClass: 'theme-emergency',
-            name: 'Parent / Emergency Contact',
-            loginTitle: 'Parent / Emergency Login',
-            loginSubtitle: 'Stay Connected, Stay Informed',
+            name: 'Parent',
+            loginTitle: 'Login',
+            loginSubtitle: 'Welcome back to Jagruthi',
             regTitle: 'Parent Registration',
             svg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>`,
             // 2. Child, Parent Silhouette & Heart (Matches media_1793454826650_c2ad0585.png)
@@ -660,11 +660,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const regSubEl = document.getElementById('authRegSub');
 
         if (mode === 'login') {
-            if (loginTitleEl) loginTitleEl.innerText = selectedRole === 'user' ? 'Login' : meta.loginTitle;
-            if (loginSubEl) loginSubEl.innerText = selectedRole === 'user' ? 'Welcome back to Jagruthi' : meta.loginSubtitle;
+            if (loginTitleEl) loginTitleEl.innerText = (selectedRole === 'user' || selectedRole === 'emergency') ? 'Login' : meta.loginTitle;
+            if (loginSubEl) loginSubEl.innerText = (selectedRole === 'user' || selectedRole === 'emergency') ? 'Welcome back to Jagruthi' : meta.loginSubtitle;
         } else {
             if (regTitleEl) {
-                const rolePrefix = selectedRole === 'user' ? 'Women' : (meta.name ? meta.name.split(' ')[0] : 'User');
+                const rolePrefix = selectedRole === 'user' ? 'Women' : (selectedRole === 'emergency' ? 'Parent' : (meta.name ? meta.name.split(' ')[0] : 'User'));
                 regTitleEl.innerHTML = `${rolePrefix} <span class="highlight">Registration</span>`;
             }
             if (regSubEl) regSubEl.innerText = 'Create your account';

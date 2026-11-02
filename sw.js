@@ -1,10 +1,10 @@
 /* ===================================================
    JAGRUTHI WOMEN SAFETY - SERVICE WORKER (PWA)
-   Version: 3.6.1 (Hero Image Half Screen Spec)
+   Version: 3.6.9 (Full Body & Illustration Visible Framing)
    Provides offline capability, caching & installability
    =================================================== */
 
-const CACHE_NAME = 'jagruthi-pwa-v3.6.1';
+const CACHE_NAME = 'jagruthi-pwa-v3.6.9';
 
 const PRECACHE_ASSETS = [
     './',

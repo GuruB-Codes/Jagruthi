@@ -1388,13 +1388,18 @@ body.police-portal-mode {
     top: 0;
     left: 0;
     right: 0;
-    z-index: 25;
+    z-index: 35;
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
-    padding: clamp(16px, 2.5vh, 22px) 16px 6px 16px;
-    padding-top: max(16px, env(safe-area-inset-top, 16px));
+    padding: clamp(14px, 2.2vh, 20px) 16px 8px 16px;
+    padding-top: max(14px, env(safe-area-inset-top, 14px));
     pointer-events: none;
+    background: linear-gradient(180deg, rgba(255, 245, 248, 0.96) 0%, rgba(255, 245, 248, 0.85) 60%, rgba(255, 245, 248, 0) 100%);
+}
+
+#authScreen.theme-emergency .auth-brand-nav {
+    background: linear-gradient(180deg, rgba(253, 242, 247, 0.96) 0%, rgba(253, 242, 247, 0.85) 60%, rgba(253, 242, 247, 0) 100%);
 }
 
 .auth-brand-nav > * {
@@ -1434,16 +1439,17 @@ body.police-portal-mode {
     flex-direction: column;
     align-items: center;
     text-align: center;
-    margin-top: 2px;
+    margin-top: 1px;
 }
 
 .auth-brand-logo-wrap {
     width: 44px;
     height: 44px;
-    margin-bottom: 0px;
+    margin-bottom: 2px;
     display: flex;
     align-items: center;
     justify-content: center;
+    filter: drop-shadow(0 2px 6px rgba(184, 23, 93, 0.15));
     transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
@@ -1460,23 +1466,25 @@ body.police-portal-mode {
 
 .auth-brand-name {
     font-family: 'Playfair Display', Georgia, serif;
-    font-size: 24px;
+    font-size: clamp(23px, 3.4vh, 26px);
     font-weight: 800;
     color: #4a0a28;
     line-height: 1.05;
-    letter-spacing: -0.4px;
+    letter-spacing: -0.3px;
     margin: 0;
+    text-shadow: 0 1px 2px rgba(255, 255, 255, 0.85);
 }
 
 .auth-brand-tagline {
     font-family: 'Plus Jakarta Sans', sans-serif;
-    font-size: 8px;
+    font-size: 8.5px;
     font-weight: 800;
     letter-spacing: 2px;
-    color: #82566f;
-    margin-top: 4px;
+    color: #741743;
+    margin-top: 3px;
     text-transform: uppercase;
     line-height: 1.25;
+    text-shadow: 0 1px 2px rgba(255, 255, 255, 0.85);
 }
 
 .nav-spacer {
@@ -1485,81 +1493,85 @@ body.police-portal-mode {
     visibility: hidden;
 }
 
-/* 2. Hero Illustration Layer (Image is half of the screen in Login mode) */
+/* 2. Hero Illustration Layer: Reaches down behind the bottom-docked card sheet */
 .auth-hero-layer {
-    position: relative;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
     width: 100%;
-    height: 48vh;
-    height: 48dvh;
-    min-height: 280px;
+    height: 74vh;
+    height: 74dvh;
+    min-height: 480px;
+    max-height: 740px;
     z-index: 1;
     overflow: hidden;
     background: #fff5f8;
-    transition: height 0.4s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.35s ease;
-    flex-shrink: 0;
+    pointer-events: none;
+}
+
+#authScreen.theme-emergency .auth-hero-layer {
+    background: #fdf2f7;
 }
 
 .auth-hero-img {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    object-position: center top;
+    object-position: center 30%;
     display: block;
 }
 
-/* Login Mode: Hero illustration occupies top half of the screen */
-#authScreen.mode-login {
-    min-height: 100vh;
-    min-height: 100dvh;
-    justify-content: flex-start;
+/* Parent Mode (theme-emergency): Framed so mother, daughter, faces, shoulders, and bodies are fully visible */
+#authScreen.theme-emergency .auth-hero-img {
+    object-fit: cover;
+    object-position: center 68%;
 }
 
-#authScreen.mode-login .auth-hero-layer {
-    height: 48vh;
-    height: 48dvh;
-    min-height: 280px;
-    max-height: 520px;
-}
-
-#authScreen.mode-login .auth-card-sheet {
-    flex: 1;
-    margin-top: -34px;
-    display: flex;
-    flex-direction: column;
-}
-
-#authScreen.mode-login .auth-sheet-content {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-    padding: 0 clamp(16px, 4.5vw, 24px) clamp(20px, 3vh, 28px);
-}
-
-/* In registration mode, hero height gently shrinks so 7 input fields fit cleanly */
-#authScreen.mode-register .auth-hero-layer {
-    height: clamp(120px, 16vh, 145px);
-    opacity: 0.92;
-}
-
-#authScreen.mode-register .auth-hero-img {
-    object-position: center top;
-}
-
-/* 3. Bottom Curved Form Card Sheet */
+/* =======================================================
+   3. BOTTOM CURVED FORM CARD SHEET (DOCKED AT BOTTOM)
+   ======================================================= */
 .auth-card-sheet {
     position: relative;
     z-index: 10;
     width: 100%;
-    margin-top: -34px;
-    flex: 1;
+    margin-top: auto;
     display: flex;
     flex-direction: column;
-    transition: margin-top 0.35s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
+/* In Login Mode: Card sheet docks snugly at bottom with smooth entrance */
+#authScreen.mode-login .auth-card-sheet {
+    margin-top: auto;
+    animation: sheetSlideDown 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* In Registration Mode: Card sheet docks snugly at bottom, sliding smoothly up without leaving empty space */
 #authScreen.mode-register .auth-card-sheet {
-    margin-top: -24px;
+    margin-top: auto;
+    animation: sheetSlideUp 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes sheetSlideUp {
+    0% {
+        transform: translateY(40px);
+        opacity: 0.88;
+    }
+    100% {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes sheetSlideDown {
+    0% {
+        transform: translateY(-24px);
+        opacity: 0.88;
+    }
+    100% {
+        transform: translateY(0);
+        opacity: 1;
+    }
 }
 
 /* Curved Wave Transition */
@@ -1569,6 +1581,8 @@ body.police-portal-mode {
     margin-bottom: -1px;
     pointer-events: none;
     display: block;
+    position: relative;
+    z-index: 15;
 }
 
 .auth-sheet-wave svg {
@@ -1577,28 +1591,176 @@ body.police-portal-mode {
     display: block;
 }
 
-.wave-login-path {
-    display: block;
-}
-
-.wave-register-path {
-    display: none;
-}
-
-#authScreen.mode-register .wave-login-path {
-    display: none;
-}
-
-#authScreen.mode-register .wave-register-path {
-    display: block;
-}
-
+/* Form Sheet Content Container: Sizes to content, leaving zero empty space below */
 .auth-sheet-content {
     background: #ffffff;
-    flex: 1;
-    padding: 0 clamp(16px, 4.5vw, 24px) clamp(22px, 3.5vh, 32px);
+    flex: 0 0 auto;
+    padding: 0 clamp(16px, 4.5vw, 24px) clamp(16px, 2.4vh, 24px);
     display: flex;
     flex-direction: column;
+}
+
+#authScreen.mode-login .auth-sheet-content {
+    padding-bottom: clamp(18px, 2.8vh, 26px);
+}
+
+/* =======================================================
+   4. LOGIN VIEW PANEL & FORM
+   ======================================================= */
+#authScreen.mode-login #authViewLogin {
+    margin: 0;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+#authScreen.mode-login .auth-header-text {
+    text-align: center;
+    margin-top: 2px;
+    margin-bottom: clamp(8px, 1.2vh, 12px);
+}
+
+#authScreen.mode-login .auth-view-title {
+    font-size: clamp(24px, 3.4vh, 27px);
+    margin-bottom: 2px;
+}
+
+#authScreen.mode-login .auth-view-sub {
+    font-size: 12.5px;
+}
+
+#authScreen.mode-login .auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(8px, 1.2vh, 11px);
+    width: 100%;
+}
+
+#authScreen.mode-login .auth-form .input-field {
+    height: clamp(42px, 5vh, 46px);
+}
+
+#authScreen.mode-login .btn-auth-submit {
+    height: clamp(44px, 5.2vh, 48px);
+    margin-top: 4px;
+}
+
+#authScreen.mode-login .auth-switch-prompt {
+    margin-top: clamp(8px, 1.3vh, 12px);
+    margin-bottom: 2px;
+}
+
+/* =======================================================
+   5. REGISTRATION VIEW PANEL & FORM (SLIDES UP OVER IMAGE)
+   ======================================================= */
+#authScreen.mode-register .auth-sheet-content {
+    padding: 0 clamp(16px, 4.5vw, 24px) clamp(16px, 2.5vh, 24px);
+}
+
+#authScreen.mode-register #authViewRegister {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+#authScreen.mode-register .auth-header-text {
+    text-align: center;
+    margin-top: 2px;
+    margin-bottom: clamp(8px, 1.4vh, 12px);
+}
+
+#authScreen.mode-register .auth-view-title {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: clamp(22px, 3.2vh, 25px);
+    font-weight: 800;
+    color: #1e1022;
+    line-height: 1.15;
+    margin: 0 0 2px 0;
+}
+
+#authScreen.mode-register .auth-view-title .highlight {
+    color: #cf1b66;
+    font-family: 'Playfair Display', Georgia, serif;
+    font-weight: 800;
+}
+
+#authScreen.mode-register .auth-view-sub {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    color: #71626f;
+    margin: 0;
+}
+
+#authScreen.mode-register .auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(6px, 1vh, 8px);
+    width: 100%;
+}
+
+#authScreen.mode-register .role-fields,
+#authScreen.mode-register .dynamic-fields {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(6px, 1vh, 8px);
+    margin: 0;
+}
+
+#authScreen.mode-register .auth-form .input-field {
+    height: clamp(38px, 4.8vh, 42px);
+    background: #ffffff;
+    border: 1.5px solid #ebdbe3;
+    border-radius: 12px;
+    padding: 0 12px;
+    gap: 10px;
+    display: flex;
+    align-items: center;
+    box-sizing: border-box;
+}
+
+#authScreen.mode-register .auth-form .input-field input {
+    font-size: 13px;
+}
+
+#authScreen.mode-register .auth-form .input-field input::placeholder {
+    font-size: 12px;
+}
+
+#authScreen.mode-register .auth-form .field-icon svg {
+    width: 16px;
+    height: 16px;
+}
+
+#authScreen.mode-register .toggle-pass {
+    font-size: 1.1rem;
+    padding: 2px;
+}
+
+#authScreen.mode-register .btn-auth-submit {
+    height: clamp(42px, 5.4vh, 46px);
+    border-radius: 9999px;
+    background: linear-gradient(90deg, #d61a6b 0%, #740a3c 100%);
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 700;
+    margin-top: clamp(4px, 0.8vh, 8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 8px 24px rgba(214, 26, 107, 0.38);
+}
+
+#authScreen.mode-register .auth-switch-prompt {
+    text-align: center;
+    font-size: 12.5px;
+    color: #71626f;
+    margin-top: clamp(6px, 1.2vh, 10px);
+    margin-bottom: clamp(6px, 1vh, 10px);
+    font-weight: 500;
 }
 
 /* 4. Auth View Panels & Titles */
