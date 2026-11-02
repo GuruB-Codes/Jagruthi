@@ -45,7 +45,7 @@
             }
         }
     </script>
-    <link rel="stylesheet" href="./login.css?v=3.5.2">
+    <link rel="stylesheet" href="./login.css?v=3.6.1">
 </head>
 
 <body>
@@ -726,315 +726,331 @@
         <!-- =======================================================
              SCREEN 2: ROLE AUTHENTICATION (LOGIN & REGISTRATION)
              ======================================================= -->
-        <section class="screen-view hidden theme-women" id="authScreen">
+        <section class="screen-view hidden theme-women mode-login" id="authScreen">
             
-            <!-- Top Navigation Bar -->
-            <div class="auth-top-bar">
-                <button type="button" class="btn-back-nav" id="btnBackToRoles" aria-label="Back to role selection">
-                    <i class="las la-angle-left"></i>
-                </button>
-                <div class="active-role-chip" id="activeRoleChip" role="button" tabindex="0" title="Switch role">
-                    <span class="role-chip-dot"></span>
-                    <span class="role-chip-text" id="roleChipText">Women</span>
-                    <i class="las la-angle-down chip-dropdown-icon"></i>
-                </div>
-            </div>
-
-            <!-- Centered Dynamic Role Avatar & Title -->
-            <div class="auth-hero-header">
-                <div class="auth-hero-avatar" id="authRoleAvatar">
-                    <!-- Injected by JS: woman, parent, police, admin, patrol -->
-                    <div class="hero-avatar-icon" id="heroAvatarIcon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                            <circle cx="12" cy="7" r="4"></circle>
-                        </svg>
-                    </div>
-                </div>
-                <h1 class="auth-hero-title" id="authTitle">Women Login</h1>
-                <p class="auth-hero-sub" id="authSubtitle">Stay Safe, Stay Empowered</p>
-            </div>
-
-            <!-- Error/Success Messages Box -->
-            <div class="message-box hidden" id="messageBox" role="alert">
-                <i class="las la-exclamation-circle"></i>
-                <span id="messageText"></span>
-            </div>
-
-            <!-- Hidden Tab Switcher hooks for script compatibility -->
-            <div class="tab-switcher" style="display:none;" aria-hidden="true">
-                <button type="button" id="tabLogin" class="tab-btn active"></button>
-                <button type="button" id="tabRegister" class="tab-btn"></button>
-                <div id="tabIndicator" class="tab-indicator"></div>
-            </div>
-
-            <!-- ================= LOGIN FORM ================= -->
-            <form class="auth-form" id="loginForm">
-                
-                <!-- Phone Number -->
-                <div class="input-field" id="wrapLoginPhone">
-                    <div class="field-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="3" y="5" width="18" height="14" rx="2"></rect>
-                            <polyline points="3 7 12 13 21 7"></polyline>
-                        </svg>
-                    </div>
-                    <input type="tel" id="loginPhone" placeholder="Email / Phone" required autocomplete="tel">
-                    <span class="field-validation-icon" id="loginPhoneValid" aria-hidden="true">
-                        <i class="las la-check-circle"></i>
-                    </span>
-                </div>
-
-                <!-- Password -->
-                <div class="input-field">
-                    <div class="field-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                        </svg>
-                    </div>
-                    <input type="password" id="loginPassword" placeholder="Password" required autocomplete="current-password">
-                    <button type="button" class="toggle-pass" id="toggleLoginPass" aria-label="Toggle password visibility">
-                        <i class="las la-eye"></i>
-                    </button>
-                </div>
-
-                <!-- Options Row: Remember Me & Forgot Password -->
-                <div class="auth-options-row">
-                    <label class="remember-me-label">
-                        <input type="checkbox" id="rememberMe">
-                        <span>Remember me</span>
-                    </label>
-                    <a href="#" class="forgot-link">Forgot password?</a>
-                </div>
-
-                <!-- Submit Button -->
-                <button type="submit" class="auth-action-btn" id="loginBtn">
-                    <span>Login</span>
+            <!-- Top Navigation & Brand Header -->
+            <header class="auth-brand-nav">
+                <!-- Floating Circular Back Button -->
+                <button type="button" class="btn-back-circle" id="btnBackToRoles" aria-label="Back to role selection" title="Back to role selection">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="15 18 9 12 15 6"></polyline>
+                    </svg>
                 </button>
 
-                <!-- OR Divider -->
-                <div class="auth-divider">
-                    <span>OR</span>
+                <!-- Center Brand Logo & Typography -->
+                <div class="auth-brand-center">
+                    <div class="auth-brand-logo-wrap">
+                        <img src="./assets/icons/logo.png" alt="Jagruthi Logo" class="auth-brand-logo" onerror="this.onerror=null; this.src='assets/icons/logo.png';" />
+                    </div>
+                    <h1 class="auth-brand-name">Jagruthi</h1>
+                    <p class="auth-brand-tagline">SAFER STEPS<br>BRIGHTER TOMORROW</p>
                 </div>
 
-                <!-- Switch to Register -->
-                <p class="auth-switch-prompt">
-                    Don't have an account? <a href="#" id="linkToRegister" class="switch-link">Sign Up</a>
-                </p>
+                <!-- Balance spacer for flex alignment -->
+                <div class="nav-spacer" aria-hidden="true"></div>
+            </header>
 
-            </form>
+            <!-- Hero Illustration Layer (Matches Mockup) -->
+            <div class="auth-hero-layer" id="authHeroLayer">
+                <img src="./assets/images/user-backg.png" alt="Jagruthi Hero Illustration" class="auth-hero-img" id="authHeroImg" onerror="this.onerror=null; this.src='assets/images/user-backg.png';" />
+            </div>
 
-            <!-- ================= REGISTRATION FORM ================= -->
-            <form class="auth-form hidden" id="registerForm">
+            <!-- Bottom Curved Sheet Container -->
+            <div class="auth-card-sheet" id="authCardSheet">
                 
-                <!-- Full Name -->
-                <div class="input-field">
-                    <div class="field-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                            <circle cx="12" cy="7" r="4"></circle>
-                        </svg>
-                    </div>
-                    <input type="text" id="regName" placeholder="Full Name" required>
+                <!-- Seamless Curved Wave Transition (Dual Path for Login & Register) -->
+                <div class="auth-sheet-wave" id="authSheetWave">
+                    <svg viewBox="0 0 375 44" fill="none" preserveAspectRatio="none">
+                        <path class="wave-login-path" d="M0,26 C85,6 185,40 275,18 C320,8 355,14 375,22 L375,44 L0,44 Z" fill="#ffffff" />
+                        <path class="wave-register-path" d="M0,38 C90,4 285,4 375,38 L375,44 L0,44 Z" fill="#ffffff" />
+                    </svg>
                 </div>
 
-                <!-- Email -->
-                <div class="input-field" id="wrapRegEmail">
-                    <div class="field-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="3" y="5" width="18" height="14" rx="2"></rect>
-                            <polyline points="3 7 12 13 21 7"></polyline>
-                        </svg>
-                    </div>
-                    <input type="email" id="regEmail" placeholder="Email" required>
-                    <span class="field-validation-icon" id="regEmailValid" aria-hidden="true">
-                        <i class="las la-check-circle"></i>
-                    </span>
-                </div>
-
-                <!-- Phone -->
-                <div class="input-field" id="wrapRegPhone">
-                    <div class="field-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
-                        </svg>
-                    </div>
-                    <input type="tel" id="regPhone" placeholder="Phone Number" required>
-                    <span class="field-validation-icon" id="regPhoneValid" aria-hidden="true">
-                        <i class="las la-check-circle"></i>
-                    </span>
-                </div>
-
-                <!-- Password -->
-                <div class="input-field">
-                    <div class="field-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                        </svg>
-                    </div>
-                    <input type="password" id="regPassword" placeholder="Password" required>
-                    <button type="button" class="toggle-pass" id="toggleRegPass" aria-label="Toggle password visibility">
-                        <i class="las la-eye"></i>
-                    </button>
-                </div>
-
-                <!-- Password Strength Meter (Interactive) -->
-                <div class="pass-meter-wrap hidden" id="passMeterWrap">
-                    <div class="pass-meter-bars">
-                        <span class="bar bar-1"></span>
-                        <span class="bar bar-2"></span>
-                        <span class="bar bar-3"></span>
-                    </div>
-                    <span class="pass-meter-label" id="passMeterLabel">Password strength</span>
-                </div>
-
-                <!-- Confirm Password -->
-                <div class="input-field">
-                    <div class="field-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                        </svg>
-                    </div>
-                    <input type="password" id="regConfirmPassword" placeholder="Confirm Password" required>
-                </div>
-
-                <!-- Password Match Status (Interactive) -->
-                <div class="pass-match-wrap hidden" id="passMatchWrap">
-                    <i class="las la-check-circle" id="passMatchIcon"></i>
-                    <span id="passMatchLabel">Passwords match</span>
-                </div>
-
-                <!-- Role Specific Dynamic Fields -->
-                <div class="role-fields" id="roleFields">
+                <!-- Form Content Panel -->
+                <div class="auth-sheet-content">
                     
-                    <!-- 1. Women / User Fields -->
-                    <div class="dynamic-fields" id="fieldsUser">
-                        <div class="input-field">
-                            <div class="field-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
-                                </svg>
-                            </div>
-                            <input type="tel" id="regEmergencyContact" placeholder="Emergency Contact Number">
-                        </div>
-                        <div class="input-field">
-                            <div class="field-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                                    <circle cx="12" cy="10" r="3"></circle>
-                                </svg>
-                            </div>
-                            <input type="text" id="regAddress" placeholder="Address (Optional)">
-                        </div>
+                    <!-- Alert Message Box -->
+                    <div class="message-box hidden" id="messageBox" role="alert">
+                        <i class="las la-exclamation-circle"></i>
+                        <span id="messageText"></span>
                     </div>
 
-                    <!-- 2. Emergency Contact Fields -->
-                    <div class="dynamic-fields hidden" id="fieldsEmergency">
-                        <div class="input-field">
-                            <div class="field-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-                                </svg>
-                            </div>
-                            <input type="text" id="regRelationship" placeholder="Relationship to User">
-                        </div>
+                    <!-- Hidden Tab Switcher hooks for script backward-compatibility -->
+                    <div class="tab-switcher" style="display:none;" aria-hidden="true">
+                        <button type="button" id="tabLogin" class="tab-btn active"></button>
+                        <button type="button" id="tabRegister" class="tab-btn"></button>
+                        <div id="tabIndicator" class="tab-indicator"></div>
+                        <div id="activeRoleChip" class="hidden"><span id="roleChipText">Women</span></div>
+                        <div id="authRoleAvatar" class="hidden"><div id="heroAvatarIcon"></div></div>
+                        <h1 id="authTitle" class="hidden">Login</h1>
+                        <p id="authSubtitle" class="hidden">Welcome back to Jagruthi</p>
+                        <div id="authBottomIllustration" class="hidden"></div>
                     </div>
 
-                    <!-- 3. Police Fields -->
-                    <div class="dynamic-fields hidden" id="fieldsPolice">
-                        <div class="input-field">
-                            <div class="field-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-                                    <polyline points="9 22 9 12 15 12 15 22"></polyline>
-                                </svg>
-                            </div>
-                            <input type="text" id="regPoliceStation" placeholder="Police Station Name">
+                    <!-- ================= 1. LOGIN VIEW ================= -->
+                    <div class="auth-view-panel" id="authViewLogin">
+                        <div class="auth-header-text">
+                            <h2 class="auth-view-title" id="authLoginTitle">Login</h2>
+                            <p class="auth-view-sub" id="authLoginSub">Welcome back to Jagruthi</p>
                         </div>
-                        <div class="input-field">
-                            <div class="field-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
-                                    <line x1="8" y1="21" x2="16" y2="21"></line>
-                                    <line x1="12" y1="17" x2="12" y2="21"></line>
-                                </svg>
+
+                        <form class="auth-form" id="loginForm">
+                            <!-- Phone Number -->
+                            <div class="input-field" id="wrapLoginPhone">
+                                <div class="field-icon">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                                    </svg>
+                                </div>
+                                <input type="tel" id="loginPhone" placeholder="Phone Number" required autocomplete="tel">
+                                <span class="field-validation-icon" id="loginPhoneValid" aria-hidden="true">
+                                    <i class="las la-check-circle"></i>
+                                </span>
                             </div>
-                            <input type="text" id="regOfficerId" placeholder="Officer ID">
-                        </div>
+
+                            <!-- Password -->
+                            <div class="input-field">
+                                <div class="field-icon">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                                    </svg>
+                                </div>
+                                <input type="password" id="loginPassword" placeholder="Password" required autocomplete="current-password">
+                                <button type="button" class="toggle-pass" id="toggleLoginPass" aria-label="Toggle password visibility">
+                                    <i class="las la-eye"></i>
+                                </button>
+                            </div>
+
+                            <!-- Action Submit Button -->
+                            <button type="submit" class="btn-auth-submit" id="loginBtn">
+                                <span>Login</span>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                    <polyline points="12 5 19 12 12 19"></polyline>
+                                </svg>
+                            </button>
+
+                            <!-- Switch to Registration -->
+                            <p class="auth-switch-prompt">
+                                Don't have an account? <a href="#" id="linkToRegister" class="switch-link">Register</a>
+                            </p>
+                        </form>
                     </div>
 
-                    <!-- 4. Admin Fields -->
-                    <div class="dynamic-fields hidden" id="fieldsAdmin">
-                        <div class="input-field">
-                            <div class="field-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
-                                    <line x1="8" y1="21" x2="16" y2="21"></line>
-                                    <line x1="12" y1="17" x2="12" y2="21"></line>
-                                </svg>
-                            </div>
-                            <input type="text" id="regAdminId" placeholder="Admin ID">
+                    <!-- ================= 2. REGISTRATION VIEW ================= -->
+                    <div class="auth-view-panel hidden" id="authViewRegister">
+                        <div class="auth-header-text">
+                            <h2 class="auth-view-title" id="authRegTitle">Women <span class="highlight">Registration</span></h2>
+                            <p class="auth-view-sub" id="authRegSub">Create your account</p>
                         </div>
-                        <div class="input-field">
-                            <div class="field-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <circle cx="7.5" cy="15.5" r="5.5"></circle>
-                                    <path d="M21 2l-9.6 9.6"></path>
-                                    <path d="M15.5 7.5l3 3L22 7l-3-3"></path>
-                                </svg>
-                            </div>
-                            <input type="password" id="regSecurityCode" placeholder="Security Code">
-                        </div>
-                    </div>
 
-                    <!-- 5. Patrol Fields -->
-                    <div class="dynamic-fields hidden" id="fieldsPatrol">
-                        <div class="input-field">
-                            <div class="field-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-                                    <polyline points="9 22 9 12 15 12 15 22"></polyline>
-                                </svg>
+                        <form class="auth-form" id="registerForm">
+                            <!-- 1. Full Name -->
+                            <div class="input-field">
+                                <div class="field-icon">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                        <circle cx="12" cy="7" r="4"></circle>
+                                    </svg>
+                                </div>
+                                <input type="text" id="regName" placeholder="Full Name" required autocomplete="name">
                             </div>
-                            <input type="text" id="regPatrolStation" placeholder="Police Station / Unit">
-                        </div>
-                        <div class="input-field">
-                            <div class="field-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
-                                    <line x1="8" y1="21" x2="16" y2="21"></line>
-                                    <line x1="12" y1="17" x2="12" y2="21"></line>
-                                </svg>
+
+                            <!-- 2. Email -->
+                            <div class="input-field" id="wrapRegEmail">
+                                <div class="field-icon">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <rect x="3" y="5" width="18" height="14" rx="2"></rect>
+                                        <polyline points="3 7 12 13 21 7"></polyline>
+                                    </svg>
+                                </div>
+                                <input type="email" id="regEmail" placeholder="Email" required autocomplete="email">
+                                <span class="field-validation-icon" id="regEmailValid" aria-hidden="true">
+                                    <i class="las la-check-circle"></i>
+                                </span>
                             </div>
-                            <input type="text" id="regPatrolOfficerId" placeholder="Officer / Patrol ID">
-                        </div>
+
+                            <!-- 3. Phone Number -->
+                            <div class="input-field" id="wrapRegPhone">
+                                <div class="field-icon">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                                    </svg>
+                                </div>
+                                <input type="tel" id="regPhone" placeholder="Phone Number" required autocomplete="tel">
+                                <span class="field-validation-icon" id="regPhoneValid" aria-hidden="true">
+                                    <i class="las la-check-circle"></i>
+                                </span>
+                            </div>
+
+                            <!-- 4. Password -->
+                            <div class="input-field">
+                                <div class="field-icon">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                                    </svg>
+                                </div>
+                                <input type="password" id="regPassword" placeholder="Password" required autocomplete="new-password">
+                                <button type="button" class="toggle-pass" id="toggleRegPass" aria-label="Toggle password visibility">
+                                    <i class="las la-eye"></i>
+                                </button>
+                            </div>
+
+                            <!-- 5. Confirm Password -->
+                            <div class="input-field">
+                                <div class="field-icon">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                                    </svg>
+                                </div>
+                                <input type="password" id="regConfirmPassword" placeholder="Confirm Password" required autocomplete="new-password">
+                            </div>
+
+                            <!-- Password strength & match meters (kept functional) -->
+                            <div class="pass-meter-wrap hidden" id="passMeterWrap">
+                                <div class="pass-meter-bars">
+                                    <span class="bar bar-1"></span>
+                                    <span class="bar bar-2"></span>
+                                    <span class="bar bar-3"></span>
+                                </div>
+                                <span class="pass-meter-label" id="passMeterLabel">Password strength</span>
+                            </div>
+                            <div class="pass-match-wrap hidden" id="passMatchWrap">
+                                <i class="las la-check-circle" id="passMatchIcon"></i>
+                                <span id="passMatchLabel">Passwords match</span>
+                            </div>
+
+                            <!-- Role-Specific Dynamic Fields -->
+                            <div class="role-fields" id="roleFields">
+                                
+                                <!-- 1. Women Fields (Matches Mockup 100%) -->
+                                <div class="dynamic-fields" id="fieldsUser">
+                                    <!-- 6. Emergency Contact Number -->
+                                    <div class="input-field">
+                                        <div class="field-icon">
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                                            </svg>
+                                        </div>
+                                        <input type="tel" id="regEmergencyContact" placeholder="Emergency Contact Number">
+                                    </div>
+
+                                    <!-- 7. Address (Optional) -->
+                                    <div class="input-field">
+                                        <div class="field-icon">
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                                <circle cx="12" cy="10" r="3"></circle>
+                                            </svg>
+                                        </div>
+                                        <input type="text" id="regAddress" placeholder="Address (Optional)">
+                                    </div>
+                                </div>
+
+                                <!-- 2. Parent Fields -->
+                                <div class="dynamic-fields hidden" id="fieldsEmergency">
+                                    <div class="input-field">
+                                        <div class="field-icon">
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                                            </svg>
+                                        </div>
+                                        <input type="text" id="regRelationship" placeholder="Relationship to User">
+                                    </div>
+                                </div>
+
+                                <!-- 3. Police Fields -->
+                                <div class="dynamic-fields hidden" id="fieldsPolice">
+                                    <div class="input-field">
+                                        <div class="field-icon">
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                                                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                                            </svg>
+                                        </div>
+                                        <input type="text" id="regPoliceStation" placeholder="Police Station Name">
+                                    </div>
+                                    <div class="input-field">
+                                        <div class="field-icon">
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                                                <line x1="8" y1="21" x2="16" y2="21"></line>
+                                                <line x1="12" y1="17" x2="12" y2="21"></line>
+                                            </svg>
+                                        </div>
+                                        <input type="text" id="regOfficerId" placeholder="Officer ID">
+                                    </div>
+                                </div>
+
+                                <!-- 4. Admin Fields -->
+                                <div class="dynamic-fields hidden" id="fieldsAdmin">
+                                    <div class="input-field">
+                                        <div class="field-icon">
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                                                <line x1="8" y1="21" x2="16" y2="21"></line>
+                                                <line x1="12" y1="17" x2="12" y2="21"></line>
+                                            </svg>
+                                        </div>
+                                        <input type="text" id="regAdminId" placeholder="Admin ID">
+                                    </div>
+                                    <div class="input-field">
+                                        <div class="field-icon">
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <circle cx="7.5" cy="15.5" r="5.5"></circle>
+                                                <path d="M21 2l-9.6 9.6"></path>
+                                                <path d="M15.5 7.5l3 3L22 7l-3-3"></path>
+                                            </svg>
+                                        </div>
+                                        <input type="password" id="regSecurityCode" placeholder="Security Code">
+                                    </div>
+                                </div>
+
+                                <!-- 5. Patrol Fields -->
+                                <div class="dynamic-fields hidden" id="fieldsPatrol">
+                                    <div class="input-field">
+                                        <div class="field-icon">
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                                                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                                            </svg>
+                                        </div>
+                                        <input type="text" id="regPatrolStation" placeholder="Police Station / Unit">
+                                    </div>
+                                    <div class="input-field">
+                                        <div class="field-icon">
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                                                <line x1="8" y1="21" x2="16" y2="21"></line>
+                                                <line x1="12" y1="17" x2="12" y2="21"></line>
+                                            </svg>
+                                        </div>
+                                        <input type="text" id="regPatrolOfficerId" placeholder="Officer / Patrol ID">
+                                    </div>
+                                </div>
+
+                            </div>
+
+                            <!-- Action Submit Button -->
+                            <button type="submit" class="btn-auth-submit" id="registerBtn">
+                                <span>Register</span>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                    <polyline points="12 5 19 12 12 19"></polyline>
+                                </svg>
+                            </button>
+
+                            <!-- Switch to Login -->
+                            <p class="auth-switch-prompt">
+                                Already have an account? <a href="#" id="linkToLogin" class="switch-link">Login</a>
+                            </p>
+                        </form>
                     </div>
 
                 </div>
-
-                <!-- Submit Button -->
-                <button type="submit" class="auth-action-btn" id="registerBtn">
-                    <span>Create Account</span>
-                </button>
-
-                <!-- Switch to Login -->
-                <p class="auth-switch-prompt">
-                    Already have an account? <a href="#" id="linkToLogin" class="switch-link">Login</a>
-                </p>
-
-            </form>
-
-            <!-- Dynamic Thematic Role Illustration (Centered Below Form, Matches Mockup) -->
-            <div class="auth-bottom-illustration" id="authBottomIllustration" aria-hidden="true"></div>
-
-            <!-- Bottom Background Curve Graphic -->
-            <div class="auth-screen-wave" aria-hidden="true">
-                <svg viewBox="0 0 500 120" preserveAspectRatio="none">
-                    <path class="dynamic-wave-path" d="M0,50 C180,95 340,15 500,65 L500,120 L0,120 Z"></path>
-                </svg>
             </div>
 
         </section>
@@ -1044,7 +1060,7 @@
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./services/supabaseClient.js"></script>
-    <script src="./login.js?v=3.2.9"></script>
+    <script src="./login.js?v=3.6.1"></script>
 </body>
 
 </html>

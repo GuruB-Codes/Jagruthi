@@ -624,19 +624,20 @@ document.addEventListener('DOMContentLoaded', () => {
         authScreen.classList.remove('theme-women', 'theme-emergency', 'theme-police', 'theme-admin', 'theme-patrol');
         authScreen.classList.add(meta.themeClass);
 
-        // Update Avatar Icon
-        if (heroAvatarIcon) {
-            heroAvatarIcon.innerHTML = meta.svg;
-        }
-
-        // Update Bottom Thematic Line-Art Illustration (Centered Below Form, Matches Mockup)
-        if (authBottomIllustration && meta.illustrationSvg) {
-            authBottomIllustration.innerHTML = meta.illustrationSvg;
-        }
-
-        // Update Top Active Role Chip
-        if (roleChipText) {
-            roleChipText.innerText = meta.name;
+        // Update hero image to matching role artwork
+        const heroImg = document.getElementById('authHeroImg');
+        if (heroImg) {
+            if (role === 'user') {
+                heroImg.src = './assets/images/user-backg.png';
+            } else if (role === 'emergency') {
+                heroImg.src = './assets/images/illustration.png';
+            } else if (role === 'police') {
+                heroImg.src = './assets/images/police.png';
+            } else if (role === 'patrol') {
+                heroImg.src = './assets/images/patrol.png';
+            } else {
+                heroImg.src = './assets/images/user-backg.png';
+            }
         }
 
         // Update Header Text based on current auth mode
@@ -652,15 +653,21 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateAuthHeader(mode) {
-        const meta = roleMeta[selectedRole];
-        if (!meta) return;
+        const meta = roleMeta[selectedRole] || roleMeta['user'];
+        const loginTitleEl = document.getElementById('authLoginTitle');
+        const loginSubEl = document.getElementById('authLoginSub');
+        const regTitleEl = document.getElementById('authRegTitle');
+        const regSubEl = document.getElementById('authRegSub');
 
         if (mode === 'login') {
-            if (authTitle) authTitle.innerText = meta.loginTitle;
-            if (authSubtitle) authSubtitle.innerText = meta.loginSubtitle;
+            if (loginTitleEl) loginTitleEl.innerText = selectedRole === 'user' ? 'Login' : meta.loginTitle;
+            if (loginSubEl) loginSubEl.innerText = selectedRole === 'user' ? 'Welcome back to Jagruthi' : meta.loginSubtitle;
         } else {
-            if (authTitle) authTitle.innerText = meta.regTitle;
-            if (authSubtitle) authSubtitle.innerText = 'Create your account';
+            if (regTitleEl) {
+                const rolePrefix = selectedRole === 'user' ? 'Women' : (meta.name ? meta.name.split(' ')[0] : 'User');
+                regTitleEl.innerHTML = `${rolePrefix} <span class="highlight">Registration</span>`;
+            }
+            if (regSubEl) regSubEl.innerText = 'Create your account';
         }
     }
 
@@ -757,28 +764,28 @@ document.addEventListener('DOMContentLoaded', () => {
         hideMessage();
         currentAuthMode = tab;
 
+        const authScreenEl = document.getElementById('authScreen');
+        const viewLoginEl = document.getElementById('authViewLogin');
+        const viewRegisterEl = document.getElementById('authViewRegister');
+
         if (tab === 'login') {
-            if (tabLogin) tabLogin.classList.add('active');
-            if (tabRegister) tabRegister.classList.remove('active');
-            if (tabIndicator) tabIndicator.classList.remove('right');
-            if (loginForm) {
-                loginForm.classList.remove('hidden');
-                loginForm.classList.remove('form-stagger');
-                void loginForm.offsetWidth;
-                loginForm.classList.add('form-stagger');
+            if (authScreenEl) {
+                authScreenEl.classList.remove('mode-register');
+                authScreenEl.classList.add('mode-login');
             }
+            if (viewLoginEl) viewLoginEl.classList.remove('hidden');
+            if (viewRegisterEl) viewRegisterEl.classList.add('hidden');
+            if (loginForm) loginForm.classList.remove('hidden');
             if (registerForm) registerForm.classList.add('hidden');
         } else {
-            if (tabLogin) tabLogin.classList.remove('active');
-            if (tabRegister) tabRegister.classList.add('active');
-            if (tabIndicator) tabIndicator.classList.add('right');
-            if (loginForm) loginForm.classList.add('hidden');
-            if (registerForm) {
-                registerForm.classList.remove('hidden');
-                registerForm.classList.remove('form-stagger');
-                void registerForm.offsetWidth;
-                registerForm.classList.add('form-stagger');
+            if (authScreenEl) {
+                authScreenEl.classList.remove('mode-login');
+                authScreenEl.classList.add('mode-register');
             }
+            if (viewLoginEl) viewLoginEl.classList.add('hidden');
+            if (viewRegisterEl) viewRegisterEl.classList.remove('hidden');
+            if (loginForm) loginForm.classList.add('hidden');
+            if (registerForm) registerForm.classList.remove('hidden');
         }
 
         updateAuthHeader(tab);
