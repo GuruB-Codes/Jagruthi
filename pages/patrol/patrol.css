@@ -93,6 +93,47 @@ body.patrol-body {
     color: var(--patrol-text-muted);
 }
 
+/* Header Right & Actions */
+.patrol-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.btn-patrol-logout {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 13px;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    background: rgba(244, 20, 100, 0.12);
+    border: 1px solid rgba(244, 20, 100, 0.35);
+    color: #FF4D82;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: inherit;
+    line-height: 1.2;
+}
+
+.btn-patrol-logout:hover {
+    background: #F41464;
+    color: #ffffff;
+    border-color: #F41464;
+    box-shadow: 0 4px 14px rgba(244, 20, 100, 0.4);
+    transform: translateY(-1px);
+}
+
+.btn-patrol-logout:active {
+    transform: scale(0.96);
+}
+
+.btn-patrol-logout i {
+    font-size: 1.05rem;
+}
+
 /* Duty Status Badge */
 .duty-status-badge {
     display: flex;
@@ -431,3 +472,60 @@ body.patrol-body {
     height: 320px;
     background: #0B112C;
 }
+
+/* Officer Session Management Card */
+.officer-session-card {
+    background: var(--patrol-card-bg);
+    border: 1px solid var(--patrol-border);
+    border-radius: 16px;
+    padding: 16px 18px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    margin-top: 4px;
+    margin-bottom: 24px;
+    text-align: center;
+}
+
+.btn-patrol-logout-wide {
+    width: 100%;
+    max-width: 380px;
+    background: rgba(239, 68, 68, 0.12);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #f87171;
+    border-radius: 12px;
+    padding: 12px 18px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+}
+
+.btn-patrol-logout-wide:hover {
+    background: #ef4444;
+    color: #ffffff;
+    border-color: #ef4444;
+    box-shadow: 0 4px 16px rgba(239, 68, 68, 0.35);
+    transform: translateY(-1px);
+}
+
+.btn-patrol-logout-wide:active {
+    transform: scale(0.98);
+}
+
+.btn-patrol-logout-wide i {
+    font-size: 1.2rem;
+}
+
+.session-hint-text {
+    margin: 0;
+    font-size: 0.76rem;
+    color: var(--patrol-text-muted);
+}
+

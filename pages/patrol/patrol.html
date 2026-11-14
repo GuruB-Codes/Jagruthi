@@ -55,6 +55,10 @@
                     <span class="status-dot"></span>
                     <span id="dutyStatusText">OFF DUTY</span>
                 </div>
+                <button type="button" class="btn-patrol-logout" id="btnPatrolLogout" title="Logout Patrol Session" aria-label="Logout">
+                    <i class="las la-sign-out-alt"></i>
+                    <span>Logout</span>
+                </button>
             </div>
         </header>
 
@@ -179,6 +183,15 @@
 
         <!-- Sound for dispatch alert -->
         <audio id="dispatchSound" src="https://assets.mixkit.co/active_storage/sfx/992/992-preview.mp3" preload="auto"></audio>
+
+        <!-- Officer Session Management Card -->
+        <section class="officer-session-card">
+            <button type="button" class="btn-patrol-logout-wide" id="btnPatrolLogoutBottom" title="Logout Patrol Session">
+                <i class="las la-sign-out-alt"></i>
+                <span>Logout Patrol Unit</span>
+            </button>
+            <p class="session-hint-text">Logging out will turn your unit off-duty and return to the login screen.</p>
+        </section>
 
     </div>
 

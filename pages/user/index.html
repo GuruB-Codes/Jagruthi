@@ -24,7 +24,7 @@
     <!-- Icons -->
     <link rel="stylesheet"
         href="https://maxst.icons8.com/vue-static/landings/line-awesome/line-awesome/1.3.0/css/line-awesome.min.css">
-    <link rel="stylesheet" href="./user.css?v=30">
+    <link rel="stylesheet" href="./user.css?v=31">
 
     <!-- Leaflet Map -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -427,6 +427,19 @@
                         <i class="las la-angle-right profile-menu-arrow"></i>
                     </div>
 
+                    <!-- 3. Evidence Vault (Private User Vault) -->
+                    <div class="profile-menu-item" id="menuItemEvidenceVault" role="button" tabindex="0">
+                        <div class="profile-menu-icon icon-vault">
+                            <i class="las la-lock"></i>
+                        </div>
+                        <div class="profile-menu-text">
+                            <h4 class="profile-menu-title">Evidence Vault</h4>
+                            <p class="profile-menu-sub">Private encrypted photos, videos & audio</p>
+                        </div>
+                        <span class="vault-count-badge" id="profileVaultCountBadge">0</span>
+                        <i class="las la-angle-right profile-menu-arrow"></i>
+                    </div>
+
                     <!-- 3. Safety Preferences -->
                     <div class="profile-menu-item" id="menuItemSafetyPreferences" role="button" tabindex="0">
                         <div class="profile-menu-icon icon-safety">
@@ -756,6 +769,88 @@
                 <button type="button" class="profile-modal-btn" onclick="localStorage.clear(); window.location.href='../../login.html';" style="background: #fee2e2; color: #e11d48; border: 1px solid #fca5a5;">
                     <i class="las la-sign-out-alt"></i> Logout Account
                 </button>
+            </div>
+        </div>
+
+        <!-- 7. Evidence Vault Modal (Private User Vault) -->
+        <div class="profile-modal-overlay" id="modalEvidenceVault">
+            <div class="profile-modal-container" style="max-height: 90vh;">
+                <div class="profile-modal-header">
+                    <div class="profile-modal-title">
+                        <div class="profile-menu-icon icon-vault" style="width: 34px; height: 34px; font-size: 1.15rem;">
+                            <i class="las la-lock"></i>
+                        </div>
+                        <span>Evidence Vault</span>
+                        <span class="vault-count-badge" id="vaultModalTotalBadge">0</span>
+                    </div>
+                    <button type="button" class="profile-modal-close" data-close-modal="modalEvidenceVault" aria-label="Close Vault">&times;</button>
+                </div>
+
+                <div class="vault-privacy-notice">
+                    <i class="las la-shield-alt"></i>
+                    <span><b>Private & Encrypted</b>: Incident evidence stored here is saved to your personal device and synced to your secure Supabase Cloud Vault. <b>Never dispatched to police</b> unless you explicitly share or export.</span>
+                </div>
+
+                <!-- Vault Filter & Cloud Refresh Bar -->
+                <div class="vault-toolbar">
+                    <div class="vault-filter-group">
+                        <button type="button" class="vault-filter-btn active" data-vault-filter="all">All (<span id="vaultCountAll">0</span>)</button>
+                        <button type="button" class="vault-filter-btn" data-vault-filter="photo">Photos (<span id="vaultCountPhotos">0</span>)</button>
+                        <button type="button" class="vault-filter-btn" data-vault-filter="video">Videos (<span id="vaultCountVideos">0</span>)</button>
+                    </div>
+                    <button type="button" class="vault-refresh-btn" id="btnSyncVaultCloud" title="Sync with Supabase Cloud Vault" aria-label="Sync with Supabase Cloud Vault">
+                        <i class="las la-sync"></i>
+                    </button>
+                </div>
+
+                <!-- Captured Evidence Grid -->
+                <div class="vault-evidence-grid" id="vaultEvidenceGrid">
+                    <!-- Populated dynamically via renderEvidenceVault() -->
+                </div>
+
+                <!-- Empty State (Shown when 0 items) -->
+                <div class="vault-empty-state" id="vaultEmptyState" style="display: none;">
+                    <div class="vault-empty-icon">
+                        <i class="las la-camera"></i>
+                    </div>
+                    <h4>Your Vault is Empty</h4>
+                    <p>Discreetly record incident photos or video evidence. Media is encrypted and stored safely without appearing in your phone's public photo gallery.</p>
+                    <button type="button" class="profile-modal-btn btn-vault-capture-action" id="btnVaultCaptureNow">
+                        <i class="las la-camera"></i> Capture Evidence Now
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lightbox / Full Evidence Item Viewer Modal -->
+        <div class="profile-modal-overlay" id="modalVaultItemViewer">
+            <div class="profile-modal-container">
+                <div class="profile-modal-header">
+                    <div class="profile-modal-title">
+                        <i class="las la-shield-check" style="color: #059669; font-size: 1.3rem;"></i>
+                        <span id="vaultViewerTitle">Secured Evidence</span>
+                    </div>
+                    <button type="button" class="profile-modal-close" data-close-modal="modalVaultItemViewer">&times;</button>
+                </div>
+
+                <div class="vault-preview-media-wrap" id="vaultViewerMediaWrap">
+                    <!-- Populated with <img> or <video> -->
+                </div>
+
+                <div class="vault-preview-meta" id="vaultViewerMeta">
+                    <div><i class="las la-calendar"></i> <b>Recorded:</b> <span id="vaultViewerTime">--</span></div>
+                    <div><i class="las la-map-marker-alt"></i> <b>Location:</b> <span id="vaultViewerLocation">--</span></div>
+                    <div><i class="las la-cloud-upload-alt"></i> <b>Storage:</b> <span id="vaultViewerStorage">Supabase Private Cloud Vault</span></div>
+                </div>
+
+                <div style="display: flex; gap: 8px;">
+                    <button type="button" class="profile-modal-btn" id="btnVaultDownloadItem" style="flex: 1; background: #2563eb; box-shadow: 0 4px 14px rgba(37,99,235,0.25);">
+                        <i class="las la-download"></i> Save to Device
+                    </button>
+                    <button type="button" class="profile-modal-btn" id="btnVaultDeleteItem" style="max-width: 50px; background: #fee2e2; color: #e11d48; border: 1px solid #fca5a5; box-shadow: none;" title="Delete from Vault">
+                        <i class="las la-trash"></i>
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -1634,7 +1729,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="../../services/supabaseClient.js?v=14"></script>
     <script src="../../services/mediaService.js?v=15"></script>
-    <script src="./user.js?v=25"></script>
+    <script src="./user.js?v=26"></script>
     <script src="../../pwaManager.js?v=3.7.2"></script>
 </body>
 

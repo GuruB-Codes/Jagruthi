@@ -1419,7 +1419,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         .eq('sos_id', cId)
                         .order('created_at', { ascending: false });
                     if (!rErr && recs && recs.length > 0) {
-                        evidenceRecords = recs;
+                        // Strictly filter out any private user vault items
+                        evidenceRecords = recs.filter(r => !r.storage_path?.startsWith('vault/') && !r.storage_path?.includes('/vault/'));
                         matchedSosId = cId;
                         break;
                     }
@@ -1437,7 +1438,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             .order('created_at', { ascending: false })
                             .limit(10);
                         if (userRecs && userRecs.length > 0) {
-                            evidenceRecords = userRecs;
+                            // Strictly filter out any private user vault items (never sent to police)
+                            evidenceRecords = userRecs.filter(r => !r.storage_path?.startsWith('vault/') && !r.storage_path?.includes('/vault/'));
                         }
                     }
                 }

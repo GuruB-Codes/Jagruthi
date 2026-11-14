@@ -1723,6 +1723,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 }, 200);
             }
 
+            // Refresh Evidence Vault count badge when viewing Profile
+            if (targetTab === 'tab-profile' && typeof updateVaultBadges === 'function') {
+                updateVaultBadges();
+            }
+
             // Scroll to top smoothly
             window.scrollTo({ top: 0, behavior: 'smooth' });
         });
@@ -3743,6 +3748,164 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    // In-memory cache for fast tab-switching
+    const nearbyPlacesCache = new Map();
+
+    async function resolveLiveUserCoordinates() {
+        // Priority 1: liveUserCoords if available and valid
+        if (liveUserCoords && typeof liveUserCoords.lat === 'number' && typeof liveUserCoords.lng === 'number') {
+            return [liveUserCoords.lat, liveUserCoords.lng];
+        }
+        // Priority 2: startLoc
+        if (startLoc && typeof startLoc[0] === 'number' && typeof startLoc[1] === 'number') {
+            return [startLoc[0], startLoc[1]];
+        }
+        // Priority 3: Query real high-accuracy GPS directly
+        if (navigator.geolocation) {
+            try {
+                const pos = await new Promise((resolve, reject) => {
+                    navigator.geolocation.getCurrentPosition(resolve, reject, {
+                        enableHighAccuracy: true,
+                        timeout: 6000,
+                        maximumAge: 15000
+                    });
+                });
+                const lat = pos.coords.latitude;
+                const lng = pos.coords.longitude;
+                startLoc = [lat, lng];
+                liveUserCoords = { lat, lng, accuracy: pos.coords.accuracy, timestamp: Date.now() };
+                if (typeof applyUserGpsPosition === 'function') {
+                    applyUserGpsPosition(lat, lng, pos.coords.accuracy);
+                }
+                return [lat, lng];
+            } catch (e) {
+                console.warn("[SafePlaces] High-accuracy GPS query error:", e.message);
+            }
+        }
+        // Priority 4: Cached location in localStorage
+        try {
+            const cached = JSON.parse(localStorage.getItem('safeRouteLiveLocation') || '{}');
+            if (cached.lat && cached.lng) return [cached.lat, cached.lng];
+        } catch (e) {}
+
+        // Safe fallback center if device permissions are completely blocked
+        return [13.0380, 77.5120];
+    }
+
+    async function fetchRealNearbySafePlaces(category, uLat, uLng) {
+        const cacheKey = `${category}_${uLat.toFixed(3)}_${uLng.toFixed(3)}`;
+        if (nearbyPlacesCache.has(cacheKey)) {
+            return nearbyPlacesCache.get(cacheKey);
+        }
+
+        const queryMap = {
+            police: 'police station',
+            hospitals: 'hospital',
+            fire: 'fire station',
+            pharmacies: 'pharmacy'
+        };
+        const queryTerm = queryMap[category] || 'police station';
+        const config = safePlacesCategoryConfig[category] || safePlacesCategoryConfig.police;
+
+        // Bounding box around live location (~15km radius)
+        const delta = 0.15;
+        const minLng = (uLng - delta).toFixed(5);
+        const maxLat = (uLat + delta).toFixed(5);
+        const maxLng = (uLng + delta).toFixed(5);
+        const minLat = (uLat - delta).toFixed(5);
+
+        const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(queryTerm)}&format=json&bounded=1&viewbox=${minLng},${maxLat},${maxLng},${minLat}&limit=12&addressdetails=1`;
+
+        try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 6500);
+
+            const res = await fetch(url, {
+                headers: { 'Accept-Language': 'en' },
+                signal: controller.signal
+            });
+            clearTimeout(timeoutId);
+
+            if (res.ok) {
+                const rawList = await res.json();
+                if (Array.isArray(rawList) && rawList.length > 0) {
+                    const realPlaces = rawList.map((item, idx) => {
+                        const pLat = parseFloat(item.lat);
+                        const pLng = parseFloat(item.lon);
+                        const dist = calcDistanceKm(uLat, uLng, pLat, pLng);
+                        
+                        let name = item.name || '';
+                        if (!name && item.display_name) {
+                            name = item.display_name.split(',')[0].trim();
+                        }
+                        if (!name) name = `${config.singular} Near You`;
+
+                        let shortName = name;
+                        if (shortName.length > 24) shortName = shortName.substring(0, 22) + '...';
+
+                        let address = '';
+                        if (item.address) {
+                            const parts = [
+                                item.address.road || item.address.pedestrian || item.address.suburb,
+                                item.address.neighbourhood || item.address.city_district || item.address.suburb,
+                                item.address.city || item.address.town || item.address.village || item.address.state_district
+                            ].filter(Boolean);
+                            address = parts.join(', ');
+                        }
+                        if (!address && item.display_name) {
+                            address = item.display_name.split(',').slice(1, 4).join(',').trim();
+                        }
+                        if (!address) address = `Near ${uLat.toFixed(3)}° N, ${uLng.toFixed(3)}° E`;
+
+                        let phone = '112';
+                        if (category === 'hospitals') phone = '108';
+                        else if (category === 'fire') phone = '101';
+                        else if (category === 'pharmacies') phone = '112';
+
+                        return {
+                            id: `real_${category}_${idx}_${item.place_id || Math.random().toString(36).substring(2, 6)}`,
+                            name: name,
+                            shortName: shortName,
+                            lat: pLat,
+                            lng: pLng,
+                            address: address,
+                            phone: phone,
+                            distanceKm: dist,
+                            isLiveResult: true
+                        };
+                    });
+
+                    // Sort ascending by distance (nearest to user's live position first)
+                    realPlaces.sort((a, b) => a.distanceKm - b.distanceKm);
+
+                    const filtered = realPlaces.filter(p => p.distanceKm <= 50).slice(0, 10);
+                    if (filtered.length > 0) {
+                        nearbyPlacesCache.set(cacheKey, filtered);
+                        return filtered;
+                    }
+                }
+            }
+        } catch (err) {
+            console.warn(`[SafePlaces] Live Nominatim search for ${category} notice:`, err.message);
+        }
+
+        // Smart fallback relative to user's live location if offline
+        return getFallbackSafePlaces(category, uLat, uLng);
+    }
+
+    function getFallbackSafePlaces(category, uLat, uLng) {
+        const config = safePlacesCategoryConfig[category] || safePlacesCategoryConfig.police;
+        if (typeof config.getLocalPlaces === 'function') {
+            const places = config.getLocalPlaces(uLat, uLng);
+            places.forEach(p => {
+                p.distanceKm = calcDistanceKm(uLat, uLng, p.lat, p.lng);
+            });
+            places.sort((a, b) => a.distanceKm - b.distanceKm);
+            return places;
+        }
+        return [];
+    }
+
     async function loadAndDisplayNearbySafePlaces(category = 'police') {
         currentSafePlaceCategory = safePlacesCategoryConfig[category] ? category : 'police';
         const config = safePlacesCategoryConfig[currentSafePlaceCategory];
@@ -3762,15 +3925,30 @@ document.addEventListener('DOMContentLoaded', () => {
         if (safePlacesMapHeadTitle) safePlacesMapHeadTitle.innerText = config.title;
         if (safePlacesListTitle) safePlacesListTitle.innerText = config.listTitle;
 
-        const uLat = startLoc ? startLoc[0] : 13.14921;
-        const uLng = startLoc ? startLoc[1] : 77.53395;
+        // Show loading state in list while acquiring GPS and fetching places
+        if (policeCardsList) {
+            policeCardsList.innerHTML = `
+                <div style="text-align: center; padding: 28px 16px; color: #64748b; font-size: 0.88rem;">
+                    <i class="las la-spinner la-spin" style="font-size: 2rem; color: #e11d48; display: block; margin-bottom: 10px;"></i>
+                    <strong>Finding verified ${config.singular.toLowerCase()}s near your live location...</strong>
+                    <p style="font-size: 0.78rem; color: #94a3b8; margin: 4px 0 0;">Acquiring live GPS & querying nearest emergency facilities</p>
+                </div>
+            `;
+        }
 
-        // Ensure Leaflet map is initialized
+        if (policeMapStatusPill) {
+            policeMapStatusPill.innerHTML = `<i class="las la-spinner la-spin"></i> Locating from your live GPS position...`;
+        }
+
+        // 1. Resolve user's actual live coordinates
+        const [uLat, uLng] = await resolveLiveUserCoordinates();
+
+        // 2. Ensure Leaflet map is initialized and centered on user's live position
         if (!nearbySafePlacesMapInstance) {
             nearbySafePlacesMapInstance = L.map('nearbyPoliceMap', {
                 zoomControl: true,
                 attributionControl: false
-            }).setView([uLat, uLng], 13);
+            }).setView([uLat, uLng], 14);
 
             L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
                 maxZoom: 20,
@@ -3778,6 +3956,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }).addTo(nearbySafePlacesMapInstance);
 
             safePlacesMarkersGroup = L.featureGroup().addTo(nearbySafePlacesMapInstance);
+        } else {
+            nearbySafePlacesMapInstance.setView([uLat, uLng], 14);
         }
 
         setTimeout(() => {
@@ -3792,31 +3972,18 @@ document.addEventListener('DOMContentLoaded', () => {
         const userLivePinIcon = L.divIcon({
             className: 'user-live-pin-custom',
             html: '<div class="user-live-pin-pulse" title="Your Live Location"></div>',
-            iconSize: [20, 20],
-            iconAnchor: [10, 10]
+            iconSize: [22, 22],
+            iconAnchor: [11, 11]
         });
 
-        safePlacesUserMarker = L.marker([uLat, uLng], { icon: userLivePinIcon })
-            .bindPopup(`<strong style="font-family:'Outfit',sans-serif; color:#1e293b;">📍 Your Live Location</strong>`)
+        safePlacesUserMarker = L.marker([uLat, uLng], { icon: userLivePinIcon, zIndexOffset: 1000 })
+            .bindPopup(`<strong style="font-family:'Outfit',sans-serif; color:#e11d48;">📍 Your Live Location</strong><br><small style="color:#64748b;">${uLat.toFixed(5)}° N, ${uLng.toFixed(5)}° E</small>`)
             .addTo(safePlacesMarkersGroup);
 
-        if (policeMapStatusPill) {
-            policeMapStatusPill.innerHTML = `<i class="las la-spinner la-spin"></i> Locating verified ${config.singular.toLowerCase()}s...`;
-        }
+        // 3. Fetch real verified nearby safe places from live coordinates
+        const places = await fetchRealNearbySafePlaces(currentSafePlaceCategory, uLat, uLng);
 
-        // Determine places around user coordinates
-        const distFromBlr = calcDistanceKm(uLat, uLng, 13.14921, 77.53395);
-        let places = (distFromBlr > 40 && typeof config.getLocalPlaces === 'function')
-            ? config.getLocalPlaces(uLat, uLng)
-            : JSON.parse(JSON.stringify(config.defaultPlaces));
-
-        // Compute distance and sort ascending
-        places.forEach(item => {
-            item.distanceKm = calcDistanceKm(uLat, uLng, item.lat, item.lng);
-        });
-        places.sort((a, b) => a.distanceKm - b.distanceKm);
-
-        // Render markers on map
+        // 4. Render markers on map
         places.forEach(item => {
             const pinIcon = L.divIcon({
                 className: 'police-marker-custom',
@@ -3836,10 +4003,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="police-popup-content">
                     <div class="police-popup-badge"><i class="${config.iconClass}"></i> ${config.badgeText}</div>
                     <h4 class="police-popup-title">${item.name}</h4>
-                    <p class="police-popup-distance"><i class="las la-map-marker-alt"></i> ${item.distanceKm.toFixed(1)} km away • ${item.address}</p>
+                    <p class="police-popup-distance"><i class="las la-map-marker-alt"></i> <b>${item.distanceKm.toFixed(1)} km</b> from your live location • ${item.address}</p>
                     <div class="police-popup-actions">
                         <a href="tel:${item.phone || '112'}" class="police-popup-btn police-popup-call"><i class="las la-phone"></i> Call</a>
-                        <a href="https://www.google.com/maps/dir/?api=1&destination=${item.lat},${item.lng}" target="_blank" class="police-popup-btn police-popup-nav"><i class="las la-directions"></i> Navigate</a>
+                        <a href="https://www.google.com/maps/dir/?api=1&origin=${uLat},${uLng}&destination=${item.lat},${item.lng}" target="_blank" class="police-popup-btn police-popup-nav"><i class="las la-directions"></i> Navigate</a>
                     </div>
                 </div>
             `;
@@ -3849,20 +4016,33 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         // Fit map bounds to encompass user and nearby places
-        if (safePlacesMarkersGroup && safePlacesMarkersGroup.getLayers().length > 0) {
-            nearbySafePlacesMapInstance.fitBounds(safePlacesMarkersGroup.getBounds().pad(0.12));
+        if (safePlacesMarkersGroup && safePlacesMarkersGroup.getLayers().length > 1) {
+            nearbySafePlacesMapInstance.fitBounds(safePlacesMarkersGroup.getBounds().pad(0.14));
         }
 
         // Update Header & Badge counts
         if (policeMapStatusPill) {
-            policeMapStatusPill.innerHTML = `<i class="${config.iconClass}"></i> ${places.length} ${config.singular}s Pinned`;
+            policeMapStatusPill.innerHTML = `<i class="${config.iconClass}"></i> ${places.length} ${config.singular}s found near your live location`;
         }
         if (policeStationsCountBadge) {
-            policeStationsCountBadge.innerText = `${places.length} Found`;
+            policeStationsCountBadge.innerText = `${places.length} Nearby`;
         }
 
-        // Render Cards List below the map
+        // 5. Render Cards List below the map
         if (policeCardsList) {
+            if (places.length === 0) {
+                policeCardsList.innerHTML = `
+                    <div style="text-align: center; padding: 32px 16px; color: #64748b;">
+                        <i class="${config.iconClass}" style="font-size: 2.2rem; color: #cbd5e1; display: block; margin-bottom: 8px;"></i>
+                        <p>No verified ${config.singular.toLowerCase()}s detected within 40 km of your live GPS.</p>
+                        <button type="button" class="profile-modal-btn" onclick="btnRefreshPoliceStations.click()" style="max-width: 220px; margin: 12px auto 0;">
+                            <i class="las la-sync"></i> Refresh Live GPS
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+
             policeCardsList.innerHTML = '';
             places.forEach((st) => {
                 const card = document.createElement('div');
@@ -3887,7 +4067,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <a href="tel:${st.phone || '112'}" class="btn-card-action btn-card-call">
                             <i class="las la-phone"></i> Call
                         </a>
-                        <a href="https://www.google.com/maps/dir/?api=1&destination=${st.lat},${st.lng}" target="_blank" class="btn-card-action btn-card-nav">
+                        <a href="https://www.google.com/maps/dir/?api=1&origin=${uLat},${uLng}&destination=${st.lat},${st.lng}" target="_blank" class="btn-card-action btn-card-nav">
                             <i class="las la-directions"></i> Navigate
                         </a>
                     </div>
@@ -3899,7 +4079,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const triggerFocus = () => {
                     const marker = safePlacesMarkerLookup[st.id];
                     if (marker && nearbySafePlacesMapInstance) {
-                        nearbySafePlacesMapInstance.setView([st.lat, st.lng], 15, { animate: true });
+                        nearbySafePlacesMapInstance.setView([st.lat, st.lng], 16, { animate: true });
                         marker.openPopup();
                         const mapWrap = document.querySelector('.police-map-wrap');
                         if (mapWrap) mapWrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -3987,21 +4167,31 @@ document.addEventListener('DOMContentLoaded', () => {
     // Refresh GPS location button
     if (btnRefreshPoliceStations) {
         btnRefreshPoliceStations.addEventListener('click', () => {
+            btnRefreshPoliceStations.innerHTML = '<i class="las la-spinner la-spin"></i>';
+            if (nearbyPlacesCache) nearbyPlacesCache.clear();
             if (navigator.geolocation) {
-                btnRefreshPoliceStations.innerHTML = '<i class="las la-spinner la-spin"></i>';
                 navigator.geolocation.getCurrentPosition(
                     (pos) => {
-                        startLoc = [pos.coords.latitude, pos.coords.longitude];
+                        const lat = pos.coords.latitude;
+                        const lng = pos.coords.longitude;
+                        startLoc = [lat, lng];
+                        liveUserCoords = { lat, lng, accuracy: pos.coords.accuracy, timestamp: Date.now() };
+                        if (typeof applyUserGpsPosition === 'function') {
+                            applyUserGpsPosition(lat, lng, pos.coords.accuracy);
+                        }
                         btnRefreshPoliceStations.innerHTML = '<i class="las la-crosshairs"></i>';
                         loadAndDisplayNearbySafePlaces(currentSafePlaceCategory);
+                        showAppToast('Refreshed safe places from your live GPS location!', 'success');
                     },
-                    () => {
+                    (err) => {
                         btnRefreshPoliceStations.innerHTML = '<i class="las la-crosshairs"></i>';
                         loadAndDisplayNearbySafePlaces(currentSafePlaceCategory);
+                        showAppToast('Could not acquire fresh GPS: ' + err.message, 'warning');
                     },
-                    { enableHighAccuracy: true, timeout: 5000 }
+                    { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
                 );
             } else {
+                btnRefreshPoliceStations.innerHTML = '<i class="las la-crosshairs"></i>';
                 loadAndDisplayNearbySafePlaces(currentSafePlaceCategory);
             }
         });
@@ -4182,113 +4372,67 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // -------------------------------------------------------------
-    // Comprehensive Supabase Storage & Database Upload for Incidents
+    // -------------------------------------------------------------
+    // Personal Incident Evidence Vault Storage (Supabase & Local)
+    // NOTE: Strictly private to user account. NEVER sent to police.
     // -------------------------------------------------------------
     async function uploadIncidentFileToSupabase({ blob, type, fileName }) {
         const client = window.supabaseClient || supabase;
-        if (!client) {
-            console.warn("[Incident Evidence] Supabase client unavailable, stored in local device vault only.");
-            return { success: false, reason: "No Supabase client" };
-        }
-
         try {
             const userId = await getAuthenticatedUserId();
             const timestamp = Date.now();
             const ext = type === 'photo' ? 'jpg' : (blob.type?.includes('mp4') ? 'mp4' : 'webm');
             const actualFileName = fileName || `${type}_${timestamp}.${ext}`;
             
-            // Ensure valid active SOS event to link evidence in Supabase
-            let sosId = activeSosId;
-            if (!sosId) {
-                const lat = startLoc ? startLoc[0] : (liveUserCoords ? liveUserCoords.lat : 0);
-                const lng = startLoc ? startLoc[1] : (liveUserCoords ? liveUserCoords.lng : 0);
-                if (window.jagruthiSosService) {
-                    try {
-                        const evRes = await window.jagruthiSosService.createSosEvent({
-                            userId: userId,
-                            latitude: lat,
-                            longitude: lng
-                        });
-                        if (evRes?.data?.id) {
-                            sosId = evRes.data.id;
-                            activeSosId = sosId;
-                        }
-                    } catch (e) {
-                        console.warn("[Incident Evidence] SOS event creation notice:", e);
-                    }
-                }
-            }
-            if (!sosId) {
-                sosId = window.generateUUID ? window.generateUUID() : '00000000-0000-0000-0000-000000000000';
-            }
+            // Personal Vault Path in Supabase Storage: vault/<userId>/<fileName>
+            // Stored strictly in user private vault, NEVER linked to SOS alerts, NEVER sent to police.
+            const storagePath = `vault/${userId}/${actualFileName}`;
+            console.log(`[User Vault] Securing & uploading ${actualFileName} to Supabase bucket 'jagruthi-evidence'...`);
 
-            const storagePath = `${userId}/${sosId}/${actualFileName}`;
-            console.log(`[Incident Evidence] Uploading ${actualFileName} to Supabase bucket 'jagruthi-evidence'...`);
+            let uploadSuccess = false;
+            let signedUrl = null;
 
-            // Primary upload attempt (MIME type from blob)
-            const initialMime = type === 'photo' ? 'image/jpeg' : (blob.type || 'video/webm');
-            let uploadRes = await client.storage
-                .from('jagruthi-evidence')
-                .upload(storagePath, blob, {
-                    contentType: initialMime,
-                    upsert: true
-                });
-
-            // If Supabase Storage bucket has MIME whitelist restriction (e.g. 415 InvalidMimeType)
-            if (uploadRes.error && (uploadRes.error.message?.includes('mime type') || uploadRes.error.statusCode === '415' || uploadRes.error.error === 'invalid_mime_type')) {
-                console.warn("[Incident Evidence] Storage bucket MIME restriction detected. Retrying with container compatibility format...");
-                uploadRes = await client.storage
+            if (client) {
+                // Primary upload attempt with proper content type
+                const initialMime = type === 'photo' ? 'image/jpeg' : (blob.type || 'video/webm');
+                let uploadRes = await client.storage
                     .from('jagruthi-evidence')
                     .upload(storagePath, blob, {
-                        contentType: 'video/mp4',
+                        contentType: initialMime,
                         upsert: true
                     });
-            }
 
-            if (uploadRes.error) {
-                console.error("[Incident Evidence] Upload error from Supabase:", uploadRes.error);
-                return { success: false, error: uploadRes.error };
-            }
-
-            console.log(`[Incident Evidence] Uploaded successfully to storage: ${storagePath}`);
-
-            // Obtain signed URL so user and emergency team can view/download securely
-            let signedUrl = null;
-            try {
-                const { data: signData } = await client.storage
-                    .from('jagruthi-evidence')
-                    .createSignedUrl(storagePath, 3600 * 24 * 7); // 7 days
-                if (signData && signData.signedUrl) signedUrl = signData.signedUrl;
-            } catch (sErr) {}
-
-            // Record in Supabase sos_evidence database table
-            if (window.jagruthiSosService && sosId) {
-                try {
-                    let dbRes = await window.jagruthiSosService.createSosEvidenceRecord({
-                        sosId: sosId,
-                        userId: userId,
-                        evidenceType: type,
-                        storagePath: storagePath,
-                        fileName: actualFileName,
-                        capturedAt: new Date().toISOString(),
-                        status: 'UPLOADED'
-                    });
-
-                    // If database check constraint only permits 'video' or 'audio'
-                    if (dbRes?.error && dbRes.error.message?.includes('check constraint')) {
-                        console.log("[Incident Evidence] Registering with compatibility alias 'video'...");
-                        await window.jagruthiSosService.createSosEvidenceRecord({
-                            sosId: sosId,
-                            userId: userId,
-                            evidenceType: 'video',
-                            storagePath: storagePath,
-                            fileName: actualFileName,
-                            capturedAt: new Date().toISOString(),
-                            status: 'UPLOADED'
+                // Fallback for restricted MIME whitelist in storage bucket
+                if (uploadRes.error && (uploadRes.error.message?.includes('mime') || uploadRes.error.statusCode === '415')) {
+                    uploadRes = await client.storage
+                        .from('jagruthi-evidence')
+                        .upload(storagePath, blob, {
+                            contentType: type === 'photo' ? 'image/jpeg' : 'video/mp4',
+                            upsert: true
                         });
+                }
+
+                if (!uploadRes.error) {
+                    uploadSuccess = true;
+                    console.log(`[User Vault] Uploaded successfully to Supabase Storage: ${storagePath}`);
+
+                    // Create signed URL for playback (valid for 7 days)
+                    try {
+                        const { data: signData } = await client.storage
+                            .from('jagruthi-evidence')
+                            .createSignedUrl(storagePath, 3600 * 24 * 7);
+                        if (signData && signData.signedUrl) {
+                            signedUrl = signData.signedUrl;
+                            if (signedUrl.startsWith('/')) {
+                                const baseUrl = (window.supabaseUrl || "https://aibfppmwpdrttfezhdkj.supabase.co").replace(/\/$/, '');
+                                signedUrl = `${baseUrl}/storage/v1${signedUrl}`;
+                            }
+                        }
+                    } catch (sErr) {
+                        console.warn("[User Vault] Signed URL warning:", sErr);
                     }
-                } catch (dbErr) {
-                    console.warn("[Incident Evidence] Database record notice:", dbErr);
+                } else {
+                    console.warn("[User Vault] Supabase storage upload warning:", uploadRes.error);
                 }
             }
 
@@ -4296,28 +4440,29 @@ document.addEventListener('DOMContentLoaded', () => {
             if (typeof idbSaveEvidenceRecord === 'function') {
                 try {
                     await idbSaveEvidenceRecord({
-                        id: `${sosId}_${actualFileName}`,
-                        sosId: sosId,
+                        id: `vault_${timestamp}_${actualFileName}`,
+                        sosId: 'VAULT_PRIVATE',
                         userId: userId,
                         type: type,
                         blob: blob,
-                        mimeType: blob.type || 'image/jpeg',
+                        mimeType: blob.type || (type === 'photo' ? 'image/jpeg' : 'video/webm'),
                         fileName: actualFileName,
                         capturedAt: new Date().toISOString(),
                         sizeBytes: blob.size,
-                        status: 'UPLOADED'
+                        status: uploadSuccess ? 'UPLOADED' : 'SAVED_LOCALLY',
+                        isVault: true
                     });
                 } catch (idbErr) {}
             }
 
             return {
-                success: true,
+                success: uploadSuccess,
                 storagePath: storagePath,
                 signedUrl: signedUrl,
                 fileName: actualFileName
             };
         } catch (err) {
-            console.error("[Incident Evidence] Exception during upload workflow:", err);
+            console.error("[User Vault] Exception during vault upload workflow:", err);
             return { success: false, error: err };
         }
     }
@@ -4344,7 +4489,7 @@ document.addEventListener('DOMContentLoaded', () => {
         ctx.fillRect(0, canvas.height - 40, canvas.width, 40);
         ctx.fillStyle = '#ffffff';
         ctx.font = 'bold 16px Outfit, sans-serif';
-        const watermarkText = `Jagruthi Evidence • ${new Date().toLocaleString()} • Lat: ${startLoc ? startLoc[0].toFixed(4) : '--'}, Lng: ${startLoc ? startLoc[1].toFixed(4) : '--'}`;
+        const watermarkText = `Jagruthi Vault • ${new Date().toLocaleString()} • Lat: ${startLoc ? startLoc[0].toFixed(4) : '--'}, Lng: ${startLoc ? startLoc[1].toFixed(4) : '--'}`;
         ctx.fillText(watermarkText, 14, canvas.height - 15);
 
         showEvidenceFeedback("⏳ Securing & uploading photo to Supabase Cloud Vault...");
@@ -4355,7 +4500,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const photoUrl = URL.createObjectURL(blob);
             const fileName = `photo_${Date.now()}.jpg`;
             
-            // Upload to Supabase Storage & Database
+            // Upload directly to user's private Supabase storage vault
             const uploadResult = await uploadIncidentFileToSupabase({
                 blob: blob,
                 type: 'photo',
@@ -4364,7 +4509,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Save to incident evidence record
             const incidentRecord = {
-                id: Date.now(),
+                id: 'vault_' + Date.now(),
                 type: 'photo',
                 url: uploadResult?.signedUrl || photoUrl,
                 fileName: fileName,
@@ -4372,15 +4517,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 cloudSynced: uploadResult?.success || false,
                 capturedAt: new Date().toISOString(),
                 coords: startLoc,
-                address: homeCurrentLocText?.innerText || 'Unknown'
+                address: homeCurrentLocText?.innerText || 'Unknown Location',
+                sizeBytes: blob.size || 0
             };
 
             const existing = JSON.parse(localStorage.getItem('jagruthiCapturedEvidence') || '[]');
             existing.unshift(incidentRecord);
             localStorage.setItem('jagruthiCapturedEvidence', JSON.stringify(existing));
 
+            updateVaultBadges();
             if (uploadResult && uploadResult.success) {
-                showEvidenceFeedback("✅ Photo Evidence Uploaded & Encrypted in Cloud Vault!");
+                showEvidenceFeedback("✅ Photo Evidence Secured in Your Vault & Synced to Cloud!");
             } else {
                 showEvidenceFeedback("⚠️ Photo Saved in Device Vault (Cloud Sync Pending)");
             }
@@ -4424,7 +4571,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 
                 const incidentRecord = {
-                    id: Date.now(),
+                    id: 'vault_' + Date.now(),
                     type: 'video',
                     url: uploadResult?.signedUrl || videoUrl,
                     fileName: fileName,
@@ -4432,17 +4579,19 @@ document.addEventListener('DOMContentLoaded', () => {
                     cloudSynced: uploadResult?.success || false,
                     capturedAt: new Date().toISOString(),
                     coords: startLoc,
-                    address: homeCurrentLocText?.innerText || 'Unknown'
+                    address: homeCurrentLocText?.innerText || 'Unknown Location',
+                    sizeBytes: videoBlob.size || 0
                 };
 
                 const existing = JSON.parse(localStorage.getItem('jagruthiCapturedEvidence') || '[]');
                 existing.unshift(incidentRecord);
                 localStorage.setItem('jagruthiCapturedEvidence', JSON.stringify(existing));
 
+                updateVaultBadges();
                 if (uploadResult && uploadResult.success) {
-                    showEvidenceFeedback("✅ Incident Video Secured & Uploaded to Cloud Vault!");
+                    showEvidenceFeedback("✅ Incident Video Secured in Your Vault & Synced to Cloud!");
                 } else {
-                    showEvidenceFeedback("⚠️ Video Saved Locally (Cloud Sync Pending)");
+                    showEvidenceFeedback("⚠️ Video Saved Locally in Device Vault (Cloud Sync Pending)");
                 }
             };
 
@@ -4499,7 +4648,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             
             const incidentRecord = {
-                id: Date.now(),
+                id: 'vault_' + Date.now(),
                 type: type,
                 url: uploadResult?.signedUrl || fileUrl,
                 fileName: file.name,
@@ -4507,73 +4656,343 @@ document.addEventListener('DOMContentLoaded', () => {
                 cloudSynced: uploadResult?.success || false,
                 capturedAt: new Date().toISOString(),
                 coords: startLoc,
-                address: homeCurrentLocText?.innerText || 'Unknown'
+                address: homeCurrentLocText?.innerText || 'Unknown Location',
+                sizeBytes: file.size || 0
             };
 
             const existing = JSON.parse(localStorage.getItem('jagruthiCapturedEvidence') || '[]');
             existing.unshift(incidentRecord);
             localStorage.setItem('jagruthiCapturedEvidence', JSON.stringify(existing));
 
+            updateVaultBadges();
             if (uploadResult && uploadResult.success) {
-                showEvidenceFeedback(`✅ ${isVid ? 'Video' : 'Photo'} Uploaded & Encrypted in Cloud Vault!`);
+                showEvidenceFeedback(`✅ ${isVid ? 'Video' : 'Photo'} Uploaded & Encrypted in Your Vault!`);
             } else {
-                showEvidenceFeedback(`✅ ${isVid ? 'Video' : 'Photo'} Loaded & Saved Locally!`);
+                showEvidenceFeedback(`✅ ${isVid ? 'Video' : 'Photo'} Saved Locally in Vault!`);
             }
         });
     }
 
-    // View Stored Evidence -> opens #userEvdModal
+    // View Stored Evidence -> opens full Evidence Vault modal
     if (btnOpenStoredEvidence) {
-        btnOpenStoredEvidence.addEventListener('click', async () => {
-            const userEvdOverlay = document.getElementById('userEvdOverlay');
-            const userEvdModal = document.getElementById('userEvdModal');
-            const userEvdImage = document.getElementById('userEvdImage');
-            const userEvdVideo = document.getElementById('userEvdVideo');
-            const userEvdAudio = document.getElementById('userEvdAudio');
-            const userEvdMeta = document.getElementById('userEvdMeta');
+        btnOpenStoredEvidence.addEventListener('click', () => {
+            closeEvidenceModal();
+            openEvidenceVault();
+        });
+    }
 
-            const stored = JSON.parse(localStorage.getItem('jagruthiCapturedEvidence') || '[]');
-            if (stored.length > 0) {
-                const latest = stored[0];
-                let displayUrl = latest.url;
+    // -------------------------------------------------------------
+    // EVIDENCE VAULT CONTROLLER & VIEWER
+    // -------------------------------------------------------------
+    let currentVaultFilter = 'all';
+    let currentViewingVaultItem = null;
 
-                // If storage path exists, refresh signed URL from Supabase
-                const client = window.supabaseClient || supabase;
-                if (client && latest.storagePath) {
-                    try {
-                        const { data: sData } = await client.storage
-                            .from('jagruthi-evidence')
-                            .createSignedUrl(latest.storagePath, 3600);
-                        if (sData?.signedUrl) displayUrl = sData.signedUrl;
-                    } catch (e) {}
+    function getStoredEvidenceList() {
+        try {
+            return JSON.parse(localStorage.getItem('jagruthiCapturedEvidence') || '[]');
+        } catch (e) {
+            return [];
+        }
+    }
+
+    function updateVaultBadges() {
+        const list = getStoredEvidenceList();
+        const count = list.length;
+        const profileVaultCountBadge = document.getElementById('profileVaultCountBadge');
+        const vaultModalTotalBadge = document.getElementById('vaultModalTotalBadge');
+        if (profileVaultCountBadge) profileVaultCountBadge.innerText = count;
+        if (vaultModalTotalBadge) vaultModalTotalBadge.innerText = `${count} ${count === 1 ? 'item' : 'items'}`;
+
+        const vaultCountAll = document.getElementById('vaultCountAll');
+        const vaultCountPhotos = document.getElementById('vaultCountPhotos');
+        const vaultCountVideos = document.getElementById('vaultCountVideos');
+        if (vaultCountAll) vaultCountAll.innerText = count;
+        if (vaultCountPhotos) vaultCountPhotos.innerText = list.filter(i => i.type === 'photo').length;
+        if (vaultCountVideos) vaultCountVideos.innerText = list.filter(i => i.type === 'video').length;
+    }
+
+    function renderEvidenceVault(filter = currentVaultFilter) {
+        currentVaultFilter = filter;
+        const list = getStoredEvidenceList();
+        updateVaultBadges();
+
+        const grid = document.getElementById('vaultEvidenceGrid');
+        const emptyState = document.getElementById('vaultEmptyState');
+        if (!grid) return;
+
+        // Update active filter button styling
+        document.querySelectorAll('.vault-filter-btn').forEach(btn => {
+            const f = btn.getAttribute('data-vault-filter');
+            if (f === filter) btn.classList.add('active');
+            else btn.classList.remove('active');
+        });
+
+        const filtered = filter === 'all' ? list : list.filter(i => i.type === filter);
+
+        if (filtered.length === 0) {
+            grid.innerHTML = '';
+            grid.style.display = 'none';
+            if (emptyState) emptyState.style.display = 'flex';
+            return;
+        }
+
+        if (emptyState) emptyState.style.display = 'none';
+        grid.style.display = 'grid';
+
+        grid.innerHTML = filtered.map((item, idx) => {
+            const dateStr = item.capturedAt ? new Date(item.capturedAt).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : 'Recent';
+            const icon = item.type === 'video' ? 'las la-video' : 'las la-camera';
+            const syncHtml = item.cloudSynced 
+                ? `<span class="vault-sync-pill synced"><i class="las la-cloud-check"></i> Cloud Vault</span>`
+                : `<span class="vault-sync-pill local"><i class="las la-shield-alt"></i> Device Vault</span>`;
+
+            const thumbContent = item.type === 'video'
+                ? `<video src="${item.url}" class="vault-video-preview" preload="metadata" muted></video>
+                   <div class="vault-play-overlay"><i class="las la-play-circle"></i></div>`
+                : `<img src="${item.url}" class="vault-thumb-img" alt="${item.fileName || 'Evidence Photo'}" loading="lazy">`;
+
+            return `
+                <div class="vault-item-card" data-vault-index="${idx}" data-item-id="${item.id}">
+                    <div class="vault-thumb-wrap" onclick="window.viewVaultItem('${item.id}')">
+                        <span class="vault-type-chip"><i class="${icon}"></i> ${item.type}</span>
+                        ${thumbContent}
+                    </div>
+                    <div class="vault-item-body">
+                        <h4 class="vault-item-title" title="${item.fileName || 'Incident Evidence'}">${item.fileName || (item.type.toUpperCase() + ' Evidence')}</h4>
+                        <p class="vault-item-date"><i class="las la-clock"></i> ${dateStr}</p>
+                        ${syncHtml}
+                        <div class="vault-item-actions">
+                            <button type="button" class="vault-action-btn vault-action-view" onclick="window.viewVaultItem('${item.id}')" title="View Full Evidence">
+                                <i class="las la-expand"></i> View
+                            </button>
+                            <button type="button" class="vault-action-btn vault-action-dl" onclick="window.downloadVaultItem('${item.id}')" title="Download to Device">
+                                <i class="las la-download"></i>
+                            </button>
+                            <button type="button" class="vault-action-btn vault-action-del" onclick="window.deleteVaultItem('${item.id}')" title="Delete from Vault">
+                                <i class="las la-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    // Global helper methods for inline card clicks
+    window.viewVaultItem = function(itemId) {
+        const list = getStoredEvidenceList();
+        const item = list.find(i => String(i.id) === String(itemId));
+        if (!item) return;
+        currentViewingVaultItem = item;
+
+        const modal = document.getElementById('modalVaultItemViewer');
+        const titleEl = document.getElementById('vaultViewerTitle');
+        const mediaWrap = document.getElementById('vaultViewerMediaWrap');
+        const timeEl = document.getElementById('vaultViewerTime');
+        const locEl = document.getElementById('vaultViewerLocation');
+        const storageEl = document.getElementById('vaultViewerStorage');
+
+        if (titleEl) titleEl.innerText = item.fileName || 'Secured Evidence';
+        if (timeEl) timeEl.innerText = item.capturedAt ? new Date(item.capturedAt).toLocaleString() : 'Recent';
+        if (locEl) {
+            locEl.innerText = item.coords ? `${item.coords[0].toFixed(5)}° N, ${item.coords[1].toFixed(5)}° E (${item.address || 'Verified'})` : (item.address || 'Location Tagged');
+        }
+        if (storageEl) {
+            storageEl.innerHTML = item.cloudSynced 
+                ? '<span style="color:#059669;"><i class="las la-cloud-check"></i> Encrypted in Supabase Cloud Storage (Private)</span>'
+                : '<span style="color:#d97706;"><i class="las la-shield-alt"></i> Stored in Device Encrypted Vault</span>';
+        }
+
+        if (mediaWrap) {
+            if (item.type === 'video') {
+                mediaWrap.innerHTML = `<video src="${item.url}" controls autoplay playsinline style="max-width:100%; max-height:55vh; border-radius:10px;"></video>`;
+            } else {
+                mediaWrap.innerHTML = `<img src="${item.url}" alt="Evidence Photo" style="max-width:100%; max-height:55vh; object-fit:contain; border-radius:10px;">`;
+            }
+        }
+
+        if (modal) modal.classList.add('active');
+    };
+
+    window.downloadVaultItem = async function(itemId) {
+        const list = getStoredEvidenceList();
+        const item = list.find(i => String(i.id) === String(itemId));
+        if (!item || !item.url) return;
+
+        try {
+            const res = await fetch(item.url);
+            const blob = await res.blob();
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = item.fileName || `evidence_${Date.now()}.${item.type === 'video' ? 'mp4' : 'jpg'}`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            showAppToast('Saved evidence to device storage!', 'success');
+        } catch (e) {
+            window.open(item.url, '_blank');
+        }
+    };
+
+    window.deleteVaultItem = async function(itemId) {
+        if (!confirm("Are you sure you want to permanently delete this evidence from your private vault?")) {
+            return;
+        }
+
+        let list = getStoredEvidenceList();
+        const item = list.find(i => String(i.id) === String(itemId));
+        
+        // Remove from Supabase Storage if path exists
+        const client = window.supabaseClient || supabase;
+        if (client && item?.storagePath) {
+            try {
+                await client.storage.from('jagruthi-evidence').remove([item.storagePath]);
+                console.log("[User Vault] Deleted storage object:", item.storagePath);
+            } catch (err) {
+                console.warn("[User Vault] Storage delete error:", err);
+            }
+        }
+
+        list = list.filter(i => String(i.id) !== String(itemId));
+        localStorage.setItem('jagruthiCapturedEvidence', JSON.stringify(list));
+
+        // Close viewer modal if current item was deleted
+        const viewerModal = document.getElementById('modalVaultItemViewer');
+        if (viewerModal && viewerModal.classList.contains('active')) {
+            viewerModal.classList.remove('active');
+        }
+
+        renderEvidenceVault(currentVaultFilter);
+        showAppToast('Evidence item removed from vault.', 'info');
+    };
+
+    async function syncVaultWithSupabase() {
+        const client = window.supabaseClient || supabase;
+        const btnSync = document.getElementById('btnSyncVaultCloud');
+        if (btnSync) btnSync.classList.add('rotating');
+
+        try {
+            const userId = await getAuthenticatedUserId();
+            if (!client || !userId) {
+                showAppToast('Vault synced locally. Connect to cloud for remote backup.', 'info');
+                return;
+            }
+
+            // 1. List objects currently in user's Supabase Storage folder: vault/<userId>/
+            const { data: cloudObjects, error } = await client.storage
+                .from('jagruthi-evidence')
+                .list(`vault/${userId}`, { limit: 100, sortBy: { column: 'created_at', order: 'desc' } });
+
+            if (!error && cloudObjects && cloudObjects.length > 0) {
+                const localList = getStoredEvidenceList();
+                let hasNewOrUpdated = false;
+
+                for (const obj of cloudObjects) {
+                    if (obj.name === '.emptyFolderPlaceholder') continue;
+                    const storagePath = `vault/${userId}/${obj.name}`;
+                    
+                    // Create fresh signed URL
+                    const { data: sData } = await client.storage
+                        .from('jagruthi-evidence')
+                        .createSignedUrl(storagePath, 3600 * 24 * 7);
+
+                    let signedUrl = sData?.signedUrl || null;
+                    if (signedUrl && signedUrl.startsWith('/')) {
+                        const baseUrl = (window.supabaseUrl || "https://aibfppmwpdrttfezhdkj.supabase.co").replace(/\/$/, '');
+                        signedUrl = `${baseUrl}/storage/v1${signedUrl}`;
+                    }
+
+                    const existingIndex = localList.findIndex(l => l.storagePath === storagePath || l.fileName === obj.name);
+                    const isVid = obj.name.endsWith('.mp4') || obj.name.endsWith('.webm');
+                    const type = isVid ? 'video' : 'photo';
+
+                    if (existingIndex >= 0) {
+                        // Refresh URL & cloudSynced flag
+                        if (signedUrl) localList[existingIndex].url = signedUrl;
+                        localList[existingIndex].cloudSynced = true;
+                        hasNewOrUpdated = true;
+                    } else if (signedUrl) {
+                        // Pull down cloud item
+                        localList.push({
+                            id: 'vault_' + (obj.id || Date.now()),
+                            type: type,
+                            url: signedUrl,
+                            fileName: obj.name,
+                            storagePath: storagePath,
+                            cloudSynced: true,
+                            capturedAt: obj.created_at || new Date().toISOString(),
+                            coords: null,
+                            address: 'Cloud Backup'
+                        });
+                        hasNewOrUpdated = true;
+                    }
                 }
 
-                if (latest.type === 'photo') {
-                    if (userEvdImage) {
-                        userEvdImage.src = displayUrl;
-                        userEvdImage.style.display = 'block';
-                    }
-                    if (userEvdVideo) userEvdVideo.style.display = 'none';
-                    if (userEvdAudio) userEvdAudio.style.display = 'none';
-                } else if (latest.type === 'video') {
-                    if (userEvdVideo) {
-                        userEvdVideo.src = displayUrl;
-                        userEvdVideo.style.display = 'block';
-                    }
-                    if (userEvdImage) userEvdImage.style.display = 'none';
-                    if (userEvdAudio) userEvdAudio.style.display = 'none';
-                }
-
-                if (userEvdMeta) {
-                    const statusText = latest.cloudSynced ? 'Cloud Vault Verified' : 'Local Encrypted Storage';
-                    userEvdMeta.innerText = `Latest Evidence (${latest.type.toUpperCase()}) • ${new Date(latest.capturedAt).toLocaleTimeString()} • ${statusText}`;
+                if (hasNewOrUpdated) {
+                    localStorage.setItem('jagruthiCapturedEvidence', JSON.stringify(localList));
                 }
             }
 
-            if (userEvdOverlay) userEvdOverlay.classList.add('show');
-            if (userEvdModal) userEvdModal.classList.add('show');
+            renderEvidenceVault(currentVaultFilter);
+            showAppToast('Private Evidence Vault synced with Supabase Cloud!', 'success');
+        } catch (syncErr) {
+            console.warn("[User Vault] Sync error:", syncErr);
+            showAppToast('Vault updated from device storage.', 'info');
+        } finally {
+            if (btnSync) btnSync.classList.remove('rotating');
+        }
+    }
+
+    function openEvidenceVault() {
+        renderEvidenceVault('all');
+        openProfileModal('modalEvidenceVault');
+        syncVaultWithSupabase();
+    }
+
+    // Wire up Evidence Vault controls
+    const menuItemEvidenceVault = document.getElementById('menuItemEvidenceVault');
+    if (menuItemEvidenceVault) {
+        menuItemEvidenceVault.addEventListener('click', openEvidenceVault);
+    }
+
+    const btnSyncVaultCloud = document.getElementById('btnSyncVaultCloud');
+    if (btnSyncVaultCloud) {
+        btnSyncVaultCloud.addEventListener('click', syncVaultWithSupabase);
+    }
+
+    const btnVaultCaptureNow = document.getElementById('btnVaultCaptureNow');
+    if (btnVaultCaptureNow) {
+        btnVaultCaptureNow.addEventListener('click', () => {
+            closeProfileModal('modalEvidenceVault');
+            openEvidenceModal();
         });
     }
+
+    // Filter Buttons
+    document.querySelectorAll('[data-vault-filter]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const filter = btn.getAttribute('data-vault-filter');
+            renderEvidenceVault(filter);
+        });
+    });
+
+    // Viewer Modal Action Buttons
+    const btnVaultDownloadItem = document.getElementById('btnVaultDownloadItem');
+    if (btnVaultDownloadItem) {
+        btnVaultDownloadItem.addEventListener('click', () => {
+            if (currentViewingVaultItem) window.downloadVaultItem(currentViewingVaultItem.id);
+        });
+    }
+
+    const btnVaultDeleteItem = document.getElementById('btnVaultDeleteItem');
+    if (btnVaultDeleteItem) {
+        btnVaultDeleteItem.addEventListener('click', () => {
+            if (currentViewingVaultItem) window.deleteVaultItem(currentViewingVaultItem.id);
+        });
+    }
+
+    // Initialize vault badges on startup
+    updateVaultBadges();
 
     // ---------------------------------------------
     // CARD 4: Fake Incoming Call Simulator

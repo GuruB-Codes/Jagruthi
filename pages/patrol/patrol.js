@@ -502,6 +502,48 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }, 500);
 
+    // Patrol Logout Action
+    async function handlePatrolLogout() {
+        if (!confirm("Are you sure you want to log out of Patrol Hub?")) {
+            return;
+        }
+
+        try {
+            if (isOnDuty) {
+                stopGpsTracking();
+            } else if (supabase && officerPhone) {
+                await supabase
+                    .from('police_units')
+                    .update({ status: 'offline' })
+                    .eq('phone', officerPhone);
+            }
+        } catch (err) {
+            console.warn("[Patrol] Offline status update on logout warning:", err);
+        }
+
+        localStorage.removeItem('isLoggedIn');
+        localStorage.removeItem('userId');
+        localStorage.removeItem('userName');
+        localStorage.removeItem('fullName');
+        localStorage.removeItem('userPhone');
+        localStorage.removeItem('userRole');
+        localStorage.removeItem('policeStation');
+        localStorage.removeItem('officerId');
+        sessionStorage.clear();
+
+        window.location.href = '../../login.html';
+    }
+
+    const btnPatrolLogout = document.getElementById('btnPatrolLogout');
+    if (btnPatrolLogout) {
+        btnPatrolLogout.addEventListener('click', handlePatrolLogout);
+    }
+
+    const btnPatrolLogoutBottom = document.getElementById('btnPatrolLogoutBottom');
+    if (btnPatrolLogoutBottom) {
+        btnPatrolLogoutBottom.addEventListener('click', handlePatrolLogout);
+    }
+
     // Unload cleanup
     window.addEventListener('beforeunload', () => {
         if (watchId !== null) navigator.geolocation.clearWatch(watchId);
