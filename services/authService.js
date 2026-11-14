@@ -8,12 +8,15 @@ const JagruthiAuthService = {
         const client = window.supabaseClient;
         if (!client) throw new Error("Supabase client not initialized.");
 
-        const { data: user, error } = await client
-            .from('users')
-            .select('*')
-            .eq('phone', phone)
-            .eq('role', role)
-            .single();
+        let query = client.from('users').select('*').eq('phone', phone);
+        if (role === 'patrol') {
+            query = query.in('role', ['patrol', 'police']);
+        } else {
+            query = query.eq('role', role);
+        }
+
+        const { data: users, error } = await query;
+        const user = users && users.length > 0 ? users[0] : null;
 
         if (error || !user) {
             throw new Error(`No ${role} account found with this phone number.`);
@@ -31,19 +34,31 @@ const JagruthiAuthService = {
         if (!client) throw new Error("Supabase client not initialized.");
 
         // Check for duplicate
-        const { data: existing } = await client
-            .from('users')
-            .select('phone')
-            .eq('phone', userPayload.phone)
-            .eq('role', userPayload.role);
+        let checkQuery = client.from('users').select('phone').eq('phone', userPayload.phone);
+        if (userPayload.role === 'patrol') {
+            checkQuery = checkQuery.in('role', ['patrol', 'police']);
+        } else {
+            checkQuery = checkQuery.eq('role', userPayload.role);
+        }
+        const { data: existing } = await checkQuery;
 
         if (existing && existing.length > 0) {
             throw new Error("An account with this phone number already exists for this role.");
         }
 
-        const { data, error } = await client
+        let insertPayload = { ...userPayload };
+        let { data, error } = await client
             .from('users')
-            .insert([userPayload]);
+            .insert([insertPayload]);
+
+        // Auto-fallback: If database constraint "users_role_check" rejects 'patrol', store as 'police'
+        if (error && error.message && error.message.includes('users_role_check') && userPayload.role === 'patrol') {
+            console.warn("[Auth] 'patrol' role rejected by database constraint, falling back to role 'police'");
+            insertPayload.role = 'police';
+            const retry = await client.from('users').insert([insertPayload]);
+            data = retry.data;
+            error = retry.error;
+        }
 
         if (error) throw error;
         return data;

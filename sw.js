@@ -1,10 +1,10 @@
 /* ===================================================
    JAGRUTHI WOMEN SAFETY - SERVICE WORKER (PWA)
-   Version: 3.7.2 (PWA Mobile Download & Installation Ready)
+   Version: 3.7.3 (Patrol Role Constraint Resilience & PWA Ready)
    Provides offline capability, caching & installability
    =================================================== */
 
-const CACHE_NAME = 'jagruthi-pwa-v3.7.2';
+const CACHE_NAME = 'jagruthi-pwa-v3.7.3';
 
 const PRECACHE_ASSETS = [
     './',

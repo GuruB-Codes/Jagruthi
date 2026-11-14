@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const isLoggedIn = localStorage.getItem('isLoggedIn');
     const userRole = localStorage.getItem('userRole');
 
-    if (isLoggedIn !== 'true' || userRole !== 'police') {
+    if (isLoggedIn !== 'true' || (userRole !== 'police' && userRole !== 'patrol')) {
         window.location.href = '../../login.html';
         return;
     }

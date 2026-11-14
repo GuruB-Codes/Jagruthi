@@ -997,13 +997,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     return showMessage('Database connection unavailable. Please check your network.');
                 }
 
-                // Supabase Query
-                const { data: user, error } = await supabase
-                    .from('users')
-                    .select('*')
-                    .eq('phone', phone)
-                    .eq('role', selectedRole)
-                    .single();
+                // Supabase Query (support patrol querying both 'patrol' and 'police' fallback)
+                let userQuery = supabase.from('users').select('*').eq('phone', phone);
+                if (selectedRole === 'patrol') {
+                    userQuery = userQuery.in('role', ['patrol', 'police']);
+                } else {
+                    userQuery = userQuery.eq('role', selectedRole);
+                }
+
+                const { data: users, error } = await userQuery;
+                const user = users && users.length > 0 ? users[0] : null;
 
                 if (error || !user) {
                     if (btn) btn.classList.remove('loading');
@@ -1028,14 +1031,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 localStorage.setItem('userName', user.full_name);
                 localStorage.setItem('fullName', user.full_name);
                 localStorage.setItem('userPhone', user.phone);
-                localStorage.setItem('userRole', user.role);
+                localStorage.setItem('userRole', selectedRole === 'patrol' ? 'patrol' : user.role);
                 localStorage.setItem('isLoggedIn', 'true');
                 if (user.police_station) localStorage.setItem('policeStation', user.police_station);
                 if (user.officer_id) localStorage.setItem('officerId', user.officer_id);
 
                 const redirectMsg = selectedRole === 'police' 
                     ? `Welcome Officer ${user.full_name}! Opening Police Dashboard...` 
-                    : `Welcome back, ${user.full_name}! Redirecting...`;
+                    : (selectedRole === 'patrol'
+                        ? `Welcome Officer ${user.full_name}! Opening Patrol Dashboard...`
+                        : `Welcome back, ${user.full_name}! Redirecting...`);
                 showMessage(redirectMsg, 'success');
 
                 setTimeout(() => {
@@ -1106,11 +1111,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 // Check for duplicate in Supabase
-                const { data: existingList, error: checkError } = await supabase
-                    .from('users')
-                    .select('phone')
-                    .eq('phone', phone)
-                    .eq('role', selectedRole);
+                let checkQuery = supabase.from('users').select('phone').eq('phone', phone);
+                if (selectedRole === 'patrol') {
+                    checkQuery = checkQuery.in('role', ['patrol', 'police']);
+                } else {
+                    checkQuery = checkQuery.eq('role', selectedRole);
+                }
+                const { data: existingList, error: checkError } = await checkQuery;
 
                 if (checkError) {
                     console.error("Supabase Check Error:", checkError);
@@ -1146,15 +1153,41 @@ document.addEventListener('DOMContentLoaded', () => {
                     newUser.officer_id = document.getElementById('regPatrolOfficerId')?.value.trim() || document.getElementById('regOfficerId')?.value.trim() || '';
                 }
 
-                // Insert into Supabase
-                const { error: insertError } = await supabase
+                // Insert into Supabase with automatic check constraint fallback
+                let insertPayload = { ...newUser };
+                let { error: insertError } = await supabase
                     .from('users')
-                    .insert([newUser]);
+                    .insert([insertPayload]);
+
+                // Auto-fallback: If database constraint "users_role_check" rejects 'patrol', store as 'police'
+                if (insertError && insertError.message && (insertError.message.includes('users_role_check') || insertError.message.includes('check constraint')) && selectedRole === 'patrol') {
+                    console.warn("[Auth] 'patrol' role rejected by database constraint 'users_role_check', falling back to role 'police'");
+                    insertPayload.role = 'police';
+                    const retryResult = await supabase
+                        .from('users')
+                        .insert([insertPayload]);
+                    insertError = retryResult.error;
+                }
 
                 if (insertError) {
                     console.error("Supabase Insert Error:", insertError);
                     if (btn) btn.classList.remove('loading');
                     return showMessage(`Database error: ${insertError.message}`);
+                }
+
+                // Sync with police_units if table exists
+                if (selectedRole === 'patrol' || selectedRole === 'police') {
+                    try {
+                        await supabase.from('police_units').upsert([{
+                            station_name: newUser.police_station || 'Command Center',
+                            officer_name: name,
+                            officer_id: newUser.officer_id || `OFFICER-${phone.slice(-4)}`,
+                            phone: phone,
+                            status: 'available'
+                        }], { onConflict: 'phone' });
+                    } catch (unitErr) {
+                        console.warn('[Auth] Non-critical police_units sync warning:', unitErr);
+                    }
                 }
 
                 if (btn) btn.classList.remove('loading');
